@@ -294,6 +294,10 @@ internal sealed class AplicacaoPacienteConfiguration : IEntityTypeConfiguration<
         builder.HasOne(entity => entity.Produto).WithMany().HasForeignKey(entity => entity.ProdutoId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Agendamento)
+            .WithOne(entity => entity.AplicacaoPaciente)
+            .HasForeignKey<AplicacaoPaciente>(entity => entity.AgendamentoId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(entity => new { entity.EmpresaId, entity.PacienteId, entity.DataAplicacao });
     }
 }
@@ -311,6 +315,112 @@ internal sealed class AplicacaoSintomaConfiguration : IEntityTypeConfiguration<A
             .WithMany(entity => entity.Aplicacoes)
             .HasForeignKey(entity => entity.SintomaId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendamento>
+{
+    public void Configure(EntityTypeBuilder<Agendamento> builder)
+    {
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Tipo).HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.Property(entity => entity.Titulo).HasMaxLength(180).IsRequired();
+        builder.Property(entity => entity.Observacao).HasMaxLength(2000);
+        builder.Property(entity => entity.MotivoCancelamento).HasMaxLength(500);
+        builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Paciente).WithMany().HasForeignKey(entity => entity.PacienteId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.CompraPaciente).WithMany().HasForeignKey(entity => entity.CompraPacienteId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.CriadoPor).WithMany().HasForeignKey(entity => entity.CriadoPorId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.CanceladoPor).WithMany().HasForeignKey(entity => entity.CanceladoPorId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.UnidadeId, entity.DataInicio });
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.FuncionarioId, entity.DataInicio, entity.DataFim });
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.PacienteId, entity.Status });
+    }
+}
+
+internal sealed class DisponibilidadeFuncionarioConfiguration : IEntityTypeConfiguration<DisponibilidadeFuncionario>
+{
+    public void Configure(EntityTypeBuilder<DisponibilidadeFuncionario> builder)
+    {
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.DiaSemana).HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.FuncionarioId, entity.UnidadeId, entity.DiaSemana });
+    }
+}
+
+internal sealed class BloqueioAgendaConfiguration : IEntityTypeConfiguration<BloqueioAgenda>
+{
+    public void Configure(EntityTypeBuilder<BloqueioAgenda> builder)
+    {
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Motivo).HasMaxLength(500).IsRequired();
+        builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.CriadoPor).WithMany().HasForeignKey(entity => entity.CriadoPorId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.FuncionarioId, entity.DataInicio, entity.DataFim });
+    }
+}
+
+internal sealed class ContaGoogleConectadaConfiguration : IEntityTypeConfiguration<ContaGoogleConectada>
+{
+    public void Configure(EntityTypeBuilder<ContaGoogleConectada> builder)
+    {
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.GoogleEmail).HasMaxLength(200).IsRequired();
+        builder.Property(entity => entity.GoogleAccountId).HasMaxLength(200).IsRequired();
+        builder.Property(entity => entity.AccessToken).HasMaxLength(4000).IsRequired();
+        builder.Property(entity => entity.RefreshToken).HasMaxLength(4000).IsRequired();
+        builder.Property(entity => entity.EscoposAutorizados).HasMaxLength(1000).IsRequired();
+        builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Usuario).WithMany().HasForeignKey(entity => entity.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.GoogleAccountId });
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.FuncionarioId, entity.Ativo });
+    }
+}
+
+internal sealed class AgendaGoogleConfiguration : IEntityTypeConfiguration<AgendaGoogle>
+{
+    public void Configure(EntityTypeBuilder<AgendaGoogle> builder)
+    {
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.GoogleCalendarId).HasMaxLength(300).IsRequired();
+        builder.Property(entity => entity.Nome).HasMaxLength(200).IsRequired();
+        builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.ContaGoogleConectada)
+            .WithMany(entity => entity.Agendas)
+            .HasForeignKey(entity => entity.ContaGoogleConectadaId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.ContaGoogleConectadaId, entity.GoogleCalendarId }).IsUnique();
+    }
+}
+
+internal sealed class AgendamentoGoogleSyncConfiguration : IEntityTypeConfiguration<AgendamentoGoogleSync>
+{
+    public void Configure(EntityTypeBuilder<AgendamentoGoogleSync> builder)
+    {
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.GoogleEventId).HasMaxLength(300);
+        builder.Property(entity => entity.StatusSync).HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.Property(entity => entity.ErroSync).HasMaxLength(2000);
+        builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Agendamento)
+            .WithOne(entity => entity.GoogleSync)
+            .HasForeignKey<AgendamentoGoogleSync>(entity => entity.AgendamentoId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.AgendaGoogle)
+            .WithMany(entity => entity.Sincronizacoes)
+            .HasForeignKey(entity => entity.AgendaGoogleId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => entity.AgendamentoId).IsUnique();
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.StatusSync });
     }
 }
 

@@ -31,6 +31,12 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<MovimentacaoEstoque> MovimentacoesEstoque => Set<MovimentacaoEstoque>();
     public DbSet<AplicacaoPaciente> AplicacoesPaciente => Set<AplicacaoPaciente>();
     public DbSet<AplicacaoSintoma> AplicacoesSintomas => Set<AplicacaoSintoma>();
+    public DbSet<Agendamento> Agendamentos => Set<Agendamento>();
+    public DbSet<DisponibilidadeFuncionario> DisponibilidadesFuncionario => Set<DisponibilidadeFuncionario>();
+    public DbSet<BloqueioAgenda> BloqueiosAgenda => Set<BloqueioAgenda>();
+    public DbSet<ContaGoogleConectada> ContasGoogleConectadas => Set<ContaGoogleConectada>();
+    public DbSet<AgendaGoogle> AgendasGoogle => Set<AgendaGoogle>();
+    public DbSet<AgendamentoGoogleSync> AgendamentosGoogleSync => Set<AgendamentoGoogleSync>();
     public DbSet<FormaPagamento> FormasPagamento => Set<FormaPagamento>();
     public DbSet<ContaReceber> ContasReceber => Set<ContaReceber>();
     public DbSet<PagamentoPaciente> PagamentosPaciente => Set<PagamentoPaciente>();
