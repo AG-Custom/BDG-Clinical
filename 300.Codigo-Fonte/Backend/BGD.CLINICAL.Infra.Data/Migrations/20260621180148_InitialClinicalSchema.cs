@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -12,7 +12,7 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "empresas",
+                name: "empresa",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -22,70 +22,79 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     logo = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     cor_principal = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_empresas", x => x.id);
+                    table.PrimaryKey("pk_empresa", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "modulos_sistema",
+                name: "modulo_sistema",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     nome = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     codigo = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
                     descricao = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_modulos_sistema", x => x.id);
+                    table.PrimaryKey("pk_modulo_sistema", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "cargos",
+                name: "cargo",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
                     nome = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_cargos", x => x.id);
+                    table.PrimaryKey("pk_cargo", x => x.id);
                     table.ForeignKey(
-                        name: "fk_cargos_empresas_empresa_id",
+                        name: "fk_cargo_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "formas_pagamento",
+                name: "forma_pagamento",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
                     nome = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    tipo = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: true),
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_formas_pagamento", x => x.id);
+                    table.PrimaryKey("pk_forma_pagamento", x => x.id);
                     table.ForeignKey(
-                        name: "fk_formas_pagamento_empresas_empresa_id",
+                        name: "fk_forma_pagamento_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "fornecedores",
+                name: "fornecedor",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -94,21 +103,23 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     telefone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
                     email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     cnpj = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_fornecedores", x => x.id);
+                    table.PrimaryKey("pk_fornecedor", x => x.id);
                     table.ForeignKey(
-                        name: "fk_fornecedores_empresas_empresa_id",
+                        name: "fk_fornecedor_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "pacotes",
+                name: "pacote",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -117,21 +128,23 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     descricao = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     quantidade_aplicacoes = table.Column<int>(type: "integer", nullable: false),
                     valor = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_pacotes", x => x.id);
+                    table.PrimaryKey("pk_pacote", x => x.id);
                     table.ForeignKey(
-                        name: "fk_pacotes_empresas_empresa_id",
+                        name: "fk_pacote_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "produtos",
+                name: "produto",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -140,62 +153,68 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     tipo = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     unidade_medida = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
                     estoque_minimo = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_produtos", x => x.id);
+                    table.PrimaryKey("pk_produto", x => x.id);
                     table.ForeignKey(
-                        name: "fk_produtos_empresas_empresa_id",
+                        name: "fk_produto_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "sintomas",
+                name: "sintoma",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
                     nome = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_sintomas", x => x.id);
+                    table.PrimaryKey("pk_sintoma", x => x.id);
                     table.ForeignKey(
-                        name: "fk_sintomas_empresas_empresa_id",
+                        name: "fk_sintoma_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "unidades",
+                name: "unidade",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
                     nome = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
                     endereco = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_unidades", x => x.id);
+                    table.PrimaryKey("pk_unidade", x => x.id);
                     table.ForeignKey(
-                        name: "fk_unidades_empresas_empresa_id",
+                        name: "fk_unidade_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "licencas_modulo",
+                name: "licenca_modulo",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -203,83 +222,98 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     modulo_id = table.Column<Guid>(type: "uuid", nullable: false),
                     status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     data_inicio = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    data_fim = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    data_fim = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    valor = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_licencas_modulo", x => x.id);
+                    table.PrimaryKey("pk_licenca_modulo", x => x.id);
                     table.ForeignKey(
-                        name: "fk_licencas_modulo_empresas_empresa_id",
+                        name: "fk_licenca_modulo_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_licencas_modulo_modulos_sistema_modulo_id",
+                        name: "fk_licenca_modulo_modulo_sistema_modulo_id",
                         column: x => x.modulo_id,
-                        principalTable: "modulos_sistema",
+                        principalTable: "modulo_sistema",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "funcionarios",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    nome = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
-                    telefone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
-                    cargo_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    flag_aplicador = table.Column<bool>(type: "boolean", nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_funcionarios", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_funcionarios_cargos_cargo_id",
-                        column: x => x.cargo_id,
-                        principalTable: "cargos",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_funcionarios_empresas_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresas",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "itens_pacote",
+                name: "item_pacote",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     pacote_id = table.Column<Guid>(type: "uuid", nullable: false),
                     produto_id = table.Column<Guid>(type: "uuid", nullable: false),
                     quantidade_total = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
-                    unidade_medida = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false)
+                    unidade_medida = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_itens_pacote", x => x.id);
+                    table.PrimaryKey("pk_item_pacote", x => x.id);
                     table.ForeignKey(
-                        name: "fk_itens_pacote_pacotes_pacote_id",
+                        name: "fk_item_pacote_pacote_pacote_id",
                         column: x => x.pacote_id,
-                        principalTable: "pacotes",
+                        principalTable: "pacote",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_itens_pacote_produtos_produto_id",
+                        name: "fk_item_pacote_produto_produto_id",
                         column: x => x.produto_id,
-                        principalTable: "produtos",
+                        principalTable: "produto",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "pacientes",
+                name: "funcionario",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    unidade_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    nome = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    telefone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    cargo_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    flag_aplicador = table.Column<bool>(type: "boolean", nullable: false),
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_funcionario", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_funcionario_cargo_cargo_id",
+                        column: x => x.cargo_id,
+                        principalTable: "cargo",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_funcionario_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_funcionario_unidade_unidade_id",
+                        column: x => x.unidade_id,
+                        principalTable: "unidade",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "paciente",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -288,29 +322,32 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     nome = table.Column<string>(type: "character varying(180)", maxLength: 180, nullable: false),
                     cpf = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     telefone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     data_nascimento = table.Column<DateOnly>(type: "date", nullable: true),
-                    observacoes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    observacao = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_pacientes", x => x.id);
+                    table.PrimaryKey("pk_paciente", x => x.id);
                     table.ForeignKey(
-                        name: "fk_pacientes_empresas_empresa_id",
+                        name: "fk_paciente_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_pacientes_unidades_unidade_id",
+                        name: "fk_paciente_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "pedidos_fornecedor",
+                name: "pedido_fornecedor",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -319,33 +356,37 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     unidade_id = table.Column<Guid>(type: "uuid", nullable: false),
                     tipo_pedido = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     data_pedido = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false)
+                    status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    valor_total = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    observacao = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_pedidos_fornecedor", x => x.id);
+                    table.PrimaryKey("pk_pedido_fornecedor", x => x.id);
                     table.ForeignKey(
-                        name: "fk_pedidos_fornecedor_empresas_empresa_id",
+                        name: "fk_pedido_fornecedor_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_pedidos_fornecedor_fornecedores_fornecedor_id",
+                        name: "fk_pedido_fornecedor_fornecedor_fornecedor_id",
                         column: x => x.fornecedor_id,
-                        principalTable: "fornecedores",
+                        principalTable: "fornecedor",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_pedidos_fornecedor_unidades_unidade_id",
+                        name: "fk_pedido_fornecedor_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "disponibilidades_funcionario",
+                name: "disponibilidade_funcionario",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -355,63 +396,69 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     dia_semana = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     hora_inicio = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
                     hora_fim = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_disponibilidades_funcionario", x => x.id);
+                    table.PrimaryKey("pk_disponibilidade_funcionario", x => x.id);
                     table.ForeignKey(
-                        name: "fk_disponibilidades_funcionario_empresas_empresa_id",
+                        name: "fk_disponibilidade_funcionario_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_disponibilidades_funcionario_funcionarios_funcionario_id",
+                        name: "fk_disponibilidade_funcionario_funcionario_funcionario_id",
                         column: x => x.funcionario_id,
-                        principalTable: "funcionarios",
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_disponibilidades_funcionario_unidades_unidade_id",
+                        name: "fk_disponibilidade_funcionario_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "usuarios",
+                name: "usuario",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
                     funcionario_id = table.Column<Guid>(type: "uuid", nullable: true),
                     nome = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
-                    email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    senha = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    email_login = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    senha_hash = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    auth_provider = table.Column<string>(type: "character varying(60)", maxLength: 60, nullable: false),
+                    google_id = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     tipo_usuario = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_usuarios", x => x.id);
+                    table.PrimaryKey("pk_usuario", x => x.id);
                     table.ForeignKey(
-                        name: "fk_usuarios_empresas_empresa_id",
+                        name: "fk_usuario_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_usuarios_funcionarios_funcionario_id",
+                        name: "fk_usuario_funcionario_funcionario_id",
                         column: x => x.funcionario_id,
-                        principalTable: "funcionarios",
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "compras_paciente",
+                name: "compra_paciente",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -420,66 +467,73 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     pacote_id = table.Column<Guid>(type: "uuid", nullable: false),
                     unidade_id = table.Column<Guid>(type: "uuid", nullable: false),
                     data_compra = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false)
+                    quantidade_aplicacoes = table.Column<int>(type: "integer", nullable: false),
+                    status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    observacao = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_compras_paciente", x => x.id);
+                    table.PrimaryKey("pk_compra_paciente", x => x.id);
                     table.ForeignKey(
-                        name: "fk_compras_paciente_empresas_empresa_id",
+                        name: "fk_compra_paciente_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_compras_paciente_pacientes_paciente_id",
+                        name: "fk_compra_paciente_paciente_paciente_id",
                         column: x => x.paciente_id,
-                        principalTable: "pacientes",
+                        principalTable: "paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_compras_paciente_pacotes_pacote_id",
+                        name: "fk_compra_paciente_pacote_pacote_id",
                         column: x => x.pacote_id,
-                        principalTable: "pacotes",
+                        principalTable: "pacote",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_compras_paciente_unidades_unidade_id",
+                        name: "fk_compra_paciente_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "itens_pedido_fornecedor",
+                name: "item_pedido_fornecedor",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     pedido_fornecedor_id = table.Column<Guid>(type: "uuid", nullable: false),
                     produto_id = table.Column<Guid>(type: "uuid", nullable: false),
                     quantidade = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
-                    valor_unitario = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false)
+                    valor_unitario = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    valor_total = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_itens_pedido_fornecedor", x => x.id);
+                    table.PrimaryKey("pk_item_pedido_fornecedor", x => x.id);
                     table.ForeignKey(
-                        name: "fk_itens_pedido_fornecedor_pedidos_fornecedor_pedido_fornecedor~",
+                        name: "fk_item_pedido_fornecedor_pedido_fornecedor_pedido_fornecedor_~",
                         column: x => x.pedido_fornecedor_id,
-                        principalTable: "pedidos_fornecedor",
+                        principalTable: "pedido_fornecedor",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_itens_pedido_fornecedor_produtos_produto_id",
+                        name: "fk_item_pedido_fornecedor_produto_produto_id",
                         column: x => x.produto_id,
-                        principalTable: "produtos",
+                        principalTable: "produto",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "bloqueios_agenda",
+                name: "bloqueio_agenda",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -489,39 +543,41 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     data_inicio = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     data_fim = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     motivo = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    criado_por_id = table.Column<Guid>(type: "uuid", nullable: false)
+                    criado_por_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_bloqueios_agenda", x => x.id);
+                    table.PrimaryKey("pk_bloqueio_agenda", x => x.id);
                     table.ForeignKey(
-                        name: "fk_bloqueios_agenda_empresas_empresa_id",
+                        name: "fk_bloqueio_agenda_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_bloqueios_agenda_funcionarios_funcionario_id",
+                        name: "fk_bloqueio_agenda_funcionario_funcionario_id",
                         column: x => x.funcionario_id,
-                        principalTable: "funcionarios",
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_bloqueios_agenda_unidades_unidade_id",
+                        name: "fk_bloqueio_agenda_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_bloqueios_agenda_usuarios_criado_por_id",
+                        name: "fk_bloqueio_agenda_usuario_criado_por_id",
                         column: x => x.criado_por_id,
-                        principalTable: "usuarios",
+                        principalTable: "usuario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "contas_google_conectadas",
+                name: "conta_google_conectada",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -534,62 +590,100 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     refresh_token = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
                     escopos_autorizados = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     ativo = table.Column<bool>(type: "boolean", nullable: false),
-                    conectado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    conectado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_contas_google_conectadas", x => x.id);
+                    table.PrimaryKey("pk_conta_google_conectada", x => x.id);
                     table.ForeignKey(
-                        name: "fk_contas_google_conectadas_empresas_empresa_id",
+                        name: "fk_conta_google_conectada_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_contas_google_conectadas_funcionarios_funcionario_id",
+                        name: "fk_conta_google_conectada_funcionario_funcionario_id",
                         column: x => x.funcionario_id,
-                        principalTable: "funcionarios",
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_contas_google_conectadas_usuarios_usuario_id",
+                        name: "fk_conta_google_conectada_usuario_usuario_id",
                         column: x => x.usuario_id,
-                        principalTable: "usuarios",
+                        principalTable: "usuario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "permissoes_usuario",
+                name: "log_auditoria",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    usuario_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    entidade = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    registro_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    acao = table.Column<string>(type: "character varying(60)", maxLength: 60, nullable: false),
+                    dados_anteriores = table.Column<string>(type: "jsonb", nullable: true),
+                    dados_novos = table.Column<string>(type: "jsonb", nullable: true),
+                    data = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ip = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_log_auditoria", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_log_auditoria_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_log_auditoria_usuario_usuario_id",
+                        column: x => x.usuario_id,
+                        principalTable: "usuario",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "permissao_usuario",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     usuario_id = table.Column<Guid>(type: "uuid", nullable: false),
                     modulo_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    visualizar = table.Column<bool>(type: "boolean", nullable: false),
-                    criar = table.Column<bool>(type: "boolean", nullable: false),
-                    editar = table.Column<bool>(type: "boolean", nullable: false),
-                    excluir = table.Column<bool>(type: "boolean", nullable: false)
+                    pode_visualizar = table.Column<bool>(type: "boolean", nullable: false),
+                    pode_criar = table.Column<bool>(type: "boolean", nullable: false),
+                    pode_editar = table.Column<bool>(type: "boolean", nullable: false),
+                    pode_excluir = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_permissoes_usuario", x => x.id);
+                    table.PrimaryKey("pk_permissao_usuario", x => x.id);
                     table.ForeignKey(
-                        name: "fk_permissoes_usuario_modulos_sistema_modulo_id",
+                        name: "fk_permissao_usuario_modulo_sistema_modulo_id",
                         column: x => x.modulo_id,
-                        principalTable: "modulos_sistema",
+                        principalTable: "modulo_sistema",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_permissoes_usuario_usuarios_usuario_id",
+                        name: "fk_permissao_usuario_usuario_usuario_id",
                         column: x => x.usuario_id,
-                        principalTable: "usuarios",
+                        principalTable: "usuario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "agendamentos",
+                name: "agendamento",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -606,92 +700,97 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     observacao = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     criado_por_id = table.Column<Guid>(type: "uuid", nullable: false),
                     cancelado_por_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    motivo_cancelamento = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                    motivo_cancelamento = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_agendamentos", x => x.id);
+                    table.PrimaryKey("pk_agendamento", x => x.id);
                     table.ForeignKey(
-                        name: "fk_agendamentos_compras_paciente_compra_paciente_id",
+                        name: "fk_agendamento_compra_paciente_compra_paciente_id",
                         column: x => x.compra_paciente_id,
-                        principalTable: "compras_paciente",
+                        principalTable: "compra_paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendamentos_empresas_empresa_id",
+                        name: "fk_agendamento_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendamentos_funcionarios_funcionario_id",
+                        name: "fk_agendamento_funcionario_funcionario_id",
                         column: x => x.funcionario_id,
-                        principalTable: "funcionarios",
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendamentos_pacientes_paciente_id",
+                        name: "fk_agendamento_paciente_paciente_id",
                         column: x => x.paciente_id,
-                        principalTable: "pacientes",
+                        principalTable: "paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendamentos_unidades_unidade_id",
+                        name: "fk_agendamento_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendamentos_usuarios_cancelado_por_id",
+                        name: "fk_agendamento_usuario_cancelado_por_id",
                         column: x => x.cancelado_por_id,
-                        principalTable: "usuarios",
+                        principalTable: "usuario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendamentos_usuarios_criado_por_id",
+                        name: "fk_agendamento_usuario_criado_por_id",
                         column: x => x.criado_por_id,
-                        principalTable: "usuarios",
+                        principalTable: "usuario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "contas_receber",
+                name: "conta_receber",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uuid", nullable: false),
                     paciente_id = table.Column<Guid>(type: "uuid", nullable: false),
                     compra_paciente_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    valor = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     data_vencimento = table.Column<DateOnly>(type: "date", nullable: false),
-                    status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false)
+                    valor_total = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    observacao = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_contas_receber", x => x.id);
+                    table.PrimaryKey("pk_conta_receber", x => x.id);
                     table.ForeignKey(
-                        name: "fk_contas_receber_compras_paciente_compra_paciente_id",
+                        name: "fk_conta_receber_compra_paciente_compra_paciente_id",
                         column: x => x.compra_paciente_id,
-                        principalTable: "compras_paciente",
+                        principalTable: "compra_paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_contas_receber_empresas_empresa_id",
+                        name: "fk_conta_receber_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_contas_receber_pacientes_paciente_id",
+                        name: "fk_conta_receber_paciente_paciente_id",
                         column: x => x.paciente_id,
-                        principalTable: "pacientes",
+                        principalTable: "paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "agendas_google",
+                name: "agenda_google",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -700,27 +799,29 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     google_calendar_id = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     nome = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     principal = table.Column<bool>(type: "boolean", nullable: false),
-                    ativo = table.Column<bool>(type: "boolean", nullable: false)
+                    ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_agendas_google", x => x.id);
+                    table.PrimaryKey("pk_agenda_google", x => x.id);
                     table.ForeignKey(
-                        name: "fk_agendas_google_contas_google_conectadas_conta_google_conectad~",
+                        name: "fk_agenda_google_conta_google_conectada_conta_google_conectada~",
                         column: x => x.conta_google_conectada_id,
-                        principalTable: "contas_google_conectadas",
+                        principalTable: "conta_google_conectada",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendas_google_empresas_empresa_id",
+                        name: "fk_agenda_google_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "aplicacoes_paciente",
+                name: "aplicacao_paciente",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -734,58 +835,60 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     data_aplicacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     quantidade_utilizada = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
                     peso = table.Column<decimal>(type: "numeric(10,3)", precision: 10, scale: 3, nullable: true),
-                    observacoes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    realizado = table.Column<bool>(type: "boolean", nullable: false)
+                    observacao = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    realizado = table.Column<bool>(type: "boolean", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_aplicacoes_paciente", x => x.id);
+                    table.PrimaryKey("pk_aplicacao_paciente", x => x.id);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_paciente_agendamentos_agendamento_id",
+                        name: "fk_aplicacao_paciente_agendamento_agendamento_id",
                         column: x => x.agendamento_id,
-                        principalTable: "agendamentos",
+                        principalTable: "agendamento",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_paciente_compras_paciente_compra_paciente_id",
+                        name: "fk_aplicacao_paciente_compra_paciente_compra_paciente_id",
                         column: x => x.compra_paciente_id,
-                        principalTable: "compras_paciente",
+                        principalTable: "compra_paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_paciente_empresas_empresa_id",
+                        name: "fk_aplicacao_paciente_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_paciente_funcionarios_funcionario_id",
+                        name: "fk_aplicacao_paciente_funcionario_funcionario_id",
                         column: x => x.funcionario_id,
-                        principalTable: "funcionarios",
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_paciente_pacientes_paciente_id",
+                        name: "fk_aplicacao_paciente_paciente_paciente_id",
                         column: x => x.paciente_id,
-                        principalTable: "pacientes",
+                        principalTable: "paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_paciente_produtos_produto_id",
+                        name: "fk_aplicacao_paciente_produto_produto_id",
                         column: x => x.produto_id,
-                        principalTable: "produtos",
+                        principalTable: "produto",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_paciente_unidades_unidade_id",
+                        name: "fk_aplicacao_paciente_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "pagamentos_paciente",
+                name: "pagamento_paciente",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -793,41 +896,43 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     paciente_id = table.Column<Guid>(type: "uuid", nullable: false),
                     conta_receber_id = table.Column<Guid>(type: "uuid", nullable: false),
                     forma_pagamento_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    valor = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     data_pagamento = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    observacoes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
+                    valor_pago = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    observacao = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_pagamentos_paciente", x => x.id);
+                    table.PrimaryKey("pk_pagamento_paciente", x => x.id);
                     table.ForeignKey(
-                        name: "fk_pagamentos_paciente_contas_receber_conta_receber_id",
+                        name: "fk_pagamento_paciente_conta_receber_conta_receber_id",
                         column: x => x.conta_receber_id,
-                        principalTable: "contas_receber",
+                        principalTable: "conta_receber",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_pagamentos_paciente_empresas_empresa_id",
+                        name: "fk_pagamento_paciente_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_pagamentos_paciente_formas_pagamento_forma_pagamento_id",
+                        name: "fk_pagamento_paciente_forma_pagamento_forma_pagamento_id",
                         column: x => x.forma_pagamento_id,
-                        principalTable: "formas_pagamento",
+                        principalTable: "forma_pagamento",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_pagamentos_paciente_pacientes_paciente_id",
+                        name: "fk_pagamento_paciente_paciente_paciente_id",
                         column: x => x.paciente_id,
-                        principalTable: "pacientes",
+                        principalTable: "paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "agendamentos_google_sync",
+                name: "agendamento_google_sync",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -837,57 +942,62 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     google_event_id = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true),
                     status_sync = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     ultima_sincronizacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    erro_sync = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
+                    erro_sync = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_agendamentos_google_sync", x => x.id);
+                    table.PrimaryKey("pk_agendamento_google_sync", x => x.id);
                     table.ForeignKey(
-                        name: "fk_agendamentos_google_sync_agendamentos_agendamento_id",
-                        column: x => x.agendamento_id,
-                        principalTable: "agendamentos",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_agendamentos_google_sync_agendas_google_agenda_google_id",
+                        name: "fk_agendamento_google_sync_agenda_google_agenda_google_id",
                         column: x => x.agenda_google_id,
-                        principalTable: "agendas_google",
+                        principalTable: "agenda_google",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_agendamentos_google_sync_empresas_empresa_id",
+                        name: "fk_agendamento_google_sync_agendamento_agendamento_id",
+                        column: x => x.agendamento_id,
+                        principalTable: "agendamento",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_agendamento_google_sync_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "aplicacoes_sintomas",
+                name: "aplicacao_sintoma",
                 columns: table => new
                 {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     aplicacao_paciente_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    sintoma_id = table.Column<Guid>(type: "uuid", nullable: false)
+                    sintoma_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_aplicacoes_sintomas", x => new { x.aplicacao_paciente_id, x.sintoma_id });
+                    table.PrimaryKey("pk_aplicacao_sintoma", x => x.id);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_sintomas_aplicacoes_paciente_aplicacao_paciente_~",
+                        name: "fk_aplicacao_sintoma_aplicacao_paciente_aplicacao_paciente_id",
                         column: x => x.aplicacao_paciente_id,
-                        principalTable: "aplicacoes_paciente",
+                        principalTable: "aplicacao_paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_aplicacoes_sintomas_sintomas_sintoma_id",
+                        name: "fk_aplicacao_sintoma_sintoma_sintoma_id",
                         column: x => x.sintoma_id,
-                        principalTable: "sintomas",
+                        principalTable: "sintoma",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "movimentacoes_estoque",
+                name: "movimentacao_estoque",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -901,438 +1011,466 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     funcionario_id = table.Column<Guid>(type: "uuid", nullable: true),
                     aplicacao_paciente_id = table.Column<Guid>(type: "uuid", nullable: true),
                     pedido_fornecedor_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    observacoes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
+                    observacao = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_movimentacoes_estoque", x => x.id);
+                    table.PrimaryKey("pk_movimentacao_estoque", x => x.id);
                     table.ForeignKey(
-                        name: "fk_movimentacoes_estoque_aplicacoes_paciente_aplicacao_pacient~",
+                        name: "fk_movimentacao_estoque_aplicacao_paciente_aplicacao_paciente_~",
                         column: x => x.aplicacao_paciente_id,
-                        principalTable: "aplicacoes_paciente",
+                        principalTable: "aplicacao_paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_movimentacoes_estoque_empresas_empresa_id",
+                        name: "fk_movimentacao_estoque_empresa_empresa_id",
                         column: x => x.empresa_id,
-                        principalTable: "empresas",
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_movimentacoes_estoque_funcionarios_funcionario_id",
+                        name: "fk_movimentacao_estoque_funcionario_funcionario_id",
                         column: x => x.funcionario_id,
-                        principalTable: "funcionarios",
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_movimentacoes_estoque_pedidos_fornecedor_pedido_fornecedor_id",
+                        name: "fk_movimentacao_estoque_pedido_fornecedor_pedido_fornecedor_id",
                         column: x => x.pedido_fornecedor_id,
-                        principalTable: "pedidos_fornecedor",
+                        principalTable: "pedido_fornecedor",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_movimentacoes_estoque_produtos_produto_id",
+                        name: "fk_movimentacao_estoque_produto_produto_id",
                         column: x => x.produto_id,
-                        principalTable: "produtos",
+                        principalTable: "produto",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_movimentacoes_estoque_unidades_unidade_id",
+                        name: "fk_movimentacao_estoque_unidade_unidade_id",
                         column: x => x.unidade_id,
-                        principalTable: "unidades",
+                        principalTable: "unidade",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_cancelado_por_id",
-                table: "agendamentos",
-                column: "cancelado_por_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_compra_paciente_id",
-                table: "agendamentos",
-                column: "compra_paciente_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_criado_por_id",
-                table: "agendamentos",
-                column: "criado_por_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_empresa_id_funcionario_id_data_inicio_data_fim",
-                table: "agendamentos",
-                columns: new[] { "empresa_id", "funcionario_id", "data_inicio", "data_fim" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_empresa_id_paciente_id_status",
-                table: "agendamentos",
-                columns: new[] { "empresa_id", "paciente_id", "status" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_empresa_id_unidade_id_data_inicio",
-                table: "agendamentos",
-                columns: new[] { "empresa_id", "unidade_id", "data_inicio" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_funcionario_id",
-                table: "agendamentos",
-                column: "funcionario_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_paciente_id",
-                table: "agendamentos",
-                column: "paciente_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_unidade_id",
-                table: "agendamentos",
-                column: "unidade_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_google_sync_agenda_google_id",
-                table: "agendamentos_google_sync",
-                column: "agenda_google_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_google_sync_agendamento_id",
-                table: "agendamentos_google_sync",
-                column: "agendamento_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamentos_google_sync_empresa_id_status_sync",
-                table: "agendamentos_google_sync",
-                columns: new[] { "empresa_id", "status_sync" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendas_google_conta_google_conectada_id",
-                table: "agendas_google",
+                name: "ix_agenda_google_conta_google_conectada_id",
+                table: "agenda_google",
                 column: "conta_google_conectada_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_agendas_google_empresa_id_conta_google_conectada_id_google_~",
-                table: "agendas_google",
+                name: "ix_agenda_google_empresa_id_conta_google_conectada_id_google_c~",
+                table: "agenda_google",
                 columns: new[] { "empresa_id", "conta_google_conectada_id", "google_calendar_id" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_paciente_agendamento_id",
-                table: "aplicacoes_paciente",
+                name: "ix_agendamento_cancelado_por_id",
+                table: "agendamento",
+                column: "cancelado_por_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_compra_paciente_id",
+                table: "agendamento",
+                column: "compra_paciente_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_criado_por_id",
+                table: "agendamento",
+                column: "criado_por_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_empresa_id_funcionario_id_data_inicio_data_fim",
+                table: "agendamento",
+                columns: new[] { "empresa_id", "funcionario_id", "data_inicio", "data_fim" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_empresa_id_paciente_id_status",
+                table: "agendamento",
+                columns: new[] { "empresa_id", "paciente_id", "status" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_empresa_id_unidade_id_data_inicio",
+                table: "agendamento",
+                columns: new[] { "empresa_id", "unidade_id", "data_inicio" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_funcionario_id",
+                table: "agendamento",
+                column: "funcionario_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_paciente_id",
+                table: "agendamento",
+                column: "paciente_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_unidade_id",
+                table: "agendamento",
+                column: "unidade_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_google_sync_agenda_google_id",
+                table: "agendamento_google_sync",
+                column: "agenda_google_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_agendamento_google_sync_agendamento_id",
+                table: "agendamento_google_sync",
                 column: "agendamento_id",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_paciente_compra_paciente_id",
-                table: "aplicacoes_paciente",
+                name: "ix_agendamento_google_sync_empresa_id_status_sync",
+                table: "agendamento_google_sync",
+                columns: new[] { "empresa_id", "status_sync" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_aplicacao_paciente_agendamento_id",
+                table: "aplicacao_paciente",
+                column: "agendamento_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_aplicacao_paciente_compra_paciente_id",
+                table: "aplicacao_paciente",
                 column: "compra_paciente_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_paciente_empresa_id_paciente_id_data_aplicacao",
-                table: "aplicacoes_paciente",
+                name: "ix_aplicacao_paciente_empresa_id_paciente_id_data_aplicacao",
+                table: "aplicacao_paciente",
                 columns: new[] { "empresa_id", "paciente_id", "data_aplicacao" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_paciente_funcionario_id",
-                table: "aplicacoes_paciente",
+                name: "ix_aplicacao_paciente_funcionario_id",
+                table: "aplicacao_paciente",
                 column: "funcionario_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_paciente_paciente_id",
-                table: "aplicacoes_paciente",
+                name: "ix_aplicacao_paciente_paciente_id",
+                table: "aplicacao_paciente",
                 column: "paciente_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_paciente_produto_id",
-                table: "aplicacoes_paciente",
+                name: "ix_aplicacao_paciente_produto_id",
+                table: "aplicacao_paciente",
                 column: "produto_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_paciente_unidade_id",
-                table: "aplicacoes_paciente",
+                name: "ix_aplicacao_paciente_unidade_id",
+                table: "aplicacao_paciente",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacoes_sintomas_sintoma_id",
-                table: "aplicacoes_sintomas",
+                name: "ix_aplicacao_sintoma_aplicacao_paciente_id_sintoma_id",
+                table: "aplicacao_sintoma",
+                columns: new[] { "aplicacao_paciente_id", "sintoma_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_aplicacao_sintoma_sintoma_id",
+                table: "aplicacao_sintoma",
                 column: "sintoma_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_bloqueios_agenda_criado_por_id",
-                table: "bloqueios_agenda",
+                name: "ix_bloqueio_agenda_criado_por_id",
+                table: "bloqueio_agenda",
                 column: "criado_por_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_bloqueios_agenda_empresa_id_funcionario_id_data_inicio_data~",
-                table: "bloqueios_agenda",
+                name: "ix_bloqueio_agenda_empresa_id_funcionario_id_data_inicio_data_~",
+                table: "bloqueio_agenda",
                 columns: new[] { "empresa_id", "funcionario_id", "data_inicio", "data_fim" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_bloqueios_agenda_funcionario_id",
-                table: "bloqueios_agenda",
+                name: "ix_bloqueio_agenda_funcionario_id",
+                table: "bloqueio_agenda",
                 column: "funcionario_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_bloqueios_agenda_unidade_id",
-                table: "bloqueios_agenda",
+                name: "ix_bloqueio_agenda_unidade_id",
+                table: "bloqueio_agenda",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_cargos_empresa_id_nome",
-                table: "cargos",
+                name: "ix_cargo_empresa_id_nome",
+                table: "cargo",
                 columns: new[] { "empresa_id", "nome" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_compras_paciente_empresa_id_paciente_id_status",
-                table: "compras_paciente",
+                name: "ix_compra_paciente_empresa_id_paciente_id_status",
+                table: "compra_paciente",
                 columns: new[] { "empresa_id", "paciente_id", "status" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_compras_paciente_paciente_id",
-                table: "compras_paciente",
+                name: "ix_compra_paciente_paciente_id",
+                table: "compra_paciente",
                 column: "paciente_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_compras_paciente_pacote_id",
-                table: "compras_paciente",
+                name: "ix_compra_paciente_pacote_id",
+                table: "compra_paciente",
                 column: "pacote_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_compras_paciente_unidade_id",
-                table: "compras_paciente",
+                name: "ix_compra_paciente_unidade_id",
+                table: "compra_paciente",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_contas_google_conectadas_empresa_id_funcionario_id_ativo",
-                table: "contas_google_conectadas",
+                name: "ix_conta_google_conectada_empresa_id_funcionario_id_ativo",
+                table: "conta_google_conectada",
                 columns: new[] { "empresa_id", "funcionario_id", "ativo" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_contas_google_conectadas_empresa_id_google_account_id",
-                table: "contas_google_conectadas",
+                name: "ix_conta_google_conectada_empresa_id_google_account_id",
+                table: "conta_google_conectada",
                 columns: new[] { "empresa_id", "google_account_id" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_contas_google_conectadas_funcionario_id",
-                table: "contas_google_conectadas",
+                name: "ix_conta_google_conectada_funcionario_id",
+                table: "conta_google_conectada",
                 column: "funcionario_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_contas_google_conectadas_usuario_id",
-                table: "contas_google_conectadas",
+                name: "ix_conta_google_conectada_usuario_id",
+                table: "conta_google_conectada",
                 column: "usuario_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_contas_receber_compra_paciente_id",
-                table: "contas_receber",
+                name: "ix_conta_receber_compra_paciente_id",
+                table: "conta_receber",
                 column: "compra_paciente_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_contas_receber_empresa_id_paciente_id_status",
-                table: "contas_receber",
+                name: "ix_conta_receber_empresa_id_paciente_id_status",
+                table: "conta_receber",
                 columns: new[] { "empresa_id", "paciente_id", "status" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_contas_receber_paciente_id",
-                table: "contas_receber",
+                name: "ix_conta_receber_paciente_id",
+                table: "conta_receber",
                 column: "paciente_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_disponibilidades_funcionario_empresa_id_funcionario_id_unid~",
-                table: "disponibilidades_funcionario",
+                name: "ix_disponibilidade_funcionario_empresa_id_funcionario_id_unida~",
+                table: "disponibilidade_funcionario",
                 columns: new[] { "empresa_id", "funcionario_id", "unidade_id", "dia_semana" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_disponibilidades_funcionario_funcionario_id",
-                table: "disponibilidades_funcionario",
+                name: "ix_disponibilidade_funcionario_funcionario_id",
+                table: "disponibilidade_funcionario",
                 column: "funcionario_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_disponibilidades_funcionario_unidade_id",
-                table: "disponibilidades_funcionario",
+                name: "ix_disponibilidade_funcionario_unidade_id",
+                table: "disponibilidade_funcionario",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_empresas_cnpj",
-                table: "empresas",
+                name: "ix_empresa_cnpj",
+                table: "empresa",
                 column: "cnpj");
 
             migrationBuilder.CreateIndex(
-                name: "ix_formas_pagamento_empresa_id_nome",
-                table: "formas_pagamento",
+                name: "ix_forma_pagamento_empresa_id_nome",
+                table: "forma_pagamento",
                 columns: new[] { "empresa_id", "nome" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_fornecedores_empresa_id_cnpj",
-                table: "fornecedores",
+                name: "ix_fornecedor_empresa_id_cnpj",
+                table: "fornecedor",
                 columns: new[] { "empresa_id", "cnpj" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_funcionarios_cargo_id",
-                table: "funcionarios",
+                name: "ix_funcionario_cargo_id",
+                table: "funcionario",
                 column: "cargo_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_funcionarios_empresa_id_nome",
-                table: "funcionarios",
+                name: "ix_funcionario_empresa_id_nome",
+                table: "funcionario",
                 columns: new[] { "empresa_id", "nome" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_itens_pacote_pacote_id_produto_id",
-                table: "itens_pacote",
+                name: "ix_funcionario_unidade_id",
+                table: "funcionario",
+                column: "unidade_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_item_pacote_pacote_id_produto_id",
+                table: "item_pacote",
                 columns: new[] { "pacote_id", "produto_id" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_itens_pacote_produto_id",
-                table: "itens_pacote",
+                name: "ix_item_pacote_produto_id",
+                table: "item_pacote",
                 column: "produto_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_itens_pedido_fornecedor_pedido_fornecedor_id",
-                table: "itens_pedido_fornecedor",
+                name: "ix_item_pedido_fornecedor_pedido_fornecedor_id",
+                table: "item_pedido_fornecedor",
                 column: "pedido_fornecedor_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_itens_pedido_fornecedor_produto_id",
-                table: "itens_pedido_fornecedor",
+                name: "ix_item_pedido_fornecedor_produto_id",
+                table: "item_pedido_fornecedor",
                 column: "produto_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_licencas_modulo_empresa_id_modulo_id",
-                table: "licencas_modulo",
+                name: "ix_licenca_modulo_empresa_id_modulo_id",
+                table: "licenca_modulo",
                 columns: new[] { "empresa_id", "modulo_id" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_licencas_modulo_modulo_id",
-                table: "licencas_modulo",
+                name: "ix_licenca_modulo_modulo_id",
+                table: "licenca_modulo",
                 column: "modulo_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_modulos_sistema_codigo",
-                table: "modulos_sistema",
+                name: "ix_log_auditoria_empresa_id_entidade_registro_id",
+                table: "log_auditoria",
+                columns: new[] { "empresa_id", "entidade", "registro_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_log_auditoria_empresa_id_usuario_id_data",
+                table: "log_auditoria",
+                columns: new[] { "empresa_id", "usuario_id", "data" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_log_auditoria_usuario_id",
+                table: "log_auditoria",
+                column: "usuario_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_modulo_sistema_codigo",
+                table: "modulo_sistema",
                 column: "codigo",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_movimentacoes_estoque_aplicacao_paciente_id",
-                table: "movimentacoes_estoque",
+                name: "ix_movimentacao_estoque_aplicacao_paciente_id",
+                table: "movimentacao_estoque",
                 column: "aplicacao_paciente_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_movimentacoes_estoque_empresa_id_unidade_id_produto_id_data",
-                table: "movimentacoes_estoque",
+                name: "ix_movimentacao_estoque_empresa_id_unidade_id_produto_id_data",
+                table: "movimentacao_estoque",
                 columns: new[] { "empresa_id", "unidade_id", "produto_id", "data" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_movimentacoes_estoque_funcionario_id",
-                table: "movimentacoes_estoque",
+                name: "ix_movimentacao_estoque_funcionario_id",
+                table: "movimentacao_estoque",
                 column: "funcionario_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_movimentacoes_estoque_pedido_fornecedor_id",
-                table: "movimentacoes_estoque",
+                name: "ix_movimentacao_estoque_pedido_fornecedor_id",
+                table: "movimentacao_estoque",
                 column: "pedido_fornecedor_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_movimentacoes_estoque_produto_id",
-                table: "movimentacoes_estoque",
+                name: "ix_movimentacao_estoque_produto_id",
+                table: "movimentacao_estoque",
                 column: "produto_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_movimentacoes_estoque_unidade_id",
-                table: "movimentacoes_estoque",
+                name: "ix_movimentacao_estoque_unidade_id",
+                table: "movimentacao_estoque",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_pacientes_empresa_id_cpf",
-                table: "pacientes",
+                name: "ix_paciente_empresa_id_cpf",
+                table: "paciente",
                 columns: new[] { "empresa_id", "cpf" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_pacientes_unidade_id",
-                table: "pacientes",
+                name: "ix_paciente_unidade_id",
+                table: "paciente",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_pacotes_empresa_id_nome",
-                table: "pacotes",
+                name: "ix_pacote_empresa_id_nome",
+                table: "pacote",
                 columns: new[] { "empresa_id", "nome" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_pagamentos_paciente_conta_receber_id",
-                table: "pagamentos_paciente",
+                name: "ix_pagamento_paciente_conta_receber_id",
+                table: "pagamento_paciente",
                 column: "conta_receber_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_pagamentos_paciente_empresa_id_paciente_id_data_pagamento",
-                table: "pagamentos_paciente",
+                name: "ix_pagamento_paciente_empresa_id_paciente_id_data_pagamento",
+                table: "pagamento_paciente",
                 columns: new[] { "empresa_id", "paciente_id", "data_pagamento" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_pagamentos_paciente_forma_pagamento_id",
-                table: "pagamentos_paciente",
+                name: "ix_pagamento_paciente_forma_pagamento_id",
+                table: "pagamento_paciente",
                 column: "forma_pagamento_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_pagamentos_paciente_paciente_id",
-                table: "pagamentos_paciente",
+                name: "ix_pagamento_paciente_paciente_id",
+                table: "pagamento_paciente",
                 column: "paciente_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_pedidos_fornecedor_empresa_id_status",
-                table: "pedidos_fornecedor",
+                name: "ix_pedido_fornecedor_empresa_id_status",
+                table: "pedido_fornecedor",
                 columns: new[] { "empresa_id", "status" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_pedidos_fornecedor_fornecedor_id",
-                table: "pedidos_fornecedor",
+                name: "ix_pedido_fornecedor_fornecedor_id",
+                table: "pedido_fornecedor",
                 column: "fornecedor_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_pedidos_fornecedor_unidade_id",
-                table: "pedidos_fornecedor",
+                name: "ix_pedido_fornecedor_unidade_id",
+                table: "pedido_fornecedor",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_permissoes_usuario_modulo_id",
-                table: "permissoes_usuario",
+                name: "ix_permissao_usuario_modulo_id",
+                table: "permissao_usuario",
                 column: "modulo_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_permissoes_usuario_usuario_id_modulo_id",
-                table: "permissoes_usuario",
+                name: "ix_permissao_usuario_usuario_id_modulo_id",
+                table: "permissao_usuario",
                 columns: new[] { "usuario_id", "modulo_id" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_produtos_empresa_id_nome",
-                table: "produtos",
+                name: "ix_produto_empresa_id_nome",
+                table: "produto",
                 columns: new[] { "empresa_id", "nome" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_sintomas_empresa_id_nome",
-                table: "sintomas",
+                name: "ix_sintoma_empresa_id_nome",
+                table: "sintoma",
                 columns: new[] { "empresa_id", "nome" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_unidades_empresa_id_nome",
-                table: "unidades",
+                name: "ix_unidade_empresa_id_nome",
+                table: "unidade",
                 columns: new[] { "empresa_id", "nome" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_usuarios_empresa_id_email",
-                table: "usuarios",
-                columns: new[] { "empresa_id", "email" },
+                name: "ix_usuario_empresa_id_email_login",
+                table: "usuario",
+                columns: new[] { "empresa_id", "email_login" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_usuarios_funcionario_id",
-                table: "usuarios",
+                name: "ix_usuario_funcionario_id",
+                table: "usuario",
                 column: "funcionario_id");
         }
 
@@ -1340,91 +1478,94 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "agendamentos_google_sync");
+                name: "agendamento_google_sync");
 
             migrationBuilder.DropTable(
-                name: "aplicacoes_sintomas");
+                name: "aplicacao_sintoma");
 
             migrationBuilder.DropTable(
-                name: "bloqueios_agenda");
+                name: "bloqueio_agenda");
 
             migrationBuilder.DropTable(
-                name: "disponibilidades_funcionario");
+                name: "disponibilidade_funcionario");
 
             migrationBuilder.DropTable(
-                name: "itens_pacote");
+                name: "item_pacote");
 
             migrationBuilder.DropTable(
-                name: "itens_pedido_fornecedor");
+                name: "item_pedido_fornecedor");
 
             migrationBuilder.DropTable(
-                name: "licencas_modulo");
+                name: "licenca_modulo");
 
             migrationBuilder.DropTable(
-                name: "movimentacoes_estoque");
+                name: "log_auditoria");
 
             migrationBuilder.DropTable(
-                name: "pagamentos_paciente");
+                name: "movimentacao_estoque");
 
             migrationBuilder.DropTable(
-                name: "permissoes_usuario");
+                name: "pagamento_paciente");
 
             migrationBuilder.DropTable(
-                name: "agendas_google");
+                name: "permissao_usuario");
 
             migrationBuilder.DropTable(
-                name: "sintomas");
+                name: "agenda_google");
 
             migrationBuilder.DropTable(
-                name: "aplicacoes_paciente");
+                name: "sintoma");
 
             migrationBuilder.DropTable(
-                name: "pedidos_fornecedor");
+                name: "aplicacao_paciente");
 
             migrationBuilder.DropTable(
-                name: "contas_receber");
+                name: "pedido_fornecedor");
 
             migrationBuilder.DropTable(
-                name: "formas_pagamento");
+                name: "conta_receber");
 
             migrationBuilder.DropTable(
-                name: "modulos_sistema");
+                name: "forma_pagamento");
 
             migrationBuilder.DropTable(
-                name: "contas_google_conectadas");
+                name: "modulo_sistema");
 
             migrationBuilder.DropTable(
-                name: "agendamentos");
+                name: "conta_google_conectada");
 
             migrationBuilder.DropTable(
-                name: "produtos");
+                name: "agendamento");
 
             migrationBuilder.DropTable(
-                name: "fornecedores");
+                name: "produto");
 
             migrationBuilder.DropTable(
-                name: "compras_paciente");
+                name: "fornecedor");
 
             migrationBuilder.DropTable(
-                name: "usuarios");
+                name: "compra_paciente");
 
             migrationBuilder.DropTable(
-                name: "pacientes");
+                name: "usuario");
 
             migrationBuilder.DropTable(
-                name: "pacotes");
+                name: "paciente");
 
             migrationBuilder.DropTable(
-                name: "funcionarios");
+                name: "pacote");
 
             migrationBuilder.DropTable(
-                name: "unidades");
+                name: "funcionario");
 
             migrationBuilder.DropTable(
-                name: "cargos");
+                name: "cargo");
 
             migrationBuilder.DropTable(
-                name: "empresas");
+                name: "unidade");
+
+            migrationBuilder.DropTable(
+                name: "empresa");
         }
     }
 }

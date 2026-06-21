@@ -40,6 +40,7 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<FormaPagamento> FormasPagamento => Set<FormaPagamento>();
     public DbSet<ContaReceber> ContasReceber => Set<ContaReceber>();
     public DbSet<PagamentoPaciente> PagamentosPaciente => Set<PagamentoPaciente>();
+    public DbSet<LogAuditoria> LogsAuditoria => Set<LogAuditoria>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

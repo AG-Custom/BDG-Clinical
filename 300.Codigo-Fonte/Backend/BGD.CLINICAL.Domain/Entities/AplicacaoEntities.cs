@@ -32,7 +32,7 @@ public sealed class AplicacaoPaciente : AggregateRoot
     public DateTime DataAplicacao { get; private set; }
     public decimal QuantidadeUtilizada { get; private set; }
     public decimal? Peso { get; private set; }
-    public string? Observacoes { get; private set; }
+    public string? Observacao { get; private set; }
     public bool Realizado { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
@@ -46,13 +46,14 @@ public sealed class AplicacaoPaciente : AggregateRoot
     public ICollection<MovimentacaoEstoque> MovimentacoesEstoque { get; private set; } = [];
 }
 
-public sealed class AplicacaoSintoma
+public sealed class AplicacaoSintoma : AggregateRoot
 {
     private AplicacaoSintoma()
     {
     }
 
     public AplicacaoSintoma(Guid aplicacaoPacienteId, Guid sintomaId)
+        : base(Guid.NewGuid())
     {
         AplicacaoPacienteId = aplicacaoPacienteId;
         SintomaId = sintomaId;

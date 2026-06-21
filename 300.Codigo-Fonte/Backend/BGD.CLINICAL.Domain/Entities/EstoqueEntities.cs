@@ -64,7 +64,7 @@ public sealed class PedidoFornecedor : AggregateRoot
     {
     }
 
-    public PedidoFornecedor(Guid empresaId, Guid fornecedorId, Guid unidadeId, TipoPedidoFornecedor tipoPedido, DateTime dataPedido, StatusPedidoFornecedor status)
+    public PedidoFornecedor(Guid empresaId, Guid fornecedorId, Guid unidadeId, TipoPedidoFornecedor tipoPedido, DateTime dataPedido, StatusPedidoFornecedor status, decimal valorTotal)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -73,6 +73,7 @@ public sealed class PedidoFornecedor : AggregateRoot
         TipoPedido = tipoPedido;
         DataPedido = dataPedido;
         Status = status;
+        ValorTotal = valorTotal;
     }
 
     public Guid EmpresaId { get; private set; }
@@ -81,6 +82,8 @@ public sealed class PedidoFornecedor : AggregateRoot
     public TipoPedidoFornecedor TipoPedido { get; private set; }
     public DateTime DataPedido { get; private set; }
     public StatusPedidoFornecedor Status { get; private set; }
+    public decimal ValorTotal { get; private set; }
+    public string? Observacao { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public Fornecedor Fornecedor { get; private set; } = null!;
@@ -94,19 +97,21 @@ public sealed class ItemPedidoFornecedor : AggregateRoot
     {
     }
 
-    public ItemPedidoFornecedor(Guid pedidoFornecedorId, Guid produtoId, decimal quantidade, decimal valorUnitario)
+    public ItemPedidoFornecedor(Guid pedidoFornecedorId, Guid produtoId, decimal quantidade, decimal valorUnitario, decimal valorTotal)
         : base(Guid.NewGuid())
     {
         PedidoFornecedorId = pedidoFornecedorId;
         ProdutoId = produtoId;
         Quantidade = quantidade;
         ValorUnitario = valorUnitario;
+        ValorTotal = valorTotal;
     }
 
     public Guid PedidoFornecedorId { get; private set; }
     public Guid ProdutoId { get; private set; }
     public decimal Quantidade { get; private set; }
     public decimal ValorUnitario { get; private set; }
+    public decimal ValorTotal { get; private set; }
 
     public PedidoFornecedor PedidoFornecedor { get; private set; } = null!;
     public Produto Produto { get; private set; } = null!;
@@ -140,7 +145,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
     public Guid? FuncionarioId { get; private set; }
     public Guid? AplicacaoPacienteId { get; private set; }
     public Guid? PedidoFornecedorId { get; private set; }
-    public string? Observacoes { get; private set; }
+    public string? Observacao { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public Unidade Unidade { get; private set; } = null!;

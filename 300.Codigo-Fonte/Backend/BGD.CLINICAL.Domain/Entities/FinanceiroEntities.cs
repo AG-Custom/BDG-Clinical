@@ -9,16 +9,18 @@ public sealed class FormaPagamento : AggregateRoot
     {
     }
 
-    public FormaPagamento(Guid empresaId, string nome)
+    public FormaPagamento(Guid empresaId, string nome, string? tipo)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
         Nome = nome;
+        Tipo = tipo;
         Ativo = true;
     }
 
     public Guid EmpresaId { get; private set; }
     public string Nome { get; private set; } = string.Empty;
+    public string? Tipo { get; private set; }
     public bool Ativo { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
@@ -30,23 +32,24 @@ public sealed class ContaReceber : AggregateRoot
     {
     }
 
-    public ContaReceber(Guid empresaId, Guid pacienteId, Guid? compraPacienteId, decimal valor, DateOnly dataVencimento)
+    public ContaReceber(Guid empresaId, Guid pacienteId, Guid? compraPacienteId, DateOnly dataVencimento, decimal valorTotal)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
         PacienteId = pacienteId;
         CompraPacienteId = compraPacienteId;
-        Valor = valor;
         DataVencimento = dataVencimento;
-        Status = StatusContaReceber.Aberta;
+        ValorTotal = valorTotal;
+        Status = StatusContaReceber.Aberto;
     }
 
     public Guid EmpresaId { get; private set; }
     public Guid PacienteId { get; private set; }
     public Guid? CompraPacienteId { get; private set; }
-    public decimal Valor { get; private set; }
     public DateOnly DataVencimento { get; private set; }
+    public decimal ValorTotal { get; private set; }
     public StatusContaReceber Status { get; private set; }
+    public string? Observacao { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public Paciente Paciente { get; private set; } = null!;
@@ -60,24 +63,24 @@ public sealed class PagamentoPaciente : AggregateRoot
     {
     }
 
-    public PagamentoPaciente(Guid empresaId, Guid pacienteId, Guid contaReceberId, Guid formaPagamentoId, decimal valor, DateTime dataPagamento)
+    public PagamentoPaciente(Guid empresaId, Guid pacienteId, Guid contaReceberId, Guid formaPagamentoId, DateTime dataPagamento, decimal valorPago)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
         PacienteId = pacienteId;
         ContaReceberId = contaReceberId;
         FormaPagamentoId = formaPagamentoId;
-        Valor = valor;
         DataPagamento = dataPagamento;
+        ValorPago = valorPago;
     }
 
     public Guid EmpresaId { get; private set; }
     public Guid PacienteId { get; private set; }
     public Guid ContaReceberId { get; private set; }
     public Guid FormaPagamentoId { get; private set; }
-    public decimal Valor { get; private set; }
     public DateTime DataPagamento { get; private set; }
-    public string? Observacoes { get; private set; }
+    public decimal ValorPago { get; private set; }
+    public string? Observacao { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public Paciente Paciente { get; private set; } = null!;

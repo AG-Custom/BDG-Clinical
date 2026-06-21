@@ -33,7 +33,7 @@ public sealed class LicencaModulo : AggregateRoot
     {
     }
 
-    public LicencaModulo(Guid empresaId, Guid moduloId, StatusLicencaModulo status, DateTime dataInicio, DateTime? dataFim)
+    public LicencaModulo(Guid empresaId, Guid moduloId, StatusLicencaModulo status, DateTime dataInicio, DateTime? dataFim, decimal valor)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -41,6 +41,7 @@ public sealed class LicencaModulo : AggregateRoot
         Status = status;
         DataInicio = dataInicio;
         DataFim = dataFim;
+        Valor = valor;
     }
 
     public Guid EmpresaId { get; private set; }
@@ -48,6 +49,7 @@ public sealed class LicencaModulo : AggregateRoot
     public StatusLicencaModulo Status { get; private set; }
     public DateTime DataInicio { get; private set; }
     public DateTime? DataFim { get; private set; }
+    public decimal Valor { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public ModuloSistema Modulo { get; private set; } = null!;
@@ -59,23 +61,23 @@ public sealed class PermissaoUsuario : AggregateRoot
     {
     }
 
-    public PermissaoUsuario(Guid usuarioId, Guid moduloId, bool visualizar, bool criar, bool editar, bool excluir)
+    public PermissaoUsuario(Guid usuarioId, Guid moduloId, bool podeVisualizar, bool podeCriar, bool podeEditar, bool podeExcluir)
         : base(Guid.NewGuid())
     {
         UsuarioId = usuarioId;
         ModuloId = moduloId;
-        Visualizar = visualizar;
-        Criar = criar;
-        Editar = editar;
-        Excluir = excluir;
+        PodeVisualizar = podeVisualizar;
+        PodeCriar = podeCriar;
+        PodeEditar = podeEditar;
+        PodeExcluir = podeExcluir;
     }
 
     public Guid UsuarioId { get; private set; }
     public Guid ModuloId { get; private set; }
-    public bool Visualizar { get; private set; }
-    public bool Criar { get; private set; }
-    public bool Editar { get; private set; }
-    public bool Excluir { get; private set; }
+    public bool PodeVisualizar { get; private set; }
+    public bool PodeCriar { get; private set; }
+    public bool PodeEditar { get; private set; }
+    public bool PodeExcluir { get; private set; }
 
     public Usuario Usuario { get; private set; } = null!;
     public ModuloSistema Modulo { get; private set; } = null!;

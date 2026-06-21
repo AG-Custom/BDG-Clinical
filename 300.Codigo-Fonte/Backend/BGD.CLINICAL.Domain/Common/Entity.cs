@@ -11,9 +11,14 @@ public abstract class Entity
     protected Entity(Guid id)
     {
         Id = id;
+        CriadoEm = DateTime.UtcNow;
     }
 
     public Guid Id { get; protected set; }
+
+    public DateTime CriadoEm { get; protected set; }
+
+    public DateTime? AtualizadoEm { get; protected set; }
 
     public IReadOnlyCollection<object> DomainEvents => _domainEvents.AsReadOnly();
 

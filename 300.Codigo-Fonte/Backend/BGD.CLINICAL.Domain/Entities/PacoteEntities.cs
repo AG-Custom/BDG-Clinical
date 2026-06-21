@@ -62,7 +62,7 @@ public sealed class CompraPaciente : AggregateRoot
     {
     }
 
-    public CompraPaciente(Guid empresaId, Guid pacienteId, Guid pacoteId, Guid unidadeId, DateTime dataCompra, StatusCompraPaciente status)
+    public CompraPaciente(Guid empresaId, Guid pacienteId, Guid pacoteId, Guid unidadeId, DateTime dataCompra, int quantidadeAplicacoes, StatusCompraPaciente status)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -70,6 +70,7 @@ public sealed class CompraPaciente : AggregateRoot
         PacoteId = pacoteId;
         UnidadeId = unidadeId;
         DataCompra = dataCompra;
+        QuantidadeAplicacoes = quantidadeAplicacoes;
         Status = status;
     }
 
@@ -78,11 +79,14 @@ public sealed class CompraPaciente : AggregateRoot
     public Guid PacoteId { get; private set; }
     public Guid UnidadeId { get; private set; }
     public DateTime DataCompra { get; private set; }
+    public int QuantidadeAplicacoes { get; private set; }
     public StatusCompraPaciente Status { get; private set; }
+    public string? Observacao { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public Paciente Paciente { get; private set; } = null!;
     public Pacote Pacote { get; private set; } = null!;
     public Unidade Unidade { get; private set; } = null!;
     public ICollection<AplicacaoPaciente> Aplicacoes { get; private set; } = [];
+    public ICollection<Agendamento> Agendamentos { get; private set; } = [];
 }

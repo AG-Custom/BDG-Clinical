@@ -8,7 +8,7 @@ public sealed class Paciente : AggregateRoot
     {
     }
 
-    public Paciente(Guid empresaId, Guid unidadeId, string nome, string? cpf, string? telefone, DateOnly? dataNascimento)
+    public Paciente(Guid empresaId, Guid unidadeId, string nome, string? cpf, string? telefone, string? email, DateOnly? dataNascimento)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -16,6 +16,7 @@ public sealed class Paciente : AggregateRoot
         Nome = nome;
         Cpf = cpf;
         Telefone = telefone;
+        Email = email;
         DataNascimento = dataNascimento;
         Ativo = true;
     }
@@ -25,8 +26,9 @@ public sealed class Paciente : AggregateRoot
     public string Nome { get; private set; } = string.Empty;
     public string? Cpf { get; private set; }
     public string? Telefone { get; private set; }
+    public string? Email { get; private set; }
     public DateOnly? DataNascimento { get; private set; }
-    public string? Observacoes { get; private set; }
+    public string? Observacao { get; private set; }
     public bool Ativo { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
