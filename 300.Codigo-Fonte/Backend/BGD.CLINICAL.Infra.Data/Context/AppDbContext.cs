@@ -1,4 +1,5 @@
 using BGD.CLINICAL.Application.Abstractions.Persistence;
+using BGD.CLINICAL.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BGD.CLINICAL.Infra.Data.Context;
@@ -9,6 +10,30 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
         : base(options)
     {
     }
+
+    public DbSet<Empresa> Empresas => Set<Empresa>();
+    public DbSet<Unidade> Unidades => Set<Unidade>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<Funcionario> Funcionarios => Set<Funcionario>();
+    public DbSet<Cargo> Cargos => Set<Cargo>();
+    public DbSet<ModuloSistema> ModulosSistema => Set<ModuloSistema>();
+    public DbSet<LicencaModulo> LicencasModulo => Set<LicencaModulo>();
+    public DbSet<PermissaoUsuario> PermissoesUsuario => Set<PermissaoUsuario>();
+    public DbSet<Paciente> Pacientes => Set<Paciente>();
+    public DbSet<Sintoma> Sintomas => Set<Sintoma>();
+    public DbSet<Pacote> Pacotes => Set<Pacote>();
+    public DbSet<ItemPacote> ItensPacote => Set<ItemPacote>();
+    public DbSet<CompraPaciente> ComprasPaciente => Set<CompraPaciente>();
+    public DbSet<Produto> Produtos => Set<Produto>();
+    public DbSet<Fornecedor> Fornecedores => Set<Fornecedor>();
+    public DbSet<PedidoFornecedor> PedidosFornecedor => Set<PedidoFornecedor>();
+    public DbSet<ItemPedidoFornecedor> ItensPedidoFornecedor => Set<ItemPedidoFornecedor>();
+    public DbSet<MovimentacaoEstoque> MovimentacoesEstoque => Set<MovimentacaoEstoque>();
+    public DbSet<AplicacaoPaciente> AplicacoesPaciente => Set<AplicacaoPaciente>();
+    public DbSet<AplicacaoSintoma> AplicacoesSintomas => Set<AplicacaoSintoma>();
+    public DbSet<FormaPagamento> FormasPagamento => Set<FormaPagamento>();
+    public DbSet<ContaReceber> ContasReceber => Set<ContaReceber>();
+    public DbSet<PagamentoPaciente> PagamentosPaciente => Set<PagamentoPaciente>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
