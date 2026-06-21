@@ -1,0 +1,1213 @@
+﻿# BGD Clinical - Banco de Dados
+
+Sistema SaaS white label para clínicas, com arquitetura multi-tenant e módulos contratáveis por empresa.
+
+Este documento descreve apenas entidades, relacionamentos e regras de banco de dados.
+
+---
+
+## 1. Core / White Label
+
+### Empresa
+
+Representa cada clínica cliente do sistema.
+
+```text
+empresa
+- id
+- nome
+- cnpj
+- telefone
+- email
+- logo
+- cor_principal
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+Empresa 1:N Unidade
+Empresa 1:N Usuario
+Empresa 1:N Funcionario
+Empresa 1:N Cargo
+Empresa 1:N Paciente
+Empresa 1:N Produto
+Empresa 1:N Pacote
+Empresa 1:N Fornecedor
+Empresa 1:N PedidoFornecedor
+Empresa 1:N MovimentacaoEstoque
+Empresa 1:N LicencaModulo
+Empresa 1:N Agendamento
+Empresa 1:N ContaGoogleConectada
+```
+
+---
+
+### Unidade
+
+Representa uma unidade física da empresa.
+
+```text
+unidade
+- id
+- empresa_id
+- nome
+- endereco
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+Unidade N:1 Empresa
+Unidade 1:N Funcionario
+Unidade 1:N Paciente
+Unidade 1:N CompraPaciente
+Unidade 1:N PedidoFornecedor
+Unidade 1:N MovimentacaoEstoque
+Unidade 1:N AplicacaoPaciente
+Unidade 1:N Agendamento
+Unidade 1:N DisponibilidadeFuncionario
+Unidade 1:N BloqueioAgenda
+```
+
+---
+
+### Cargo
+
+Representa o cargo de um funcionário.
+
+```text
+cargo
+- id
+- empresa_id
+- nome
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+Cargo N:1 Empresa
+Cargo 1:N Funcionario
+```
+
+---
+
+### Funcionario
+
+Representa um colaborador da clínica.
+
+```text
+funcionario
+- id
+- empresa_id
+- unidade_id
+- cargo_id
+- nome
+- telefone
+- email
+- flag_aplicador
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+Funcionario N:1 Empresa
+Funcionario N:1 Unidade
+Funcionario N:1 Cargo
+Funcionario 1:N AplicacaoPaciente
+Funcionario 1:N Agendamento
+Funcionario 1:N DisponibilidadeFuncionario
+Funcionario 1:N BloqueioAgenda
+Funcionario 1:N ContaGoogleConectada
+```
+
+Regras:
+
+```text
+flag_aplicador indica se o funcionário pode realizar aplicações.
+Somente funcionários aplicadores devem ser selecionados para AplicacaoPaciente realizada.
+```
+
+---
+
+### Usuario
+
+Representa o acesso ao sistema.
+
+```text
+usuario
+- id
+- empresa_id
+- funcionario_id
+- nome
+- email_login
+- senha_hash
+- auth_provider
+- google_id
+- tipo_usuario
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Enum `tipo_usuario`:
+
+```text
+ADMIN
+USUARIO
+```
+
+Relacionamentos:
+
+```text
+Usuario N:1 Empresa
+Usuario 0..1:1 Funcionario
+Usuario 1:N PermissaoUsuario
+Usuario 1:N ContaGoogleConectada
+Usuario 1:N LogAuditoria
+```
+
+---
+
+## 2. Módulos e Permissões
+
+### ModuloSistema
+
+Cadastro dos módulos disponíveis para contratação.
+
+```text
+modulo_sistema
+- id
+- nome
+- codigo
+- descricao
+- ativo
+```
+
+Exemplos de `codigo`:
+
+```text
+ESTOQUE
+APLICACOES
+AGENDAMENTOS
+FINANCEIRO
+RELATORIOS
+```
+
+Relacionamentos:
+
+```text
+ModuloSistema 1:N LicencaModulo
+ModuloSistema 1:N PermissaoUsuario
+```
+
+---
+
+### LicencaModulo
+
+Define quais módulos cada empresa contratou.
+
+```text
+licenca_modulo
+- id
+- empresa_id
+- modulo_id
+- status
+- data_inicio
+- data_fim
+- valor
+```
+
+Enum `status`:
+
+```text
+ATIVO
+SUSPENSO
+CANCELADO
+TESTE
+```
+
+Relacionamentos:
+
+```text
+LicencaModulo N:1 Empresa
+LicencaModulo N:1 ModuloSistema
+Empresa N:N ModuloSistema via LicencaModulo
+```
+
+Regras:
+
+```text
+Uma empresa só pode usar telas e recursos de módulos com licença ativa.
+Uma empresa pode contratar vários módulos.
+Um módulo pode estar contratado por várias empresas.
+```
+
+---
+
+### PermissaoUsuario
+
+Define permissões do usuário dentro de cada módulo.
+
+```text
+permissao_usuario
+- id
+- usuario_id
+- modulo_id
+- pode_visualizar
+- pode_criar
+- pode_editar
+- pode_excluir
+```
+
+Relacionamentos:
+
+```text
+PermissaoUsuario N:1 Usuario
+PermissaoUsuario N:1 ModuloSistema
+Usuario N:N ModuloSistema via PermissaoUsuario
+```
+
+Regras:
+
+```text
+Para acessar um módulo, a empresa precisa ter LicencaModulo ativa.
+Para acessar uma tela, o usuário precisa ter permissão no módulo.
+Permissões de usuário não substituem a licença da empresa.
+```
+
+---
+
+## 3. Pacientes
+
+### Paciente
+
+Cadastro dos pacientes da clínica.
+
+```text
+paciente
+- id
+- empresa_id
+- unidade_id
+- nome
+- cpf
+- telefone
+- email
+- data_nascimento
+- observacao
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+Paciente N:1 Empresa
+Paciente N:1 Unidade
+Paciente 1:N CompraPaciente
+Paciente 1:N AplicacaoPaciente
+Paciente 1:N Agendamento
+Paciente 1:N ContaReceber
+Paciente 1:N PagamentoPaciente
+```
+
+---
+
+### Sintoma
+
+Cadastro de sintomas informados em aplicações.
+
+```text
+sintoma
+- id
+- empresa_id
+- nome
+- ativo
+```
+
+Relacionamentos:
+
+```text
+Sintoma N:1 Empresa
+Sintoma N:N AplicacaoPaciente via AplicacaoSintoma
+```
+
+---
+
+## 4. Pacotes
+
+### Pacote
+
+Produto comercial vendido ao paciente.
+
+```text
+pacote
+- id
+- empresa_id
+- nome
+- descricao
+- quantidade_aplicacoes
+- valor
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+Pacote N:1 Empresa
+Pacote 1:N ItemPacote
+Pacote 1:N CompraPaciente
+```
+
+---
+
+### ItemPacote
+
+Define quais produtos físicos compõem um pacote comercial.
+
+```text
+item_pacote
+- id
+- pacote_id
+- produto_id
+- quantidade_total
+- unidade_medida
+```
+
+Relacionamentos:
+
+```text
+ItemPacote N:1 Pacote
+ItemPacote N:1 Produto
+Pacote N:N Produto via ItemPacote
+```
+
+---
+
+### CompraPaciente
+
+Representa o vínculo entre paciente e pacote comprado.
+
+```text
+compra_paciente
+- id
+- empresa_id
+- paciente_id
+- pacote_id
+- unidade_id
+- data_compra
+- quantidade_aplicacoes
+- status
+- observacao
+- criado_em
+- atualizado_em
+```
+
+Enum `status`:
+
+```text
+ATIVO
+CONCLUIDO
+CANCELADO
+VENCIDO
+```
+
+Relacionamentos:
+
+```text
+CompraPaciente N:1 Empresa
+CompraPaciente N:1 Paciente
+CompraPaciente N:1 Pacote
+CompraPaciente N:1 Unidade
+CompraPaciente 1:N AplicacaoPaciente
+CompraPaciente 1:N Agendamento
+CompraPaciente 0..1:N ContaReceber
+```
+
+Regras:
+
+```text
+CompraPaciente não altera estoque.
+O estoque só é alterado quando uma aplicação é realizada.
+Uma compra ativa representa saldo disponível para aplicações.
+```
+
+---
+
+## 5. Estoque
+
+### Produto
+
+Produto físico controlado em estoque.
+
+```text
+produto
+- id
+- empresa_id
+- nome
+- tipo
+- unidade_medida
+- estoque_minimo
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Enum `tipo`:
+
+```text
+MEDICAMENTO
+INSUMO
+IMPLANTE
+OUTRO
+```
+
+Relacionamentos:
+
+```text
+Produto N:1 Empresa
+Produto 1:N ItemPacote
+Produto 1:N ItemPedidoFornecedor
+Produto 1:N MovimentacaoEstoque
+Produto 1:N AplicacaoPaciente
+```
+
+---
+
+### Fornecedor
+
+Cadastro de fornecedores da empresa.
+
+```text
+fornecedor
+- id
+- empresa_id
+- nome
+- cnpj
+- telefone
+- email
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+Fornecedor N:1 Empresa
+Fornecedor 1:N PedidoFornecedor
+```
+
+---
+
+### PedidoFornecedor
+
+Pedido de compra feito para um fornecedor.
+
+```text
+pedido_fornecedor
+- id
+- empresa_id
+- fornecedor_id
+- unidade_id
+- tipo_pedido
+- data_pedido
+- status
+- valor_total
+- observacao
+- criado_em
+- atualizado_em
+```
+
+Enum `tipo_pedido`:
+
+```text
+MEDICAMENTO
+INSUMO
+IMPLANTE
+OUTRO
+```
+
+Enum `status`:
+
+```text
+ABERTO
+PEDIDO
+RECEBIDO
+CANCELADO
+```
+
+Relacionamentos:
+
+```text
+PedidoFornecedor N:1 Empresa
+PedidoFornecedor N:1 Fornecedor
+PedidoFornecedor N:1 Unidade
+PedidoFornecedor 1:N ItemPedidoFornecedor
+PedidoFornecedor 0..1:N MovimentacaoEstoque
+```
+
+Regras:
+
+```text
+Criar PedidoFornecedor não aumenta estoque.
+PedidoFornecedor recebido deve gerar MovimentacaoEstoque do tipo ENTRADA.
+```
+
+---
+
+### ItemPedidoFornecedor
+
+Produto e quantidade dentro de um pedido de fornecedor.
+
+```text
+item_pedido_fornecedor
+- id
+- pedido_fornecedor_id
+- produto_id
+- quantidade
+- valor_unitario
+- valor_total
+```
+
+Relacionamentos:
+
+```text
+ItemPedidoFornecedor N:1 PedidoFornecedor
+ItemPedidoFornecedor N:1 Produto
+```
+
+---
+
+### MovimentacaoEstoque
+
+Registro único para entradas, saídas, ajustes e perdas de estoque.
+
+```text
+movimentacao_estoque
+- id
+- empresa_id
+- unidade_id
+- produto_id
+- tipo
+- quantidade
+- data
+- origem
+- funcionario_id
+- aplicacao_paciente_id
+- pedido_fornecedor_id
+- observacao
+- criado_em
+```
+
+Enum `tipo`:
+
+```text
+ENTRADA
+SAIDA
+AJUSTE
+PERDA
+```
+
+Relacionamentos:
+
+```text
+MovimentacaoEstoque N:1 Empresa
+MovimentacaoEstoque N:1 Unidade
+MovimentacaoEstoque N:1 Produto
+MovimentacaoEstoque 0..1:N Funcionario
+MovimentacaoEstoque 0..1:N AplicacaoPaciente
+MovimentacaoEstoque 0..1:N PedidoFornecedor
+```
+
+Regras:
+
+```text
+Todo estoque deve ser calculado por MovimentacaoEstoque.
+ENTRADA aumenta saldo.
+SAIDA reduz saldo.
+AJUSTE corrige saldo.
+PERDA reduz saldo.
+Estoque atual = ENTRADAS - SAIDAS + AJUSTES - PERDAS.
+```
+
+---
+
+## 6. Aplicações
+
+### AplicacaoPaciente
+
+Registro de cada aplicação feita no paciente.
+
+```text
+aplicacao_paciente
+- id
+- empresa_id
+- paciente_id
+- compra_paciente_id
+- produto_id
+- funcionario_id
+- unidade_id
+- agendamento_id
+- data_aplicacao
+- quantidade_utilizada
+- peso
+- realizado
+- observacao
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+AplicacaoPaciente N:1 Empresa
+AplicacaoPaciente N:1 Paciente
+AplicacaoPaciente N:1 CompraPaciente
+AplicacaoPaciente N:1 Produto
+AplicacaoPaciente N:1 Funcionario
+AplicacaoPaciente N:1 Unidade
+AplicacaoPaciente 0..1:1 Agendamento
+AplicacaoPaciente 1:N MovimentacaoEstoque
+AplicacaoPaciente N:N Sintoma via AplicacaoSintoma
+```
+
+Regras:
+
+```text
+AplicacaoPaciente só altera estoque quando realizado = true.
+Aplicação realizada deve validar funcionário aplicador.
+Aplicação realizada deve validar compra ativa do paciente.
+Aplicação realizada deve validar saldo do pacote.
+Aplicação realizada deve validar estoque disponível na unidade.
+Aplicação realizada deve gerar MovimentacaoEstoque do tipo SAIDA.
+```
+
+---
+
+### AplicacaoSintoma
+
+Tabela intermediária entre aplicação e sintomas.
+
+```text
+aplicacao_sintoma
+- id
+- aplicacao_paciente_id
+- sintoma_id
+```
+
+Relacionamentos:
+
+```text
+AplicacaoSintoma N:1 AplicacaoPaciente
+AplicacaoSintoma N:1 Sintoma
+AplicacaoPaciente N:N Sintoma via AplicacaoSintoma
+```
+
+---
+
+## 7. Agendamentos
+
+### Agendamento
+
+Representa um horário marcado no sistema.
+
+```text
+agendamento
+- id
+- empresa_id
+- unidade_id
+- paciente_id
+- funcionario_id
+- compra_paciente_id
+- tipo
+- status
+- data_inicio
+- data_fim
+- titulo
+- observacao
+- criado_por_id
+- cancelado_por_id
+- motivo_cancelamento
+- criado_em
+- atualizado_em
+```
+
+Enum `tipo`:
+
+```text
+CONSULTA
+RETORNO
+APLICACAO
+PRIMEIRA_CONSULTA
+```
+
+Enum `status`:
+
+```text
+AGENDADO
+CONFIRMADO
+CONCLUIDO
+CANCELADO
+FALTOU
+```
+
+Relacionamentos:
+
+```text
+Agendamento N:1 Empresa
+Agendamento N:1 Unidade
+Agendamento N:1 Paciente
+Agendamento N:1 Funcionario
+Agendamento 0..1:N CompraPaciente
+Agendamento N:1 Usuario via criado_por_id
+Agendamento 0..1:N Usuario via cancelado_por_id
+Agendamento 0..1:1 AplicacaoPaciente
+Agendamento 0..1:1 AgendamentoGoogleSync
+```
+
+Regras:
+
+```text
+Um agendamento pode gerar uma aplicação.
+Nem todo agendamento precisa gerar aplicação.
+Agendamento cancelado não deve gerar aplicação.
+Agendamento concluído pode estar vinculado a AplicacaoPaciente realizada.
+```
+
+---
+
+### DisponibilidadeFuncionario
+
+Define horários disponíveis do profissional.
+
+```text
+disponibilidade_funcionario
+- id
+- empresa_id
+- funcionario_id
+- unidade_id
+- dia_semana
+- hora_inicio
+- hora_fim
+- ativo
+```
+
+Enum `dia_semana`:
+
+```text
+DOMINGO
+SEGUNDA
+TERCA
+QUARTA
+QUINTA
+SEXTA
+SABADO
+```
+
+Relacionamentos:
+
+```text
+DisponibilidadeFuncionario N:1 Empresa
+DisponibilidadeFuncionario N:1 Funcionario
+DisponibilidadeFuncionario N:1 Unidade
+```
+
+Regras:
+
+```text
+Agendamentos devem respeitar a disponibilidade ativa do funcionário.
+Disponibilidades inativas não devem ser usadas para novos agendamentos.
+```
+
+---
+
+### BloqueioAgenda
+
+Bloqueios manuais na agenda de um funcionário.
+
+```text
+bloqueio_agenda
+- id
+- empresa_id
+- funcionario_id
+- unidade_id
+- data_inicio
+- data_fim
+- motivo
+- criado_por_id
+- criado_em
+```
+
+Relacionamentos:
+
+```text
+BloqueioAgenda N:1 Empresa
+BloqueioAgenda N:1 Funcionario
+BloqueioAgenda N:1 Unidade
+BloqueioAgenda N:1 Usuario via criado_por_id
+```
+
+Regras:
+
+```text
+Novos agendamentos não devem conflitar com bloqueios de agenda.
+BloqueioAgenda deve ser usado para folga, reunião, almoço, feriado ou indisponibilidade manual.
+```
+
+---
+
+## 8. Integração Google Agenda
+
+### ContaGoogleConectada
+
+Conta Google autorizada para sincronização de agenda.
+
+```text
+conta_google_conectada
+- id
+- empresa_id
+- usuario_id
+- funcionario_id
+- google_email
+- google_account_id
+- access_token
+- refresh_token
+- escopos_autorizados
+- ativo
+- conectado_em
+```
+
+Relacionamentos:
+
+```text
+ContaGoogleConectada N:1 Empresa
+ContaGoogleConectada N:1 Usuario
+ContaGoogleConectada N:1 Funcionario
+ContaGoogleConectada 1:N AgendaGoogle
+```
+
+Regras:
+
+```text
+A conta usada para login pode ser diferente da conta Google conectada para agenda.
+Uma empresa pode ter várias contas Google conectadas.
+Um funcionário pode ter conta Google conectada para sincronização.
+Tokens devem ser protegidos e nunca expostos em respostas públicas.
+```
+
+---
+
+### AgendaGoogle
+
+Representa uma agenda dentro de uma conta Google conectada.
+
+```text
+agenda_google
+- id
+- empresa_id
+- conta_google_conectada_id
+- google_calendar_id
+- nome
+- principal
+- ativo
+```
+
+Relacionamentos:
+
+```text
+AgendaGoogle N:1 Empresa
+AgendaGoogle N:1 ContaGoogleConectada
+AgendaGoogle 1:N AgendamentoGoogleSync
+```
+
+---
+
+### AgendamentoGoogleSync
+
+Controla a sincronização entre agendamento interno e Google Calendar.
+
+```text
+agendamento_google_sync
+- id
+- empresa_id
+- agendamento_id
+- agenda_google_id
+- google_event_id
+- status_sync
+- ultima_sincronizacao
+- erro_sync
+```
+
+Enum `status_sync`:
+
+```text
+PENDENTE
+SINCRONIZADO
+ERRO
+CANCELADO
+```
+
+Relacionamentos:
+
+```text
+AgendamentoGoogleSync N:1 Empresa
+AgendamentoGoogleSync 1:1 Agendamento
+AgendamentoGoogleSync N:1 AgendaGoogle
+```
+
+Regras:
+
+```text
+Cada agendamento interno pode ter no máximo um registro de sincronização Google.
+Cada sincronização deve guardar google_event_id quando o evento externo for criado.
+Falhas de sincronização devem preencher erro_sync.
+```
+
+---
+
+## 9. Financeiro
+
+### FormaPagamento
+
+Cadastro das formas de pagamento da empresa.
+
+```text
+forma_pagamento
+- id
+- empresa_id
+- nome
+- tipo
+- ativo
+```
+
+Relacionamentos:
+
+```text
+FormaPagamento N:1 Empresa
+FormaPagamento 1:N PagamentoPaciente
+```
+
+---
+
+### ContaReceber
+
+Representa valores a receber de um paciente.
+
+```text
+conta_receber
+- id
+- empresa_id
+- paciente_id
+- compra_paciente_id
+- data_vencimento
+- valor_total
+- status
+- observacao
+```
+
+Enum `status`:
+
+```text
+ABERTO
+PAGO
+ATRASADO
+CANCELADO
+```
+
+Relacionamentos:
+
+```text
+ContaReceber N:1 Empresa
+ContaReceber N:1 Paciente
+ContaReceber 0..1:N CompraPaciente
+ContaReceber 1:N PagamentoPaciente
+```
+
+---
+
+### PagamentoPaciente
+
+Histórico dos pagamentos realizados por paciente.
+
+```text
+pagamento_paciente
+- id
+- empresa_id
+- paciente_id
+- conta_receber_id
+- forma_pagamento_id
+- data_pagamento
+- valor_pago
+- observacao
+```
+
+Relacionamentos:
+
+```text
+PagamentoPaciente N:1 Empresa
+PagamentoPaciente N:1 Paciente
+PagamentoPaciente N:1 ContaReceber
+PagamentoPaciente N:1 FormaPagamento
+```
+
+---
+
+## 10. Auditoria
+
+### LogAuditoria
+
+Registro de ações importantes do sistema.
+
+```text
+log_auditoria
+- id
+- empresa_id
+- usuario_id
+- entidade
+- registro_id
+- acao
+- dados_anteriores
+- dados_novos
+- data
+- ip
+```
+
+Enum `acao`:
+
+```text
+CRIAR
+EDITAR
+EXCLUIR
+CANCELAR
+LOGIN
+LOGOUT
+GERAR_MOVIMENTACAO
+SINCRONIZAR_GOOGLE
+```
+
+Relacionamentos:
+
+```text
+LogAuditoria N:1 Empresa
+LogAuditoria N:1 Usuario
+```
+
+Regras:
+
+```text
+Ações críticas devem gerar LogAuditoria.
+Alterações sensíveis devem registrar dados_anteriores e dados_novos.
+Eventos de login e logout devem registrar usuário, data e ip.
+```
+
+---
+
+## Relacionamentos Gerais
+
+```text
+Empresa
+├── Unidade
+├── Usuario
+├── Funcionario
+├── Cargo
+├── Paciente
+├── Produto
+├── Pacote
+├── Fornecedor
+├── PedidoFornecedor
+├── MovimentacaoEstoque
+├── LicencaModulo
+├── Agendamento
+├── ContaGoogleConectada
+├── FormaPagamento
+├── ContaReceber
+├── PagamentoPaciente
+└── LogAuditoria
+```
+
+```text
+ModuloSistema
+├── LicencaModulo
+└── PermissaoUsuario
+```
+
+```text
+Paciente
+├── CompraPaciente
+├── AplicacaoPaciente
+├── Agendamento
+├── ContaReceber
+└── PagamentoPaciente
+```
+
+```text
+Produto
+├── ItemPacote
+├── ItemPedidoFornecedor
+├── MovimentacaoEstoque
+└── AplicacaoPaciente
+```
+
+```text
+Pacote
+└── ItemPacote
+    └── Produto
+```
+
+```text
+CompraPaciente
+├── AplicacaoPaciente
+├── Agendamento
+└── ContaReceber
+```
+
+```text
+Fornecedor
+└── PedidoFornecedor
+    └── ItemPedidoFornecedor
+        └── Produto
+```
+
+```text
+Agendamento
+├── AplicacaoPaciente
+└── AgendamentoGoogleSync
+    └── AgendaGoogle
+        └── ContaGoogleConectada
+```
+
+---
+
+## Regras Gerais
+
+```text
+Todas as entidades principais devem possuir empresa_id.
+Dados de uma empresa não devem ser visíveis para outra empresa.
+Produto representa estoque físico.
+Pacote representa produto comercial vendido.
+CompraPaciente não altera estoque.
+AplicacaoPaciente realizada altera estoque.
+PedidoFornecedor criado não altera estoque.
+PedidoFornecedor recebido gera entrada de estoque.
+Todo estoque deve ser controlado por MovimentacaoEstoque.
+Empresa pode contratar vários módulos.
+Usuário precisa ter permissão para acessar módulos e executar ações.
+Login Google e Google Agenda podem usar contas diferentes.
+Tokens de integração devem ser armazenados com proteção adequada.
+```
