@@ -1,0 +1,46 @@
+---
+description: Visão geral do backend BGD Clinical — SaaS multi-tenant em camadas
+alwaysApply: true
+---
+
+# BGD Clinical — Backend
+
+Sistema SaaS white label para clínicas. Cada `Empresa` é um tenant isolado. Módulos são contratados via `LicencaModulo` e acessados conforme `PermissaoUsuario`.
+
+## Projetos da solução
+
+| Projeto | Responsabilidade |
+|---------|------------------|
+| `BGD.CLINICAL.Domain` | Entidades, enums, value objects, exceções de domínio, regras de negócio |
+| `BGD.CLINICAL.Application` | Casos de uso por contexto, DTOs, validações, abstrações de persistência |
+| `BGD.CLINICAL.Infra.Data` | EF Core, DbContext, migrations, repositórios concretos, configurações de entidade |
+| `BGD.CLINICAL.Infra.ExternalApis` | Integrações externas (Google Calendar, etc.) |
+| `BGD.CLINICAL.Infra.Jobs` | Workers e jobs em background |
+| `BGD.CLINICAL.WebApi` | Controllers, middlewares, composição de DI da API REST |
+| `BGD.CLINICAL.Jobs.Web` | Host dos jobs em background |
+
+## Princípios inegociáveis
+
+- Organizar código por **contexto delimitado**, nunca por tipo técnico solto na raiz.
+- Toda operação de negócio respeita isolamento por `empresa_id`.
+- Regras de negócio ficam no Domain; orquestração no Application; I/O no Infra.
+- Controllers finos: recebem request, delegam ao Application, retornam response.
+- Usar `Result<T>` para fluxos de aplicação com falha esperada; `DomainException` para violações de regra.
+- Não misturar contextos: Login não referencia Estoque diretamente; comunicação entre contextos passa por contratos explícitos ou eventos de domínio.
+- Referência de domínio de dados: `100.Documentos/banco-de-dados.mkd`.
+
+## Contextos delimitados
+
+| Contexto | Escopo principal |
+|----------|------------------|
+| `Core` | Empresa, Unidade, Cargo, Funcionario |
+| `Identidade` | Usuario, autenticação, sessão, login/logout |
+| `Modulos` | ModuloSistema, LicencaModulo, PermissaoUsuario |
+| `Pacientes` | Paciente, Sintoma |
+| `Pacotes` | Pacote, ItemPacote, CompraPaciente |
+| `Estoque` | Produto, Fornecedor, PedidoFornecedor, MovimentacaoEstoque |
+| `Aplicacoes` | AplicacaoPaciente, AplicacaoSintoma |
+| `Agendamentos` | Agendamento, DisponibilidadeFuncionario, BloqueioAgenda |
+| `GoogleAgenda` | ContaGoogleConectada, AgendaGoogle, AgendamentoGoogleSync |
+| `Financeiro` | FormaPagamento, ContaReceber, PagamentoPaciente |
+| `Auditoria` | LogAuditoria |

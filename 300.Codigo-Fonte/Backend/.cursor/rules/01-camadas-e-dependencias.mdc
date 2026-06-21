@@ -1,0 +1,73 @@
+---
+description: Regras de camadas e direção de dependências do backend
+alwaysApply: true
+---
+
+# Camadas e dependências
+
+## Direção permitida
+
+```
+WebApi / Jobs.Web
+    ↓
+Application ← Abstractions (interfaces)
+    ↓
+Domain
+
+Infra.Data / Infra.ExternalApis / Infra.Jobs
+    ↓ implementam
+Application.Abstractions
+    ↓ referenciam
+Domain
+```
+
+## Proibições
+
+| Origem | Não pode referenciar |
+|--------|----------------------|
+| Domain | Application, Infra, WebApi |
+| Application | Infra.Data, Infra.ExternalApis, WebApi |
+| Infra.Data | WebApi |
+| WebApi | Domain diretamente (exceto tipos expostos em contratos da API quando inevitável) |
+
+## Responsabilidades por camada
+
+### Domain
+
+- `Entity`, `AggregateRoot`, `ValueObject`
+- Construtores e métodos que garantem invariantes
+- `DomainException` para regras violadas
+- Enums espelhando o banco de dados
+- Sem EF Core, sem HTTP, sem DI container
+
+### Application
+
+- Um diretório por contexto: `Application/{Contexto}/`
+- Services ou handlers por caso de uso
+- DTOs de entrada e saída (Request/Response)
+- Interfaces específicas em `Application/Abstractions/` ou `{Contexto}/Abstractions/`
+- `Result<T>` para retornos com erro de negócio previsível
+- Registro de serviços em `DependencyInjection.cs`
+
+### Infra.Data
+
+- `AppDbContext`, migrations, `Repository<T>`, configurações EF
+- Implementações de repositórios específicos por contexto em `Repositories/{Contexto}/`
+- Mapeamentos em `Configurations/` ou `{Contexto}/Configurations/`
+- Nunca expor `DbContext` fora do Infra
+
+### WebApi
+
+- Controllers agrupados por contexto: `Controllers/{Contexto}/`
+- Middlewares transversais (exceções, tenant, autenticação)
+- Sem lógica de negócio; sem acesso direto a repositórios
+
+## Composição (DI)
+
+Cada camada expõe método de extensão:
+
+- `AddApplication()`
+- `AddInfraData(configuration)`
+- `AddExternalApis()`
+
+Novos serviços são registrados no `DependencyInjection.cs` da camada correspondente, nunca espalhados em `Program.cs` além da composição raiz.

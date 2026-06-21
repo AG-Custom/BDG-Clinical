@@ -1,0 +1,67 @@
+---
+description: Checklist para validar isolamento e fronteiras de um contexto delimitado
+alwaysApply: true
+---
+
+# Checklist — Contexto delimitado
+
+Use antes de criar arquivos e ao revisar PRs. Objetivo: impedir mistura entre contextos.
+
+## Definição do contexto
+
+- [ ] Nome do contexto está na lista oficial (Core, Identidade, Modulos, Pacientes, Pacotes, Estoque, Aplicacoes, Agendamentos, GoogleAgenda, Financeiro, Auditoria)
+- [ ] Escopo documentado em `banco-de-dados.mkd` foi lido
+- [ ] Agregados raiz do contexto identificados
+
+## Estrutura de pastas
+
+Cada contexto replica a mesma árvore dentro de cada camada:
+
+```
+Application/{Contexto}/
+  Abstractions/
+  {Feature}/
+    Commands/ ou Services/
+    DTOs/
+    Validators/
+
+Infra.Data/Repositories/{Contexto}/
+Infra.Data/Configurations/{Contexto}/   (quando volume justificar)
+WebApi/Controllers/{Contexto}/
+```
+
+- [ ] Arquivos novos estão dentro da pasta do contexto, não na raiz da camada
+- [ ] Abstrações compartilhadas ficam em `Application/Abstractions/`, não misturadas com implementação
+- [ ] Código compartilhado entre contextos está em `Application/Common/` ou `Domain/Common/`, nunca importando feature específica
+
+## Fronteiras
+
+- [ ] Nenhum `using` de pasta de outro contexto na camada Application
+- [ ] Comunicação entre contextos usa interface em `Abstractions/` ou evento de domínio
+- [ ] Entidades de contextos diferentes não compartilham lógica em uma única classe service
+- [ ] Controller de um contexto não injeta service de outro contexto sem camada de orquestração explícita
+
+## Multi-tenant e módulos
+
+- [ ] Toda operação recebe ou resolve `empresa_id` do tenant autenticado
+- [ ] Feature de módulo contratável valida `LicencaModulo` ativa antes de executar
+- [ ] Permissão de usuário validada via `PermissaoUsuario` para a ação solicitada
+
+## Nomenclatura
+
+| Elemento | Padrão | Exemplo |
+|----------|--------|---------|
+| Pasta de contexto | PascalCase singular | `Identidade`, `Estoque` |
+| Service | `{Verbo}{Entidade}Service` | `LoginUsuarioService` |
+| Interface | `I{NomeService}` | `ILoginUsuarioService` |
+| Request DTO | `{Acao}Request` | `LoginRequest` |
+| Response DTO | `{Acao}Response` | `LoginResponse` |
+| Controller | `{Recurso}Controller` | `AuthController` |
+| Repositório específico | `I{Entidade}Repository` | `IUsuarioRepository` |
+
+## Sinais de alerta (refatorar imediatamente)
+
+- Pasta `Services/` ou `Controllers/` na raiz com múltiplos contextos misturados
+- Arquivo com mais de um agregado de contextos diferentes
+- `using BGD.CLINICAL.Application.Estoque` dentro de `Application.Identidade`
+- Lógica de login espalhada em Core, Modulos e WebApi sem pasta `Identidade`

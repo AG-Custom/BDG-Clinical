@@ -1,0 +1,107 @@
+---
+description: Estrutura de referência do contexto Identidade — Login e autenticação
+globs: "**/Identidade/**,**/Auth*,**/Login*"
+alwaysApply: false
+---
+
+# Exemplo — Contexto Identidade (Login)
+
+Login, logout, refresh token e validação de sessão pertencem exclusivamente ao contexto `Identidade`. Não implementar auth dentro de `Core`, `Modulos` ou na raiz de `WebApi`.
+
+## Árvore de pastas esperada
+
+```
+BGD.CLINICAL.Domain/
+  Entities/CoreEntities.cs          → Usuario (entidade compartilhada, comportamento de auth no contexto Identidade)
+  Enums/TipoUsuario.cs
+
+BGD.CLINICAL.Application/
+  Identidade/
+    Abstractions/
+      ILoginUsuarioService.cs
+      ILogoutUsuarioService.cs
+      IUsuarioRepository.cs
+      ITokenService.cs
+      IGeradorSenhaHash.cs
+    Login/
+      DTOs/
+        LoginRequest.cs
+        LoginResponse.cs
+      LoginUsuarioService.cs
+    Logout/
+      LogoutUsuarioService.cs
+  Common/
+    ResultT.cs
+
+BGD.CLINICAL.Infra.Data/
+  Repositories/
+    Identidade/
+      UsuarioRepository.cs
+  Configurations/
+    ClinicalModelConfigurations.cs  → mapeamento Usuario (ou Identidade/UsuarioConfiguration.cs)
+
+BGD.CLINICAL.Infra.ExternalApis/
+  Identidade/
+    GoogleAuthProvider.cs           → quando auth_provider = Google
+
+BGD.CLINICAL.WebApi/
+  Controllers/
+    Identidade/
+      AuthController.cs
+  Middlewares/
+    TenantResolutionMiddleware.cs   → resolve empresa_id do token/claim
+```
+
+## Responsabilidades
+
+| Componente | Faz | Não faz |
+|------------|-----|---------|
+| `LoginUsuarioService` | Valida credenciais, emite token, registra auditoria LOGIN | Validar licença de módulo |
+| `Modulos/ValidarLicencaService` | Verifica `LicencaModulo` | Autenticar usuário |
+| `AuthController` | Expõe endpoints `/api/identidade/auth/*` | Hash de senha, query EF |
+| `UsuarioRepository` | Busca por email, persiste último acesso | Comparar senha em plain text |
+| `Usuario` (Domain) | Mantém `SenhaHash`, `Ativo`, `TipoUsuario` | Gerar JWT |
+
+## Endpoints sugeridos
+
+```
+POST   /api/identidade/auth/login
+POST   /api/identidade/auth/logout
+POST   /api/identidade/auth/refresh
+GET    /api/identidade/auth/me
+```
+
+## Fluxo Login
+
+```
+AuthController
+  → LoginUsuarioService.ExecutarAsync
+    → IUsuarioRepository.ObterPorEmailAsync
+    → IGeradorSenhaHash.Verificar
+    → ITokenService.Gerar
+    → ILogAuditoriaService.Registrar (contexto Auditoria via abstração)
+  → Result<LoginResponse>
+```
+
+## Integração com Modulos e Auditoria
+
+- Após login bem-sucedido, controller ou service de Identidade pode chamar `IObterPermissoesUsuarioService` (contexto Modulos) via interface.
+- Identidade **não importa** classes concretas de Modulos; apenas a interface em `Application/Modulos/Abstractions/`.
+- Registro de LOGIN usa `IAuditoriaService` (contexto Auditoria), nunca grava `LogAuditoria` direto no controller.
+
+## Segurança
+
+- `SenhaHash` nunca retorna em DTO de response.
+- Tokens Google (`access_token`, `refresh_token`) ficam em `ContaGoogleConectada`, contexto `GoogleAgenda`, não em Identidade.
+- Login Google OAuth é feature de Identidade; sincronização de agenda é feature de GoogleAgenda.
+- Comparar credenciais com mensagem genérica ("Credenciais inválidas") para não revelar existência de email.
+
+## Registro DI (exemplo)
+
+```csharp
+services.AddScoped<ILoginUsuarioService, LoginUsuarioService>();
+services.AddScoped<ILogoutUsuarioService, LogoutUsuarioService>();
+services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+services.AddScoped<ITokenService, JwtTokenService>();
+services.AddScoped<IGeradorSenhaHash, BcryptSenhaHashService>();
+```

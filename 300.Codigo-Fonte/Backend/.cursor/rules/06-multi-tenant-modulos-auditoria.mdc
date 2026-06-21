@@ -1,0 +1,83 @@
+---
+description: Multi-tenant, licenciamento de módulos e auditoria transversal
+alwaysApply: true
+---
+
+# Multi-tenant, módulos e auditoria
+
+## Multi-tenant
+
+Toda entidade principal possui `empresa_id`. Dados de uma empresa nunca são visíveis para outra.
+
+### Regras
+
+- Resolver `empresa_id` a partir do contexto autenticado (claim/token), nunca confiar cegamente no body da request.
+- Repositórios customizados sempre filtram por `empresa_id`.
+- Global query filter no EF Core pode ser aplicado para entidades tenant-scoped.
+- Rotas administrativas cross-tenant (se existirem) ficam em contexto separado com autorização explícita de super-admin.
+
+### Anti-padrão
+
+```csharp
+return await _dbSet.FirstOrDefaultAsync(u => u.EmailLogin == email);
+```
+
+### Padrão
+
+```csharp
+return await _dbSet.FirstOrDefaultAsync(
+    u => u.EmpresaId == empresaId && u.EmailLogin == email,
+    cancellationToken);
+```
+
+## Licenciamento de módulos
+
+Códigos de módulo: `ESTOQUE`, `APLICACOES`, `AGENDAMENTOS`, `FINANCEIRO`, `RELATORIOS`.
+
+### Ordem de validação em endpoint de módulo
+
+1. Usuário autenticado
+2. `empresa_id` resolvido
+3. `LicencaModulo` ativa para o módulo
+4. `PermissaoUsuario` com flag adequada à ação
+5. Executar caso de uso
+
+Licença da empresa e permissão do usuário são independentes: ambas devem passar.
+
+## Permissões
+
+| Flag | Ação |
+|------|------|
+| `pode_visualizar` | GET, listagens |
+| `pode_criar` | POST |
+| `pode_editar` | PUT, PATCH |
+| `pode_excluir` | DELETE |
+
+Implementar validação em filter/attribute ou decorator no Application, centralizando lógica fora do controller.
+
+## Auditoria
+
+Ações críticas geram `LogAuditoria`:
+
+- CRIAR, EDITAR, EXCLUIR, CANCELAR em entidades sensíveis
+- LOGIN, LOGOUT
+- GERAR_MOVIMENTACAO (Estoque)
+- SINCRONIZAR_GOOGLE (GoogleAgenda)
+
+### Regras
+
+- Contexto `Auditoria` expõe `IAuditoriaService`; outros contextos chamam via interface.
+- Alterações sensíveis registram `dados_anteriores` e `dados_novos`.
+- Login/logout registram `usuario_id`, `data`, `ip`.
+- Auditoria não contém regra de negócio de outros contextos.
+
+## Regras de negócio transversais (referência rápida)
+
+| Regra | Contexto responsável |
+|-------|---------------------|
+| CompraPaciente não altera estoque | Pacotes |
+| AplicacaoPaciente realizada gera SAIDA | Aplicacoes + Estoque |
+| PedidoFornecedor recebido gera ENTRADA | Estoque |
+| Estoque = ENTRADAS - SAIDAS + AJUSTES - PERDAS | Estoque |
+| Agendamento respeita disponibilidade e bloqueios | Agendamentos |
+| Funcionário aplicador obrigatório em aplicação | Aplicacoes + Core |

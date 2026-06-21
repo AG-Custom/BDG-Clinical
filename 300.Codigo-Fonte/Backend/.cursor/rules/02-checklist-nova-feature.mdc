@@ -1,0 +1,63 @@
+---
+description: Checklist obrigatório ao criar uma nova feature no backend
+alwaysApply: true
+---
+
+# Checklist — Nova feature
+
+Antes de implementar, identificar o **contexto delimitado**. Se a feature cruza contextos, definir contrato explícito entre eles.
+
+## 1. Planejamento
+
+- [ ] Contexto delimitado definido (ex.: `Estoque`, `Identidade`)
+- [ ] Entidades e regras consultadas em `100.Documentos/banco-de-dados.mkd`
+- [ ] Módulo contratável verificado (`LicencaModulo`) se a feature pertence a módulo pago
+- [ ] Permissões necessárias mapeadas (`pode_visualizar`, `pode_criar`, `pode_editar`, `pode_excluir`)
+- [ ] Impacto multi-tenant avaliado (`empresa_id` em toda query e comando)
+
+## 2. Domain
+
+- [ ] Entidade ou alteração em `Domain/Entities/{Contexto}Entities.cs` ou arquivo dedicado no contexto
+- [ ] Enums em `Domain/Enums/` se houver novo valor
+- [ ] Métodos de fábrica ou comportamento encapsulam invariantes
+- [ ] `DomainException` para regras que impedem a operação
+
+## 3. Application
+
+- [ ] Pasta criada em `Application/{Contexto}/{Feature}/`
+- [ ] DTOs de request/response na pasta da feature
+- [ ] Interface do serviço em `{Contexto}/Abstractions/` ou `Application/Abstractions/`
+- [ ] Implementação do caso de uso retorna `Result<T>` quando falha é esperada
+- [ ] Interface de repositório específica se `IRepository<>` genérico for insuficiente
+- [ ] Serviço registrado em `Application/DependencyInjection.cs`
+
+## 4. Infra.Data
+
+- [ ] Configuração EF em `Configurations/` ou `{Contexto}/Configurations/`
+- [ ] Repositório concreto em `Repositories/{Contexto}/` se necessário
+- [ ] Migration criada e revisada
+- [ ] Filtro por `empresa_id` garantido em consultas customizadas
+- [ ] Repositório registrado em `Infra.Data/DependencyInjection.cs`
+
+## 5. WebApi
+
+- [ ] Controller em `Controllers/{Contexto}/{Feature}Controller.cs`
+- [ ] Rota segue padrão: `api/{contexto-kebab}/{recurso}`
+- [ ] Autorização e validação de módulo/permissão aplicadas
+- [ ] Respostas de erro consistentes com `ExceptionHandlingMiddleware`
+- [ ] Endpoint documentado via OpenAPI quando aplicável
+
+## 6. Transversal
+
+- [ ] Ação crítica gera `LogAuditoria` quando aplicável
+- [ ] Testes manuais ou automatizados cobrem happy path e regras de negócio
+- [ ] Nenhum código de outro contexto foi alterado sem necessidade
+- [ ] `CHANGELOG.md` em `.cursor/` atualizado se regra de arquitetura mudou
+
+## Anti-padrões a evitar
+
+- Controller com lógica de negócio ou acesso a `DbContext`
+- Service de um contexto importando entidade de outro contexto sem abstração
+- DTO de API exposto dentro do Domain ou Application sem necessidade
+- Repositório genérico usado diretamente no controller
+- Query sem filtro de tenant

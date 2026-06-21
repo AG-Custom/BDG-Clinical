@@ -1,0 +1,102 @@
+---
+description: SOLID e Clean Architecture adaptados ao backend BGD Clinical
+alwaysApply: true
+---
+
+# SOLID e Clean Architecture
+
+## Single Responsibility (SRP)
+
+- Cada service/handler executa **um caso de uso**.
+- Controller apenas traduz HTTP ↔ Application.
+- Repositório apenas persiste e consulta; sem regra de negócio.
+- Entidade de domínio protege suas invariantes; não serializa para API.
+
+## Open/Closed (OCP)
+
+- Estender via novas implementações de interfaces, não alterando código estável.
+- Novo provedor de auth: implementar `IProvedorAutenticacao`, registrar no DI.
+- Nova integração externa: projeto `Infra.ExternalApis`, nunca dentro do Domain.
+
+## Liskov Substitution (LSP)
+
+- Implementações de `IRepository<T>`, `IUnitOfWork` e repositórios específicos devem honrar contratos sem surpresas.
+- Substitutos não devem enfraquecer filtros de tenant ou transações.
+
+## Interface Segregation (ISP)
+
+- Preferir interfaces específicas por agregado ou caso de uso.
+- Evitar `IGenericService` com dezenas de métodos.
+- Exemplo: `IUsuarioRepository` com `ObterPorEmailAsync` em vez de forçar todo consumer a usar `IRepository<Usuario>`.
+
+## Dependency Inversion (DIP)
+
+- Application define abstrações; Infra implementa.
+- Domain não conhece EF Core, JWT, Google APIs.
+- WebApi depende de Application, nunca de Infra concreto além da composição em `Program.cs`.
+
+## Clean Architecture — regras práticas
+
+### Entidades e agregados
+
+- Herdar de `Entity` ou `AggregateRoot`.
+- Propriedades com `private set`; mutação via métodos nomeados.
+- Construtor privado sem parâmetros para EF; construtor público/factory para criação válida.
+
+### Casos de uso (Application)
+
+```csharp
+public sealed class LoginUsuarioService : ILoginUsuarioService
+{
+    public async Task<Result<LoginResponse>> ExecutarAsync(
+        LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        var usuario = await _usuarioRepository.ObterPorEmailAsync(
+            request.EmailLogin,
+            cancellationToken);
+
+        if (usuario is null)
+            return Result<LoginResponse>.Failure("Credenciais inválidas.");
+
+        return Result<LoginResponse>.Success(/* mapeamento */);
+    }
+}
+```
+
+### Fluxo de erro
+
+| Situação | Mecanismo |
+|----------|-----------|
+| Regra de domínio violada | `DomainException` → 400 via middleware |
+| Falha esperada (credencial, not found) | `Result<T>.Failure()` → controller mapeia status |
+| Erro inesperado | Exception → 500 via middleware |
+
+### Persistência
+
+- `IUnitOfWork.SaveChangesAsync()` ao final do caso de uso que altera estado.
+- Transações complexas entre agregados do mesmo contexto via Unit of Work.
+- Operações entre contextos: orquestrar no Application com contratos explícitos; evitar transação distribuída implícita.
+
+### Presentation (WebApi)
+
+```csharp
+[HttpPost("login")]
+public async Task<IActionResult> Login(
+    [FromBody] LoginRequest request,
+    CancellationToken cancellationToken)
+{
+    var result = await _loginService.ExecutarAsync(request, cancellationToken);
+
+    if (result.IsFailure)
+        return Unauthorized(new { detail = result.Error });
+
+    return Ok(result.Value);
+}
+```
+
+## Testabilidade
+
+- Casos de uso testáveis com mocks das abstrações de Application.
+- Domain testável sem infraestrutura.
+- Não instanciar `AppDbContext` em testes de Application; mockar `IUsuarioRepository`.

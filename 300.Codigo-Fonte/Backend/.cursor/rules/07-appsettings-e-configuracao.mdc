@@ -1,0 +1,126 @@
+---
+description: Regras de appsettings, Development local e variáveis de ambiente
+alwaysApply: true
+---
+
+# AppSettings e configuração
+
+Cada **host executável** possui seus próprios arquivos de configuração. Nunca compartilhar credenciais entre hosts copiando para um único arquivo global.
+
+## Hosts com appsettings
+
+| Host | Caminho |
+|------|---------|
+| API REST | `BGD.CLINICAL.WebApi/` |
+| Jobs background | `BGD.CLINICAL.Jobs.Web/` |
+
+Projetos de biblioteca (`Application`, `Domain`, `Infra.*`) **não** possuem appsettings.
+
+## Arquivos por host
+
+Cada host mantém exatamente esta estrutura:
+
+```
+BGD.CLINICAL.{Host}/
+  appsettings.json                      → versionado, SEM segredos
+  appsettings.Development.json          → local, NO .gitignore, COM segredos
+  appsettings.Development.example.json  → versionado, template sem valores reais
+  Properties/launchSettings.json        → ASPNETCORE_ENVIRONMENT=Development
+```
+
+## O que vai em cada arquivo
+
+| Tipo de configuração | appsettings.json | Development.json | Variável de ambiente (produção) |
+|----------------------|------------------|------------------|----------------------------------|
+| Connection string | Não | Sim | `ConnectionStrings__DefaultConnection` |
+| Senhas, tokens, API keys | Não | Sim | `{Secao}__{Chave}` |
+| JWT secret | Não | Sim | `Jwt__Secret` |
+| Logging (níveis) | Sim (padrão) | Sim (pode sobrescrever) | — |
+| AllowedHosts | Sim | — | — |
+| URLs, portas públicas | Sim | Sim (se diferente local) | — |
+| Feature flags não sensíveis | Sim | — | — |
+| Config exclusiva de Jobs (intervalos, cron) | Não no WebApi | Sim no Jobs.Web | No host Jobs |
+
+## Regra de ouro
+
+```
+Segredo ou credencial → NUNCA em appsettings.json
+Local (dev)           → appsettings.Development.json do host correto
+Produção              → variável de ambiente no servidor/deploy
+Template para equipe  → appsettings.Development.example.json
+```
+
+## Checklist ao adicionar nova configuração
+
+1. Identificar qual **host** usa a config (WebApi ou Jobs.Web)
+2. Definir se é **segredo** ou **público**
+3. Segredo local → adicionar em `appsettings.Development.json` **desse host**
+4. Segredo produção → documentar variável de ambiente correspondente
+5. Config pública → adicionar em `appsettings.json` **desse host**
+6. Atualizar `appsettings.Development.example.json` **desse host** com placeholder
+7. Não duplicar entre WebApi e Jobs.Web unless ambos consumirem — nesse caso, repetir nos dois Development.json
+
+## Binding no código
+
+Ler configuração via `IConfiguration` ou options pattern:
+
+```csharp
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("Jwt"));
+```
+
+Registrar seções novas no `Program.cs` ou `DependencyInjection.cs` do host que consome.
+
+## Ambiente local
+
+`launchSettings.json` deve manter:
+
+```json
+"ASPNETCORE_ENVIRONMENT": "Development"
+```
+
+Ordem de carregamento automática do ASP.NET Core:
+
+1. `appsettings.json`
+2. `appsettings.{Environment}.json`
+3. Variáveis de ambiente (sobrescrevem arquivos)
+
+## Produção
+
+Não criar `appsettings.Production.json` com segredos versionados.
+
+Usar variáveis de ambiente com `__` (dois underscores) para hierarquia:
+
+```text
+ConnectionStrings__DefaultConnection=Server=...;Database=...;...
+Jwt__Secret=...
+Google__ClientId=...
+Google__ClientSecret=...
+```
+
+## Anti-padrões
+
+- Colocar connection string em `appsettings.json`
+- Colocar config da API no `BGD.CLINICAL.Jobs.Web` ou vice-versa sem necessidade
+- Criar appsettings em `Infra.Data` ou `Application`
+- Commitar `appsettings.Development.json`
+- Hardcodar segredo em `Program.cs` ou services
+- Usar um único appsettings compartilhado entre hosts
+
+## Exemplo — adicionar JWT na API
+
+```
+BGD.CLINICAL.WebApi/appsettings.json
+  → (nada de JWT)
+
+BGD.CLINICAL.WebApi/appsettings.Development.json
+  → "Jwt": { "Secret": "...", "ExpirationMinutes": 480 }
+
+BGD.CLINICAL.WebApi/appsettings.Development.example.json
+  → "Jwt": { "Secret": "SUBSTITUA", "ExpirationMinutes": 480 }
+
+Produção
+  → Jwt__Secret=...
+```
+
+Jobs.Web **não** recebe config JWT, a menos que o job precise validar token (caso raro, documentar).
