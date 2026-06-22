@@ -44,6 +44,13 @@ public sealed class UsersRepository : IUsersRepository
             cancellationToken);
     }
 
+    public Task<bool> ExistsActiveByEmailAsync(string emailLogin, CancellationToken cancellationToken = default)
+    {
+        return _context.Usuarios.AnyAsync(
+            usuario => usuario.EmailLogin == emailLogin && usuario.Ativo,
+            cancellationToken);
+    }
+
     public async Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default)
     {
         await _context.Usuarios.AddAsync(usuario, cancellationToken);

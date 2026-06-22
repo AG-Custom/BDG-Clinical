@@ -41,7 +41,7 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
 
         var email = IdentityValidation.NormalizeEmail(request.Email);
 
-        if (await _usersRepository.ExistsActiveEmailLoginAsync(email, cancellationToken))
+        if (await _usersRepository.ExistsActiveByEmailAsync(email, cancellationToken))
         {
             return Result<AuthResponse>.Failure("Já existe uma conta com este e-mail.");
         }

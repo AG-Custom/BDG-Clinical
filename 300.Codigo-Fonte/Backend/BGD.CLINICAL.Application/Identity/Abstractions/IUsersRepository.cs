@@ -10,5 +10,7 @@ public interface IUsersRepository
 
     Task<bool> ExistsActiveEmailLoginAsync(string emailLogin, CancellationToken cancellationToken = default);
 
+    Task<bool> ExistsActiveByEmailAsync(string emailLogin, CancellationToken cancellationToken = default);
+
     Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default);
 }

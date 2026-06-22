@@ -79,13 +79,21 @@ BGD.CLINICAL.WebApi/
 | `UsersRepository` | Busca por email, persiste usuário | Comparar senha em plain text |
 | `Usuario` (Domain) | Mantém `SenhaHash`, `Ativo`, `TipoUsuario` | Gerar JWT |
 
-## Endpoints (RF001)
+## Endpoints (RF001 + Google OAuth)
 
 ```
 POST   /api/auth/registrar
 POST   /api/auth/login
+POST   /api/auth/google/login      → body: { idToken }
+POST   /api/auth/google/registrar  → body: { idToken, nomeEmpresa, nome?, cnpj? }
 GET    /api/auth/me
 ```
+
+Configuração Google (mesmo Client ID no front e back):
+
+- WebApi `appsettings.Development.json`: `Google:ClientId`
+- FrontEnd `.env`: `VITE_GOOGLE_CLIENT_ID`
+- Google Cloud: origem autorizada `http://localhost:5173`
 
 ## Fluxo Login
 
