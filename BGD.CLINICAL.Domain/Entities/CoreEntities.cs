@@ -55,6 +55,19 @@ public sealed class Unidade : AggregateRoot
     public bool Ativo { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
+
+    public void UpdateDetails(string nome, string? endereco)
+    {
+        Nome = nome;
+        Endereco = endereco;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }
 
 public sealed class Usuario : AggregateRoot

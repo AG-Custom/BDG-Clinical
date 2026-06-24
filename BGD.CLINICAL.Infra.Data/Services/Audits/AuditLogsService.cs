@@ -32,4 +32,29 @@ public sealed class AuditLogsService : IAuditLogsService
         await _context.LogsAuditoria.AddAsync(log, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task RegisterEntityChangeAsync(
+        Guid empresaId,
+        Guid usuarioId,
+        string entidade,
+        Guid registroId,
+        AcaoAuditoria acao,
+        string? dadosAnteriores = null,
+        string? dadosNovos = null,
+        CancellationToken cancellationToken = default)
+    {
+        var log = new LogAuditoria(
+            empresaId,
+            usuarioId,
+            entidade,
+            registroId,
+            acao,
+            DateTime.UtcNow,
+            ip: null,
+            dadosAnteriores,
+            dadosNovos);
+
+        await _context.LogsAuditoria.AddAsync(log, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

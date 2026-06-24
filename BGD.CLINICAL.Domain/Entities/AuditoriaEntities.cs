@@ -16,7 +16,9 @@ public sealed class LogAuditoria : AggregateRoot
         Guid registroId,
         AcaoAuditoria acao,
         DateTime data,
-        string? ip)
+        string? ip,
+        string? dadosAnteriores = null,
+        string? dadosNovos = null)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -26,6 +28,8 @@ public sealed class LogAuditoria : AggregateRoot
         Acao = acao;
         Data = data;
         Ip = ip;
+        DadosAnteriores = dadosAnteriores;
+        DadosNovos = dadosNovos;
     }
 
     public Guid EmpresaId { get; private set; }

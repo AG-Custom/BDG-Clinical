@@ -11,13 +11,14 @@ builder.Services.AddApplication();
 builder.Services.AddInfraData(builder.Configuration);
 builder.Services.AddExternalApis();
 builder.Services.AddAuth(builder.Configuration);
+builder.Services.AddTenantContext();
 builder.Services.AddDevelopmentCors();
 
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
+builder.Services.AddApiSwagger();
 
 var app = builder.Build();
 
