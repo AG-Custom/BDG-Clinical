@@ -1,0 +1,32 @@
+using BGD.CLINICAL.Application.Inventory.Dtos;
+using BGD.CLINICAL.Domain.Entities;
+
+namespace BGD.CLINICAL.Application.Inventory.StockMovements;
+
+internal static class StockMovementsMapper
+{
+    public static IReadOnlyList<StockMovementDto> Map(IReadOnlyList<MovimentacaoEstoque> movimentacoes)
+    {
+        return movimentacoes
+            .Select(Map)
+            .ToList();
+    }
+
+    private static StockMovementDto Map(MovimentacaoEstoque movimentacao)
+    {
+        return new StockMovementDto(
+            movimentacao.Id,
+            movimentacao.UnidadeId,
+            movimentacao.Unidade.Nome,
+            movimentacao.ProdutoId,
+            movimentacao.Produto.Nome,
+            movimentacao.Tipo.ToString(),
+            movimentacao.Quantidade,
+            movimentacao.Data,
+            movimentacao.Origem,
+            movimentacao.PedidoFornecedorId,
+            movimentacao.AplicacaoPacienteId,
+            movimentacao.Observacao,
+            movimentacao.CriadoEm);
+    }
+}

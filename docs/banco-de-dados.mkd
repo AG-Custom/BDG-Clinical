@@ -634,6 +634,8 @@ Fornecedor N:1 Empresa
 Fornecedor 1:N PedidoFornecedor
 ```
 
+Índices únicos por empresa: `(empresa_id, nome)` e `(empresa_id, cnpj)`. CNPJ obrigatório (14 dígitos).
+
 ---
 
 ### PedidoFornecedor
@@ -667,10 +669,11 @@ OUTRO
 Enum `status`:
 
 ```text
-ABERTO
-PEDIDO
-RECEBIDO
-CANCELADO
+Pendente
+Enviado para Fornecedor
+Recebido pela Unidade
+Cancelado
+Recusado
 ```
 
 Relacionamentos:

@@ -1,16 +1,18 @@
 using BGD.CLINICAL.Domain.Entities;
+using BGD.CLINICAL.Domain.Enums;
 
 namespace BGD.CLINICAL.Application.Inventory.Abstractions;
 
-public interface IProductsRepository
+public interface ISuppliersRepository
 {
-    Task<IReadOnlyList<Produto>> ListByEmpresaIdAsync(
+    Task<IReadOnlyList<Fornecedor>> ListByEmpresaIdAsync(
         Guid empresaId,
-        Guid? tipoProdutoId,
         bool includeInactive,
+        string? search,
+        int? limit,
         CancellationToken cancellationToken = default);
 
-    Task<Produto?> GetByIdAndEmpresaIdAsync(
+    Task<Fornecedor?> GetByIdAndEmpresaIdAsync(
         Guid id,
         Guid empresaId,
         CancellationToken cancellationToken = default);
@@ -21,14 +23,10 @@ public interface IProductsRepository
         Guid? excludeId,
         CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsActiveTipoProdutoInEmpresaAsync(
-        Guid tipoProdutoId,
+    Task<bool> ExistsByCnpjAsync(
         Guid empresaId,
-        CancellationToken cancellationToken = default);
-
-    Task<bool> ExistsActiveUnidadeMedidaInEmpresaAsync(
-        Guid unidadeMedidaId,
-        Guid empresaId,
+        string cnpj,
+        Guid? excludeId,
         CancellationToken cancellationToken = default);
 
     Task<bool> ExistsActiveByIdAndEmpresaIdAsync(
@@ -36,7 +34,12 @@ public interface IProductsRepository
         Guid empresaId,
         CancellationToken cancellationToken = default);
 
-    Task AddAsync(Produto produto, CancellationToken cancellationToken = default);
+    Task<bool> HasOpenPedidosAsync(
+        Guid id,
+        Guid empresaId,
+        CancellationToken cancellationToken = default);
 
-    void Update(Produto produto);
+    Task AddAsync(Fornecedor fornecedor, CancellationToken cancellationToken = default);
+
+    void Update(Fornecedor fornecedor);
 }
