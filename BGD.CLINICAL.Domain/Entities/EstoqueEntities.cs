@@ -1,7 +1,152 @@
 using BGD.CLINICAL.Domain.Common;
 using BGD.CLINICAL.Domain.Enums;
+using BGD.CLINICAL.Domain.Exceptions;
 
 namespace BGD.CLINICAL.Domain.Entities;
+
+public sealed class UnidadeMedida : AggregateRoot
+{
+    private UnidadeMedida()
+    {
+    }
+
+    private UnidadeMedida(
+        Guid empresaId,
+        string nome,
+        string sigla,
+        TipoUnidadeMedida tipo)
+        : base(Guid.NewGuid())
+    {
+        EmpresaId = empresaId;
+        Nome = nome;
+        Sigla = sigla;
+        Tipo = tipo;
+        Ativo = true;
+    }
+
+    public Guid EmpresaId { get; private set; }
+    public string Nome { get; private set; } = string.Empty;
+    public string Sigla { get; private set; } = string.Empty;
+    public TipoUnidadeMedida Tipo { get; private set; }
+    public bool Ativo { get; private set; }
+
+    public Empresa Empresa { get; private set; } = null!;
+    public ICollection<Produto> Produtos { get; private set; } = [];
+
+    public static UnidadeMedida Create(
+        Guid empresaId,
+        string nome,
+        string sigla,
+        TipoUnidadeMedida tipo)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa da unidade de medida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome da unidade de medida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sigla))
+        {
+            throw new DomainException("Informe a sigla da unidade de medida.");
+        }
+
+        return new UnidadeMedida(empresaId, nome.Trim(), sigla.Trim(), tipo);
+    }
+
+    public void UpdateDetails(string nome, string sigla, TipoUnidadeMedida tipo)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome da unidade de medida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sigla))
+        {
+            throw new DomainException("Informe a sigla da unidade de medida.");
+        }
+
+        Nome = nome.Trim();
+        Sigla = sigla.Trim();
+        Tipo = tipo;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Reactivate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+}
+
+public sealed class TipoProduto : AggregateRoot
+{
+    private TipoProduto()
+    {
+    }
+
+    private TipoProduto(Guid empresaId, string nome)
+        : base(Guid.NewGuid())
+    {
+        EmpresaId = empresaId;
+        Nome = nome;
+        Ativo = true;
+    }
+
+    public Guid EmpresaId { get; private set; }
+    public string Nome { get; private set; } = string.Empty;
+    public bool Ativo { get; private set; }
+
+    public Empresa Empresa { get; private set; } = null!;
+    public ICollection<Produto> Produtos { get; private set; } = [];
+
+    public static TipoProduto Create(Guid empresaId, string nome)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa do tipo de produto.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do tipo de produto.");
+        }
+
+        return new TipoProduto(empresaId, nome.Trim());
+    }
+
+    public void UpdateDetails(string nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do tipo de produto.");
+        }
+
+        Nome = nome.Trim();
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Reactivate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+}
 
 public sealed class Produto : AggregateRoot
 {
@@ -9,25 +154,117 @@ public sealed class Produto : AggregateRoot
     {
     }
 
-    public Produto(Guid empresaId, string nome, TipoProduto tipo, string unidadeMedida, decimal estoqueMinimo)
+    private Produto(
+        Guid empresaId,
+        Guid tipoProdutoId,
+        Guid unidadeMedidaId,
+        string nome,
+        decimal estoqueMinimo)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
+        TipoProdutoId = tipoProdutoId;
+        UnidadeMedidaId = unidadeMedidaId;
         Nome = nome;
-        Tipo = tipo;
-        UnidadeMedida = unidadeMedida;
         EstoqueMinimo = estoqueMinimo;
         Ativo = true;
     }
 
     public Guid EmpresaId { get; private set; }
+    public Guid TipoProdutoId { get; private set; }
+    public Guid UnidadeMedidaId { get; private set; }
     public string Nome { get; private set; } = string.Empty;
-    public TipoProduto Tipo { get; private set; }
-    public string UnidadeMedida { get; private set; } = string.Empty;
     public decimal EstoqueMinimo { get; private set; }
     public bool Ativo { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
+    public TipoProduto TipoProduto { get; private set; } = null!;
+    public UnidadeMedida UnidadeMedida { get; private set; } = null!;
+
+    public static Produto Create(
+        Guid empresaId,
+        Guid tipoProdutoId,
+        Guid unidadeMedidaId,
+        string nome,
+        decimal estoqueMinimo)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa do produto.");
+        }
+
+        if (tipoProdutoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o tipo do produto.");
+        }
+
+        if (unidadeMedidaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade de medida do produto.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do produto.");
+        }
+
+        if (estoqueMinimo < 0)
+        {
+            throw new DomainException("O estoque mínimo não pode ser negativo.");
+        }
+
+        return new Produto(
+            empresaId,
+            tipoProdutoId,
+            unidadeMedidaId,
+            nome.Trim(),
+            estoqueMinimo);
+    }
+
+    public void UpdateDetails(
+        Guid tipoProdutoId,
+        Guid unidadeMedidaId,
+        string nome,
+        decimal estoqueMinimo)
+    {
+        if (tipoProdutoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o tipo do produto.");
+        }
+
+        if (unidadeMedidaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade de medida do produto.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do produto.");
+        }
+
+        if (estoqueMinimo < 0)
+        {
+            throw new DomainException("O estoque mínimo não pode ser negativo.");
+        }
+
+        TipoProdutoId = tipoProdutoId;
+        UnidadeMedidaId = unidadeMedidaId;
+        Nome = nome.Trim();
+        EstoqueMinimo = estoqueMinimo;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Reactivate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }
 
 public sealed class Fornecedor : AggregateRoot

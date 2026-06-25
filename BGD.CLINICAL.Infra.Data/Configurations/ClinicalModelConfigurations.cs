@@ -271,6 +271,39 @@ internal sealed class CompraPacienteConfiguration : IEntityTypeConfiguration<Com
     }
 }
 
+internal sealed class UnidadeMedidaConfiguration : IEntityTypeConfiguration<UnidadeMedida>
+{
+    public void Configure(EntityTypeBuilder<UnidadeMedida> builder)
+    {
+        builder.ToTable("unidade_medida");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Nome).HasMaxLength(120).IsRequired();
+        builder.Property(entity => entity.Sigla).HasMaxLength(30).IsRequired();
+        builder.Property(entity => entity.Tipo).HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.HasOne(entity => entity.Empresa)
+            .WithMany()
+            .HasForeignKey(entity => entity.EmpresaId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.Nome }).IsUnique();
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.Sigla }).IsUnique();
+    }
+}
+
+internal sealed class TipoProdutoConfiguration : IEntityTypeConfiguration<TipoProduto>
+{
+    public void Configure(EntityTypeBuilder<TipoProduto> builder)
+    {
+        builder.ToTable("tipo_produto");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Nome).HasMaxLength(120).IsRequired();
+        builder.HasOne(entity => entity.Empresa)
+            .WithMany()
+            .HasForeignKey(entity => entity.EmpresaId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.Nome }).IsUnique();
+    }
+}
+
 internal sealed class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
 {
     public void Configure(EntityTypeBuilder<Produto> builder)
@@ -278,11 +311,20 @@ internal sealed class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.ToTable("produto");
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Nome).HasMaxLength(160).IsRequired();
-        builder.Property(entity => entity.Tipo).HasConversion<string>().HasMaxLength(40).IsRequired();
-        builder.Property(entity => entity.UnidadeMedida).HasMaxLength(30).IsRequired();
         builder.Property(entity => entity.EstoqueMinimo).HasPrecision(18, 4);
-        builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasIndex(entity => new { entity.EmpresaId, entity.Nome });
+        builder.HasOne(entity => entity.Empresa)
+            .WithMany()
+            .HasForeignKey(entity => entity.EmpresaId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.TipoProduto)
+            .WithMany(entity => entity.Produtos)
+            .HasForeignKey(entity => entity.TipoProdutoId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.UnidadeMedida)
+            .WithMany(entity => entity.Produtos)
+            .HasForeignKey(entity => entity.UnidadeMedidaId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.Nome }).IsUnique();
     }
 }
 

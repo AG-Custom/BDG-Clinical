@@ -521,18 +521,40 @@ Uma compra ativa representa saldo disponível para aplicações.
 
 ## 5. Estoque
 
-### Produto
+### TipoProduto
 
-Produto físico controlado em estoque.
+Cadastro configurável dos tipos de produto da clínica (ex.: Medicamento, Insumo, Implante).
 
 ```text
-produto
+tipo_produto
 - id
 - empresa_id
 - nome
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+TipoProduto N:1 Empresa
+TipoProduto 1:N Produto
+```
+
+---
+
+### UnidadeMedida
+
+Cadastro configurável das unidades de medida da clínica (ex.: mg, g, ml, L, un, caixa).
+
+```text
+unidade_medida
+- id
+- empresa_id
+- nome
+- sigla
 - tipo
-- unidade_medida
-- estoque_minimo
 - ativo
 - criado_em
 - atualizado_em
@@ -541,16 +563,45 @@ produto
 Enum `tipo`:
 
 ```text
-MEDICAMENTO
-INSUMO
-IMPLANTE
-OUTRO
+Massa
+Volume
+Unidade
+Embalagem
+Outro
+```
+
+Relacionamentos:
+
+```text
+UnidadeMedida N:1 Empresa
+UnidadeMedida 1:N Produto
+```
+
+---
+
+### Produto
+
+Produto físico controlado em estoque.
+
+```text
+produto
+- id
+- empresa_id
+- tipo_produto_id
+- unidade_medida_id
+- nome
+- estoque_minimo
+- ativo
+- criado_em
+- atualizado_em
 ```
 
 Relacionamentos:
 
 ```text
 Produto N:1 Empresa
+Produto N:1 TipoProduto
+Produto N:1 UnidadeMedida
 Produto 1:N ItemPacote
 Produto 1:N ItemPedidoFornecedor
 Produto 1:N MovimentacaoEstoque

@@ -1369,7 +1369,284 @@ Reativa um paciente inativo. Sem body.
 
 ---
 
-## 10. Tipos TypeScript (referência)
+## 10. Tipos de Produto — `/api/product-types`
+
+Cadastro dos tipos de produto da clínica (ex.: Medicamento, Insumo, Implante, Material descartável, Equipamento, Outro). Todas as rotas exigem **Bearer token**.
+
+### GET `/api/product-types`
+
+Lista tipos da empresa logada.
+
+**Query params:** `includeInactive` (boolean, default `false`)
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "nome": "Medicamento",
+      "ativo": true,
+      "criadoEm": "2026-06-25T12:00:00Z",
+      "atualizadoEm": null
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+---
+
+### GET `/api/product-types/{id}`
+
+**Response 404:** `"Tipo de produto não encontrado."`
+
+---
+
+### POST `/api/product-types`
+
+**Request**
+
+```json
+{ "nome": "Medicamento" }
+```
+
+**Response 400:** `"Já existe um tipo de produto com este nome."`
+
+---
+
+### PUT `/api/product-types/{id}`
+
+**Request** — mesmo body do POST.
+
+---
+
+### DELETE `/api/product-types/{id}`
+
+Desativa o tipo (soft delete). Produtos já vinculados mantêm a referência; novos produtos exigem tipo ativo.
+
+---
+
+### PATCH `/api/product-types/{id}/reactivate`
+
+Reativa um tipo inativo.
+
+---
+
+## 11. Unidades de Medida — `/api/measurement-units`
+
+Cadastro das unidades de medida utilizadas pela clínica (ex.: mg, g, ml, L, un, caixa). Todas as rotas exigem **Bearer token**.
+
+### GET `/api/measurement-units`
+
+Lista unidades da empresa logada ou busca por termo (autocomplete / filtro remoto).
+
+**Query params**
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `includeInactive` | `boolean` | `false` | Incluir inativas |
+| `tipo` | `string` | — | Filtrar por tipo: `Massa`, `Volume`, `Unidade`, `Embalagem`, `Outro` |
+| `search` | `string` | — | Busca parcial em `nome` e `sigla` (mín. 2 caracteres) |
+| `limit` | `integer` | `20` com `search`; sem default na listagem completa | Máximo de itens retornados (máx. `50`) |
+
+**Modos de uso**
+
+| Cenário | Exemplo |
+|---------|---------|
+| Listagem completa | `GET /api/measurement-units` |
+| Select ao abrir (primeiros itens) | `GET /api/measurement-units?limit=20` |
+| Autocomplete digitando | `GET /api/measurement-units?search=cent&limit=20` |
+| Listagem + filtro de tipo | `GET /api/measurement-units?tipo=Volume&search=ml&limit=20` |
+
+**Response 400** — exemplos:
+
+```json
+{ "data": null, "success": false, "message": "Informe ao menos 2 caracteres para buscar." }
+```
+
+```json
+{ "data": null, "success": false, "message": "O limite máximo permitido é 50." }
+```
+
+> No frontend: debounce (~300 ms), mínimo 2 caracteres e `AbortController` para cancelar requisições anteriores.
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "nome": "Miligrama",
+      "sigla": "mg",
+      "tipo": "Massa",
+      "ativo": true,
+      "criadoEm": "2026-06-25T12:00:00Z",
+      "atualizadoEm": null
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+---
+
+### GET `/api/measurement-units/{id}`
+
+**Response 404:** `"Unidade de medida não encontrada."`
+
+---
+
+### POST `/api/measurement-units`
+
+**Request**
+
+```json
+{
+  "nome": "Miligrama",
+  "sigla": "mg",
+  "tipo": "Massa"
+}
+```
+
+| Campo | Obrigatório | Descrição |
+|-------|-------------|-----------|
+| `nome` | Sim | Único na empresa (ex.: Miligrama) |
+| `sigla` | Sim | Único na empresa (ex.: mg, ml, un) |
+| `tipo` | Sim | `Massa`, `Volume`, `Unidade`, `Embalagem` ou `Outro` |
+
+**Response 400** — exemplos:
+
+```json
+{ "data": null, "success": false, "message": "Já existe uma unidade de medida com esta sigla." }
+```
+
+---
+
+### PUT `/api/measurement-units/{id}`
+
+**Request** — mesmo body do POST. Não permite editar unidade inativa.
+
+---
+
+### DELETE `/api/measurement-units/{id}`
+
+Desativa a unidade (soft delete). Falha se houver produtos ativos vinculados.
+
+---
+
+### PATCH `/api/measurement-units/{id}/reactivate`
+
+Reativa uma unidade inativa.
+
+---
+
+## 12. Produtos — `/api/products`
+
+Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **Bearer token**.
+
+> Cadastre os tipos em `/api/product-types` e as unidades em `/api/measurement-units` antes de criar produtos.
+
+### GET `/api/products`
+
+**Query params**
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `tipoProdutoId` | `uuid` | — | Filtrar por tipo |
+| `includeInactive` | `boolean` | `false` | Incluir inativos |
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "tipoProdutoId": "d4e5f6a7-b8c9-0123-defa-234567890123",
+      "tipoProdutoNome": "Medicamento",
+      "unidadeMedidaId": "e5f6a7b8-c9d0-1234-efab-345678901234",
+      "unidadeMedidaNome": "Miligrama",
+      "unidadeMedidaSigla": "mg",
+      "nome": "Tirzepatida",
+      "estoqueMinimo": 10,
+      "ativo": true,
+      "criadoEm": "2026-06-25T12:00:00Z",
+      "atualizadoEm": null
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+---
+
+### GET `/api/products/{id}`
+
+**Response 404:** `"Produto não encontrado."`
+
+---
+
+### POST `/api/products`
+
+**Request**
+
+```json
+{
+  "tipoProdutoId": "d4e5f6a7-b8c9-0123-defa-234567890123",
+  "unidadeMedidaId": "e5f6a7b8-c9d0-1234-efab-345678901234",
+  "nome": "Tirzepatida",
+  "estoqueMinimo": 10
+}
+```
+
+| Campo | Obrigatório | Descrição |
+|-------|-------------|-----------|
+| `tipoProdutoId` | Sim | Tipo ativo da empresa |
+| `unidadeMedidaId` | Sim | Unidade de medida ativa da empresa |
+| `nome` | Sim | Único na empresa |
+| `estoqueMinimo` | Sim | `>= 0` |
+
+**Response 400** — exemplos:
+
+```json
+{ "data": null, "success": false, "message": "Tipo de produto não encontrado." }
+```
+
+```json
+{ "data": null, "success": false, "message": "Unidade de medida não encontrada." }
+```
+
+```json
+{ "data": null, "success": false, "message": "Já existe um produto com este nome." }
+```
+
+---
+
+### PUT `/api/products/{id}`
+
+**Request** — mesmo body do POST.
+
+---
+
+### DELETE `/api/products/{id}`
+
+Desativa o produto (soft delete).
+
+---
+
+### PATCH `/api/products/{id}/reactivate`
+
+Reativa um produto inativo. Falha se o tipo ou a unidade de medida vinculados estiverem inativos.
+
+---
+
+## 13. Tipos TypeScript (referência)
 
 ```typescript
 interface ApiResponse<T> {
@@ -1465,6 +1742,38 @@ interface Position {
   atualizadoEm: string | null;
 }
 
+interface ProductType {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
+interface MeasurementUnit {
+  id: string;
+  nome: string;
+  sigla: string;
+  tipo: 'Massa' | 'Volume' | 'Unidade' | 'Embalagem' | 'Outro';
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
+interface Product {
+  id: string;
+  tipoProdutoId: string;
+  tipoProdutoNome: string;
+  unidadeMedidaId: string;
+  unidadeMedidaNome: string;
+  unidadeMedidaSigla: string;
+  nome: string;
+  estoqueMinimo: number;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
 interface Patient {
   id: string;
   unidadeId: string;
@@ -1505,7 +1814,7 @@ interface Employee {
 
 ---
 
-## 11. Fluxo sugerido no frontend
+## 14. Fluxo sugerido no frontend
 
 ```text
 1. Registrar clínica  → POST /api/auth/registrar  → guardar token (primeira clínica)
@@ -1520,17 +1829,20 @@ interface Employee {
 10. CRUD unidades     → /api/units/*
 11. CRUD cargos       → /api/positions/* (popular select antes de cadastrar funcionário)
 12. CRUD funcionários → POST/PUT /api/employees (somente Admin) → e-mail de convite no create
-13. CRUD pacientes    → /api/patients/* (unidade obrigatória; CPF opcional e único na empresa)
-14. Funcionário abre link → /primeiro-acesso?token=...
+13. CRUD pacientes    → /api/patients/*
+14. CRUD tipos produto → /api/product-types/*
+15. CRUD unidades medida → /api/measurement-units/* (antes de cadastrar produtos)
+16. CRUD produtos     → /api/products/*
+17. Funcionário abre link → /primeiro-acesso?token=...
    a. Digita e-mail   → POST /api/auth/primeiro-acesso/validar-email
    b. Define senha    → POST /api/auth/primeiro-acesso/concluir → guardar token
-15. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
+18. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
                         → orientar a usar o link do e-mail (ou solicitar reenvio ao admin)
 ```
 
 ---
 
-## 12. Rotas ainda não disponíveis
+## 15. Rotas ainda não disponíveis
 
 | Recurso | Status |
 |---------|--------|
@@ -1539,4 +1851,4 @@ interface Employee {
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + Auth + Primeiro acesso).*
+*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + ProductTypes + MeasurementUnits + Products + Auth + Primeiro acesso).*
