@@ -1232,7 +1232,144 @@ Reativa funcionário inativo, os vínculos inativos na empresa logada e o usuár
 
 ---
 
-## 9. Tipos TypeScript (referência)
+## 9. Pacientes — `/api/patients`
+
+Cadastro de pacientes da clínica. Todas as rotas exigem **Bearer token**. Os dados são filtrados pela empresa do token; a unidade é informada no body e deve pertencer à empresa logada.
+
+### GET `/api/patients`
+
+Lista pacientes da empresa logada.
+
+**Query params**
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `unidadeId` | `uuid` | — | Filtrar por unidade |
+| `includeInactive` | `boolean` | `false` | Incluir pacientes desativados |
+
+**Exemplo:** `GET /api/patients?unidadeId=a1b2c3d4-e5f6-7890-abcd-ef1234567890&includeInactive=false`
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "unidadeId": "d4e5f6a7-b8c9-0123-defa-234567890123",
+      "nome": "Maria Silva",
+      "cpf": "12345678900",
+      "telefone": "(11) 99999-0000",
+      "email": "maria@email.com",
+      "dataNascimento": "1990-05-15",
+      "observacao": null,
+      "ativo": true,
+      "criadoEm": "2026-06-25T12:00:00Z",
+      "atualizadoEm": null
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+---
+
+### GET `/api/patients/{id}`
+
+**Response 200** — um `PatientDto` em `data`.
+
+**Response 404**
+
+```json
+{
+  "data": null,
+  "success": false,
+  "message": "Paciente não encontrado."
+}
+```
+
+---
+
+### POST `/api/patients`
+
+**Request**
+
+```json
+{
+  "unidadeId": "d4e5f6a7-b8c9-0123-defa-234567890123",
+  "nome": "Maria Silva",
+  "cpf": "123.456.789-00",
+  "telefone": "(11) 99999-0000",
+  "email": "maria@email.com",
+  "dataNascimento": "1990-05-15",
+  "observacao": null
+}
+```
+
+| Campo | Obrigatório | Descrição |
+|-------|-------------|-----------|
+| `unidadeId` | Sim | Unidade ativa da empresa logada |
+| `nome` | Sim | Nome completo |
+| `cpf` | Não | Se informado, único na empresa (11 dígitos) |
+| `telefone` | Não | |
+| `email` | Não | Formato válido se informado |
+| `dataNascimento` | Não | Formato `YYYY-MM-DD` |
+| `observacao` | Não | |
+
+`empresaId` **não** vai no body — vem do JWT.
+
+**Response 201** — `Location: /api/patients/{id}`
+
+**Response 400** — exemplos:
+
+```json
+{ "data": null, "success": false, "message": "Já existe um paciente com este CPF nesta empresa." }
+```
+
+```json
+{ "data": null, "success": false, "message": "Unidade não encontrada ou inativa." }
+```
+
+---
+
+### PUT `/api/patients/{id}`
+
+**Request** — mesmo body do POST.
+
+**Response 200** — `PatientDto` atualizado.  
+**Response 404** — paciente não encontrado.  
+**Response 400** — paciente inativo, CPF duplicado ou unidade inválida.
+
+---
+
+### DELETE `/api/patients/{id}`
+
+Desativa o paciente (soft delete).
+
+**Response 200** — `PatientDto` com `ativo: false`.
+
+---
+
+### PATCH `/api/patients/{id}/reactivate`
+
+Reativa um paciente inativo. Sem body.
+
+**Response 200** — `PatientDto` com `ativo: true`.
+
+**Response 400** — exemplos:
+
+```json
+{ "data": null, "success": false, "message": "Paciente já está ativo." }
+```
+
+```json
+{ "data": null, "success": false, "message": "A unidade vinculada ao paciente está inativa." }
+```
+
+---
+
+## 10. Tipos TypeScript (referência)
 
 ```typescript
 interface ApiResponse<T> {
@@ -1328,6 +1465,20 @@ interface Position {
   atualizadoEm: string | null;
 }
 
+interface Patient {
+  id: string;
+  unidadeId: string;
+  nome: string;
+  cpf: string | null;
+  telefone: string | null;
+  email: string | null;
+  dataNascimento: string | null;
+  observacao: string | null;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
 interface EmployeeLink {
   id: string;
   empresaId: string | null;
@@ -1354,7 +1505,7 @@ interface Employee {
 
 ---
 
-## 10. Fluxo sugerido no frontend
+## 11. Fluxo sugerido no frontend
 
 ```text
 1. Registrar clínica  → POST /api/auth/registrar  → guardar token (primeira clínica)
@@ -1369,16 +1520,17 @@ interface Employee {
 10. CRUD unidades     → /api/units/*
 11. CRUD cargos       → /api/positions/* (popular select antes de cadastrar funcionário)
 12. CRUD funcionários → POST/PUT /api/employees (somente Admin) → e-mail de convite no create
-13. Funcionário abre link → /primeiro-acesso?token=...
+13. CRUD pacientes    → /api/patients/* (unidade obrigatória; CPF opcional e único na empresa)
+14. Funcionário abre link → /primeiro-acesso?token=...
    a. Digita e-mail   → POST /api/auth/primeiro-acesso/validar-email
    b. Define senha    → POST /api/auth/primeiro-acesso/concluir → guardar token
-14. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
+15. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
                         → orientar a usar o link do e-mail (ou solicitar reenvio ao admin)
 ```
 
 ---
 
-## 11. Rotas ainda não disponíveis
+## 12. Rotas ainda não disponíveis
 
 | Recurso | Status |
 |---------|--------|
@@ -1387,4 +1539,4 @@ interface Employee {
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Auth + Primeiro acesso).*
+*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + Auth + Primeiro acesso).*

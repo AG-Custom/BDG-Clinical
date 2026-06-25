@@ -1,4 +1,5 @@
 using BGD.CLINICAL.Domain.Common;
+using BGD.CLINICAL.Domain.Exceptions;
 
 namespace BGD.CLINICAL.Domain.Entities;
 
@@ -8,7 +9,15 @@ public sealed class Paciente : AggregateRoot
     {
     }
 
-    public Paciente(Guid empresaId, Guid unidadeId, string nome, string? cpf, string? telefone, string? email, DateOnly? dataNascimento)
+    private Paciente(
+        Guid empresaId,
+        Guid unidadeId,
+        string nome,
+        string? cpf,
+        string? telefone,
+        string? email,
+        DateOnly? dataNascimento,
+        string? observacao)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -18,6 +27,7 @@ public sealed class Paciente : AggregateRoot
         Telefone = telefone;
         Email = email;
         DataNascimento = dataNascimento;
+        Observacao = observacao;
         Ativo = true;
     }
 
@@ -35,6 +45,83 @@ public sealed class Paciente : AggregateRoot
     public Unidade Unidade { get; private set; } = null!;
     public ICollection<CompraPaciente> Compras { get; private set; } = [];
     public ICollection<AplicacaoPaciente> Aplicacoes { get; private set; } = [];
+
+    public static Paciente Create(
+        Guid empresaId,
+        Guid unidadeId,
+        string nome,
+        string? cpf,
+        string? telefone,
+        string? email,
+        DateOnly? dataNascimento,
+        string? observacao)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa do paciente.");
+        }
+
+        if (unidadeId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade do paciente.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do paciente.");
+        }
+
+        return new Paciente(
+            empresaId,
+            unidadeId,
+            nome.Trim(),
+            cpf,
+            telefone,
+            email,
+            dataNascimento,
+            observacao);
+    }
+
+    public void UpdateDetails(
+        Guid unidadeId,
+        string nome,
+        string? cpf,
+        string? telefone,
+        string? email,
+        DateOnly? dataNascimento,
+        string? observacao)
+    {
+        if (unidadeId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade do paciente.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do paciente.");
+        }
+
+        UnidadeId = unidadeId;
+        Nome = nome.Trim();
+        Cpf = cpf;
+        Telefone = telefone;
+        Email = email;
+        DataNascimento = dataNascimento;
+        Observacao = observacao;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Reactivate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }
 
 public sealed class Sintoma : AggregateRoot

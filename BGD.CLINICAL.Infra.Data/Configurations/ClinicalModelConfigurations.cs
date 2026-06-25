@@ -206,7 +206,9 @@ internal sealed class PacienteConfiguration : IEntityTypeConfiguration<Paciente>
         builder.Property(entity => entity.Observacao).HasMaxLength(2000);
         builder.HasOne(entity => entity.Empresa).WithMany().HasForeignKey(entity => entity.EmpresaId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasIndex(entity => new { entity.EmpresaId, entity.Cpf });
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.Cpf })
+            .IsUnique()
+            .HasFilter("[cpf] IS NOT NULL");
     }
 }
 

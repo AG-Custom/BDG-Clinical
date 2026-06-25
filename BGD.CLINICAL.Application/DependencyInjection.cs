@@ -8,6 +8,7 @@ using BGD.CLINICAL.Application.Core.Units;
 using BGD.CLINICAL.Application.Core.Companies;
 using BGD.CLINICAL.Application.Core.Employees;
 using BGD.CLINICAL.Application.Core.Positions;
+using BGD.CLINICAL.Application.Patients.Patients;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BGD.CLINICAL.Application;
@@ -53,6 +54,13 @@ public static class DependencyInjection
         services.AddScoped<IUpdateEmployeesService, UpdateEmployeesService>();
         services.AddScoped<IDeactivateEmployeesService, DeactivateEmployeesService>();
         services.AddScoped<IReactivateEmployeesService, ReactivateEmployeesService>();
+
+        services.AddScoped<ICreatePatientsService, CreatePatientsService>();
+        services.AddScoped<IListPatientsService, ListPatientsService>();
+        services.AddScoped<IGetPatientsService, GetPatientsService>();
+        services.AddScoped<IUpdatePatientsService, UpdatePatientsService>();
+        services.AddScoped<IDeactivatePatientsService, DeactivatePatientsService>();
+        services.AddScoped<IReactivatePatientsService, ReactivatePatientsService>();
 
         return services;
     }
