@@ -89,6 +89,16 @@ public sealed class ProductsRepository : IProductsRepository
             cancellationToken);
     }
 
+    public Task<bool> ExistsActiveByIdAndEmpresaIdAsync(
+        Guid id,
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Produtos.AnyAsync(
+            produto => produto.Id == id && produto.EmpresaId == empresaId && produto.Ativo,
+            cancellationToken);
+    }
+
     public async Task AddAsync(Produto produto, CancellationToken cancellationToken = default)
     {
         await _context.Produtos.AddAsync(produto, cancellationToken);

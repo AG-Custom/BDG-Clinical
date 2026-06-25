@@ -1646,7 +1646,192 @@ Reativa um produto inativo. Falha se o tipo ou a unidade de medida vinculados es
 
 ---
 
-## 13. Tipos TypeScript (referência)
+## 13. Fornecedores — `/api/suppliers`
+
+Cadastro de fornecedores vinculados à empresa. Todas as rotas exigem **Bearer token**.
+
+### GET `/api/suppliers`
+
+**Query params**
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `includeInactive` | `boolean` | `false` | Incluir inativos |
+| `search` | `string` | — | Busca em `nome` e `cnpj` (mín. 2 caracteres) |
+| `limit` | `integer` | `20` com `search` | Máximo de itens (máx. `50`) |
+
+### POST `/api/suppliers`
+
+```json
+{
+  "nome": "Distribuidora ABC",
+  "cnpj": "12.345.678/0001-90",
+  "telefone": "11999998888",
+  "email": "contato@abc.com"
+}
+```
+
+| Campo | Obrigatório | Descrição |
+|-------|-------------|-----------|
+| `nome` | Sim | Único na empresa |
+| `cnpj` | Sim | 14 dígitos, único na empresa |
+| `telefone` | Não | — |
+| `email` | Não | — |
+
+### PUT / DELETE / PATCH reactivate
+
+Mesmo padrão de produtos/tipos. DELETE inativa (soft delete). Falha se houver pedidos em aberto (`Pendente` ou `Enviado para Fornecedor`).
+
+---
+
+## 14. Pedidos ao Fornecedor — `/api/supplier-orders`
+
+Pedidos de compra com itens de produto. Criar pedido **não** altera estoque; use `receive` para entrada.
+
+### GET `/api/supplier-orders`
+
+| Param | Descrição |
+|-------|-----------|
+| `status` | `Pendente`, `Enviado para Fornecedor`, `Recebido pela Unidade`, `Cancelado`, `Recusado` |
+| `fornecedorId` | Filtrar por fornecedor |
+| `unidadeId` | Filtrar por unidade |
+
+### POST `/api/supplier-orders`
+
+```json
+{
+  "fornecedorId": "uuid",
+  "unidadeId": "uuid",
+  "tipoPedido": "Medicamento",
+  "dataPedido": "2026-06-25T10:00:00Z",
+  "status": "Pendente",
+  "observacao": null,
+  "itens": [
+    { "produtoId": "uuid", "quantidade": 10, "valorUnitario": 50.00 },
+    { "produtoId": "uuid", "quantidade": 15, "valorTotal": 477.00 }
+  ]
+}
+```
+
+| Campo | Valores / regra |
+|-------|-----------------|
+| `tipoPedido` | `Medicamento`, `Insumo`, `Implante`, `Outro` |
+| `status` | Somente `Pendente` ou `Enviado para Fornecedor` no create/update |
+| `itens` | Mínimo 1; produtos ativos; sem repetir produto |
+| `itens[].valorUnitario` | Opcional se `valorTotal` informado |
+| `itens[].valorTotal` | Opcional se `valorUnitario` informado; informe ao menos um dos dois |
+
+**Valores por item:** informe `valorUnitario` **ou** `valorTotal` (ou ambos, se forem consistentes). Se só `valorTotal`, o unitário é calculado (`valorTotal ÷ quantidade`). Se só `valorUnitario`, o total da linha é `quantidade × valorUnitario`. A response sempre devolve os dois valores calculados.
+
+Response inclui `valorTotal` do pedido (soma dos itens) e `itens[]` com `valorUnitario` e `valorTotal` por linha.
+
+### PUT `/api/supplier-orders/{id}`
+
+Mesmo body do POST. Bloqueado se status `Recebido pela Unidade`, `Cancelado` ou `Recusado`.
+
+### PATCH `/api/supplier-orders/{id}/cancel`
+
+Cancela pedido em `Pendente` ou `Enviado para Fornecedor`.
+
+### PATCH `/api/supplier-orders/{id}/receive`
+
+Marca como `Recebido pela Unidade` e gera `MovimentacaoEstoque` tipo **Entrada** para cada item.
+
+---
+
+## 15. Saldo de Estoque — `/api/stock-balances`
+
+Saldo atual por **unidade + produto**, calculado a partir das movimentações:
+
+```text
+saldo = ENTRADAS - SAIDAS + AJUSTES - PERDAS
+```
+
+Somente combinações com ao menos uma movimentação aparecem na listagem.
+
+### GET `/api/stock-balances`
+
+| Param | Tipo | Descrição |
+|-------|------|-----------|
+| `unidadeId` | `uuid` | Filtrar por unidade |
+| `produtoId` | `uuid` | Filtrar por produto |
+| `abaixoDoMinimo` | `boolean` | `true` = apenas itens com saldo &lt; estoque mínimo |
+| `search` | `string` | Busca por nome do produto (mín. 2 caracteres) |
+| `limit` | `number` | Máx. 50 (default 20 quando `search` informado) |
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "unidadeId": "uuid",
+      "unidadeNome": "Unidade Centro",
+      "produtoId": "uuid",
+      "produtoNome": "Tirzepatida",
+      "unidadeMedidaSigla": "mg",
+      "estoqueMinimo": 10,
+      "saldoAtual": 150,
+      "abaixoDoMinimo": false
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+`saldoAtual` pode ser negativo se saídas/perdas superarem entradas.
+
+---
+
+## 16. Histórico de Movimentações — `/api/stock-movements`
+
+Extrato cronológico de entradas, saídas, ajustes e perdas.
+
+### GET `/api/stock-movements`
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `unidadeId` | `uuid` | — | Filtrar por unidade |
+| `produtoId` | `uuid` | — | Filtrar por produto |
+| `tipo` | `string` | — | `Entrada`, `Saida`, `Ajuste`, `Perda` |
+| `dataInicio` | `datetime` | — | Início do período (inclusivo) |
+| `dataFim` | `datetime` | — | Fim do período (inclusivo) |
+| `limit` | `number` | `50` | Máx. 200 |
+
+Ordenação: `data` decrescente, depois `criadoEm` decrescente.
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "unidadeId": "uuid",
+      "unidadeNome": "Unidade Centro",
+      "produtoId": "uuid",
+      "produtoNome": "Tirzepatida",
+      "tipo": "Entrada",
+      "quantidade": 15,
+      "data": "2026-06-25T14:00:00Z",
+      "origem": "PEDIDO_FORNECEDOR",
+      "pedidoFornecedorId": "uuid",
+      "aplicacaoPacienteId": null,
+      "observacao": null,
+      "criadoEm": "2026-06-25T14:00:00Z"
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`). Saídas por aplicação ainda não estão ativas na API.
+
+---
+
+## 17. Tipos TypeScript (referência)
 
 ```typescript
 interface ApiResponse<T> {
@@ -1774,6 +1959,50 @@ interface Product {
   atualizadoEm: string | null;
 }
 
+interface Supplier {
+  id: string;
+  nome: string;
+  cnpj: string;
+  telefone: string | null;
+  email: string | null;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
+interface SupplierOrderItem {
+  id: string;
+  produtoId: string;
+  produtoNome: string;
+  quantidade: number;
+  valorUnitario: number;
+  valorTotal: number;
+}
+
+/** Body POST/PUT — informe valorUnitario ou valorTotal (ou ambos consistentes). */
+interface SupplierOrderItemRequest {
+  produtoId: string;
+  quantidade: number;
+  valorUnitario?: number;
+  valorTotal?: number;
+}
+
+interface SupplierOrder {
+  id: string;
+  fornecedorId: string;
+  fornecedorNome: string;
+  unidadeId: string;
+  unidadeNome: string;
+  tipoPedido: 'Medicamento' | 'Insumo' | 'Implante' | 'Outro';
+  dataPedido: string;
+  status: 'Pendente' | 'Enviado para Fornecedor' | 'Recebido pela Unidade' | 'Cancelado' | 'Recusado';
+  valorTotal: number;
+  observacao: string | null;
+  itens: SupplierOrderItem[];
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
 interface Patient {
   id: string;
   unidadeId: string;
@@ -1810,11 +2039,38 @@ interface Employee {
   criadoEm: string;
   atualizadoEm: string | null;
 }
+
+interface StockBalance {
+  unidadeId: string;
+  unidadeNome: string;
+  produtoId: string;
+  produtoNome: string;
+  unidadeMedidaSigla: string;
+  estoqueMinimo: number;
+  saldoAtual: number;
+  abaixoDoMinimo: boolean;
+}
+
+interface StockMovement {
+  id: string;
+  unidadeId: string;
+  unidadeNome: string;
+  produtoId: string;
+  produtoNome: string;
+  tipo: 'Entrada' | 'Saida' | 'Ajuste' | 'Perda';
+  quantidade: number;
+  data: string;
+  origem: string;
+  pedidoFornecedorId: string | null;
+  aplicacaoPacienteId: string | null;
+  observacao: string | null;
+  criadoEm: string;
+}
 ```
 
 ---
 
-## 14. Fluxo sugerido no frontend
+## 18. Fluxo sugerido no frontend
 
 ```text
 1. Registrar clínica  → POST /api/auth/registrar  → guardar token (primeira clínica)
@@ -1833,22 +2089,28 @@ interface Employee {
 14. CRUD tipos produto → /api/product-types/*
 15. CRUD unidades medida → /api/measurement-units/* (antes de cadastrar produtos)
 16. CRUD produtos     → /api/products/*
-17. Funcionário abre link → /primeiro-acesso?token=...
+17. CRUD fornecedores → /api/suppliers/*
+18. CRUD pedidos      → /api/supplier-orders/* (PATCH receive para entrada no estoque)
+19. Saldo de estoque  → GET /api/stock-balances (filtro abaixoDoMinimo para alertas)
+20. Histórico estoque → GET /api/stock-movements
+21. Funcionário abre link → /primeiro-acesso?token=...
    a. Digita e-mail   → POST /api/auth/primeiro-acesso/validar-email
    b. Define senha    → POST /api/auth/primeiro-acesso/concluir → guardar token
-18. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
+20. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
                         → orientar a usar o link do e-mail (ou solicitar reenvio ao admin)
 ```
 
 ---
 
-## 15. Rotas ainda não disponíveis
+## 19. Rotas ainda não disponíveis
 
 | Recurso | Status |
 |---------|--------|
 | Reenvio de convite de primeiro acesso | Não implementado |
 | Permissões por módulo | Não implementado |
+| Aplicações em pacientes (saída de estoque) | Domínio preparado (`CreateSaidaFromAplicacao`); API não implementada |
+| Ajuste/Perda manual de estoque | Não implementado |
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + ProductTypes + MeasurementUnits + Products + Auth + Primeiro acesso).*
+*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + Inventory + Suppliers + SupplierOrders + StockBalances + StockMovements + Auth + Primeiro acesso).*

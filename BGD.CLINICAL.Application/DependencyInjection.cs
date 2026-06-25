@@ -12,6 +12,10 @@ using BGD.CLINICAL.Application.Patients.Patients;
 using BGD.CLINICAL.Application.Inventory.ProductTypes;
 using BGD.CLINICAL.Application.Inventory.Products;
 using BGD.CLINICAL.Application.Inventory.MeasurementUnits;
+using BGD.CLINICAL.Application.Inventory.Suppliers;
+using BGD.CLINICAL.Application.Inventory.SupplierOrders;
+using BGD.CLINICAL.Application.Inventory.StockBalances;
+using BGD.CLINICAL.Application.Inventory.StockMovements;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BGD.CLINICAL.Application;
@@ -85,6 +89,23 @@ public static class DependencyInjection
         services.AddScoped<IUpdateProductsService, UpdateProductsService>();
         services.AddScoped<IDeactivateProductsService, DeactivateProductsService>();
         services.AddScoped<IReactivateProductsService, ReactivateProductsService>();
+
+        services.AddScoped<ICreateSuppliersService, CreateSuppliersService>();
+        services.AddScoped<IListSuppliersService, ListSuppliersService>();
+        services.AddScoped<IGetSuppliersService, GetSuppliersService>();
+        services.AddScoped<IUpdateSuppliersService, UpdateSuppliersService>();
+        services.AddScoped<IDeactivateSuppliersService, DeactivateSuppliersService>();
+        services.AddScoped<IReactivateSuppliersService, ReactivateSuppliersService>();
+
+        services.AddScoped<ICreateSupplierOrdersService, CreateSupplierOrdersService>();
+        services.AddScoped<IListSupplierOrdersService, ListSupplierOrdersService>();
+        services.AddScoped<IGetSupplierOrdersService, GetSupplierOrdersService>();
+        services.AddScoped<IUpdateSupplierOrdersService, UpdateSupplierOrdersService>();
+        services.AddScoped<ICancelSupplierOrdersService, CancelSupplierOrdersService>();
+        services.AddScoped<IReceiveSupplierOrdersService, ReceiveSupplierOrdersService>();
+
+        services.AddScoped<IListStockBalancesService, ListStockBalancesService>();
+        services.AddScoped<IListStockMovementsService, ListStockMovementsService>();
 
         return services;
     }
