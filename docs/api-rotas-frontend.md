@@ -823,7 +823,113 @@ Reativa uma unidade inativa. Sem body.
 
 ---
 
-## 7. Funcionários — `/api/employees`
+## 7. Cargos — `/api/positions`
+
+Cadastro de cargos vinculados aos funcionários (ex.: Médico, Enfermeiro, Recepcionista). Todas as rotas exigem **Bearer token**. Os dados são filtrados pela empresa do token.
+
+### GET `/api/positions`
+
+Lista cargos da empresa logada.
+
+**Query params**
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `includeInactive` | `boolean` | `false` | Incluir cargos desativados |
+
+**Exemplo:** `GET /api/positions?includeInactive=false`
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "nome": "Médico",
+      "ativo": true,
+      "criadoEm": "2026-06-25T12:00:00Z",
+      "atualizadoEm": null
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+---
+
+### GET `/api/positions/{id}`
+
+**Response 200** — um `PositionDto` em `data`.
+
+**Response 404**
+
+```json
+{
+  "data": null,
+  "success": false,
+  "message": "Cargo não encontrado."
+}
+```
+
+---
+
+### POST `/api/positions`
+
+**Request**
+
+```json
+{
+  "nome": "Enfermeiro"
+}
+```
+
+| Campo | Obrigatório |
+|-------|-------------|
+| `nome` | Sim |
+
+**Response 201** — `Location: /api/positions/{id}`
+
+**Response 400** — nome duplicado na empresa:
+
+```json
+{
+  "data": null,
+  "success": false,
+  "message": "Já existe um cargo com este nome."
+}
+```
+
+---
+
+### PUT `/api/positions/{id}`
+
+**Request** — mesmo body do POST.
+
+**Response 200** — `PositionDto` atualizado em `data`.  
+**Response 404** — cargo não encontrado.  
+**Response 400** — cargo inativo ou nome duplicado.
+
+---
+
+### DELETE `/api/positions/{id}`
+
+Desativa o cargo (soft delete). Funcionários que já possuem o cargo vinculado mantêm a referência histórica; novos vínculos devem usar apenas cargos ativos.
+
+**Response 200** — `PositionDto` com `ativo: false`.
+
+---
+
+### PATCH `/api/positions/{id}/reactivate`
+
+Reativa um cargo inativo. Sem body.
+
+**Response 200** — `PositionDto` com `ativo: true`.
+
+---
+
+## 8. Funcionários — `/api/employees`
 
 Cadastro de colaboradores com acesso à plataforma. Todas as rotas exigem **Bearer token**.
 
@@ -1126,7 +1232,7 @@ Reativa funcionário inativo, os vínculos inativos na empresa logada e o usuár
 
 ---
 
-## 8. Tipos TypeScript (referência)
+## 9. Tipos TypeScript (referência)
 
 ```typescript
 interface ApiResponse<T> {
@@ -1214,6 +1320,14 @@ interface Company {
   atualizadoEm: string | null;
 }
 
+interface Position {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
 interface EmployeeLink {
   id: string;
   empresaId: string | null;
@@ -1240,7 +1354,7 @@ interface Employee {
 
 ---
 
-## 9. Fluxo sugerido no frontend
+## 10. Fluxo sugerido no frontend
 
 ```text
 1. Registrar clínica  → POST /api/auth/registrar  → guardar token (primeira clínica)
@@ -1253,24 +1367,24 @@ interface Employee {
 8. Upload da logo     → POST /api/companies/current/logo (somente Admin, multipart)
 9. Editar clínica     → PUT  /api/companies/current (somente Admin)
 10. CRUD unidades     → /api/units/*
-11. CRUD funcionários → POST/PUT /api/employees (somente Admin) → e-mail de convite no create
-12. Funcionário abre link → /primeiro-acesso?token=...
+11. CRUD cargos       → /api/positions/* (popular select antes de cadastrar funcionário)
+12. CRUD funcionários → POST/PUT /api/employees (somente Admin) → e-mail de convite no create
+13. Funcionário abre link → /primeiro-acesso?token=...
    a. Digita e-mail   → POST /api/auth/primeiro-acesso/validar-email
    b. Define senha    → POST /api/auth/primeiro-acesso/concluir → guardar token
-13. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
+14. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
                         → orientar a usar o link do e-mail (ou solicitar reenvio ao admin)
 ```
 
 ---
 
-## 10. Rotas ainda não disponíveis
+## 11. Rotas ainda não disponíveis
 
 | Recurso | Status |
 |---------|--------|
 | Reenvio de convite de primeiro acesso | Não implementado |
-| CRUD de cargos | Não implementado |
 | Permissões por módulo | Não implementado |
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Employees + Auth + Primeiro acesso).*
+*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Auth + Primeiro acesso).*

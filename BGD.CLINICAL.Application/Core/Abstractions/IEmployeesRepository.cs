@@ -20,11 +20,6 @@ public interface IEmployeesRepository
         Guid empresaId,
         CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsCargoInEmpresaAsync(
-        Guid cargoId,
-        Guid empresaId,
-        CancellationToken cancellationToken = default);
-
     Task<EmployeeUserAccessInfo?> GetUserAccessInfoByFuncionarioAndEmpresaAsync(
         Guid funcionarioId,
         Guid empresaId,

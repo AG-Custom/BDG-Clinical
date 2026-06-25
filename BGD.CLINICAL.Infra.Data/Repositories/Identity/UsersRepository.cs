@@ -97,6 +97,11 @@ public sealed class UsersRepository : IUsersRepository
 
     public void Update(Usuario usuario)
     {
-        _context.Usuarios.Update(usuario);
+        var entry = _context.Entry(usuario);
+
+        if (entry.State == EntityState.Detached)
+        {
+            _context.Usuarios.Update(usuario);
+        }
     }
 }

@@ -22,6 +22,7 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IEmployeesRepository _employeesRepository;
+    private readonly IPositionsRepository _positionsRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
@@ -29,12 +30,14 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
     public UpdateEmployeesService(
         ICurrentTenantContext tenantContext,
         IEmployeesRepository employeesRepository,
+        IPositionsRepository positionsRepository,
         IUsersRepository usersRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
         _tenantContext = tenantContext;
         _employeesRepository = employeesRepository;
+        _positionsRepository = positionsRepository;
         _usersRepository = usersRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
@@ -69,7 +72,7 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
         }
 
         if (request.CargoId.HasValue
-            && !await _employeesRepository.ExistsCargoInEmpresaAsync(request.CargoId.Value, empresaId, cancellationToken))
+            && !await _positionsRepository.ExistsActiveByIdAndEmpresaIdAsync(request.CargoId.Value, empresaId, cancellationToken))
         {
             return Result<EmployeeDto>.Failure("Cargo não encontrado.");
         }

@@ -24,6 +24,7 @@ public sealed class CreateEmployeesService : ICreateEmployeesService
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IEmployeesRepository _employeesRepository;
+    private readonly IPositionsRepository _positionsRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IRepository<Empresa> _empresaRepository;
     private readonly IProvisionEmployeeUsersService _provisionEmployeeUsersService;
@@ -34,6 +35,7 @@ public sealed class CreateEmployeesService : ICreateEmployeesService
     public CreateEmployeesService(
         ICurrentTenantContext tenantContext,
         IEmployeesRepository employeesRepository,
+        IPositionsRepository positionsRepository,
         IUsersRepository usersRepository,
         IRepository<Empresa> empresaRepository,
         IProvisionEmployeeUsersService provisionEmployeeUsersService,
@@ -43,6 +45,7 @@ public sealed class CreateEmployeesService : ICreateEmployeesService
     {
         _tenantContext = tenantContext;
         _employeesRepository = employeesRepository;
+        _positionsRepository = positionsRepository;
         _usersRepository = usersRepository;
         _empresaRepository = empresaRepository;
         _provisionEmployeeUsersService = provisionEmployeeUsersService;
@@ -70,7 +73,7 @@ public sealed class CreateEmployeesService : ICreateEmployeesService
         }
 
         if (request.CargoId.HasValue
-            && !await _employeesRepository.ExistsCargoInEmpresaAsync(request.CargoId.Value, empresaId, cancellationToken))
+            && !await _positionsRepository.ExistsActiveByIdAndEmpresaIdAsync(request.CargoId.Value, empresaId, cancellationToken))
         {
             return Result<EmployeeDto>.Failure("Cargo não encontrado.");
         }

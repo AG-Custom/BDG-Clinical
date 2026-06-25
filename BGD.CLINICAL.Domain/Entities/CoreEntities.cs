@@ -425,6 +425,13 @@ public sealed class FuncionarioVinculo : Entity
         AtualizadoEm = DateTime.UtcNow;
     }
 
+    public void UpdateAssignment(Guid? cargoId, bool flagAplicador)
+    {
+        CargoId = cargoId;
+        FlagAplicador = flagAplicador;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     private static void ValidateExclusiveLink(Guid? empresaId, Guid? unidadeId)
     {
         var hasEmpresa = empresaId.HasValue && empresaId.Value != Guid.Empty;
@@ -457,4 +464,27 @@ public sealed class Cargo : AggregateRoot
 
     public Empresa Empresa { get; private set; } = null!;
     public ICollection<FuncionarioVinculo> FuncionarioVinculos { get; private set; } = [];
+
+    public void UpdateDetails(string nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do cargo.");
+        }
+
+        Nome = nome.Trim();
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Reactivate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

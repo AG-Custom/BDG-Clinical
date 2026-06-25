@@ -81,16 +81,6 @@ public sealed class EmployeesRepository : IEmployeesRepository
         return count == distinctIds.Count;
     }
 
-    public Task<bool> ExistsCargoInEmpresaAsync(
-        Guid cargoId,
-        Guid empresaId,
-        CancellationToken cancellationToken = default)
-    {
-        return _context.Cargos.AnyAsync(
-            cargo => cargo.Id == cargoId && cargo.EmpresaId == empresaId && cargo.Ativo,
-            cancellationToken);
-    }
-
     public async Task<EmployeeUserAccessInfo?> GetUserAccessInfoByFuncionarioAndEmpresaAsync(
         Guid funcionarioId,
         Guid empresaId,
@@ -118,6 +108,11 @@ public sealed class EmployeesRepository : IEmployeesRepository
 
     public void Update(Funcionario funcionario)
     {
-        _context.Funcionarios.Update(funcionario);
+        var entry = _context.Entry(funcionario);
+
+        if (entry.State == EntityState.Detached)
+        {
+            _context.Funcionarios.Update(funcionario);
+        }
     }
 }
