@@ -2,10 +2,12 @@ using BGD.CLINICAL.Application.Abstractions.Persistence;
 using BGD.CLINICAL.Application.Core.Abstractions;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Patients.Abstractions;
+using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Infra.Data.Context;
 using BGD.CLINICAL.Infra.Data.Repositories;
 using BGD.CLINICAL.Infra.Data.Repositories.Core;
 using BGD.CLINICAL.Infra.Data.Repositories.Identity;
+using BGD.CLINICAL.Infra.Data.Repositories.Inventory;
 using BGD.CLINICAL.Infra.Data.Repositories.Patients;
 using BGD.CLINICAL.Infra.Data.Services.Audits;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +36,9 @@ public static class DependencyInjection
         services.AddScoped<ICompaniesRepository, CompaniesRepository>();
         services.AddScoped<IEmployeesRepository, EmployeesRepository>();
         services.AddScoped<IPatientsRepository, PatientsRepository>();
+        services.AddScoped<IProductTypesRepository, ProductTypesRepository>();
+        services.AddScoped<IMeasurementUnitsRepository, MeasurementUnitsRepository>();
+        services.AddScoped<IProductsRepository, ProductsRepository>();
         services.AddScoped<IAuditLogsService, AuditLogsService>();
 
         return services;

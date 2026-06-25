@@ -9,6 +9,9 @@ using BGD.CLINICAL.Application.Core.Companies;
 using BGD.CLINICAL.Application.Core.Employees;
 using BGD.CLINICAL.Application.Core.Positions;
 using BGD.CLINICAL.Application.Patients.Patients;
+using BGD.CLINICAL.Application.Inventory.ProductTypes;
+using BGD.CLINICAL.Application.Inventory.Products;
+using BGD.CLINICAL.Application.Inventory.MeasurementUnits;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BGD.CLINICAL.Application;
@@ -61,6 +64,27 @@ public static class DependencyInjection
         services.AddScoped<IUpdatePatientsService, UpdatePatientsService>();
         services.AddScoped<IDeactivatePatientsService, DeactivatePatientsService>();
         services.AddScoped<IReactivatePatientsService, ReactivatePatientsService>();
+
+        services.AddScoped<ICreateProductTypesService, CreateProductTypesService>();
+        services.AddScoped<IListProductTypesService, ListProductTypesService>();
+        services.AddScoped<IGetProductTypesService, GetProductTypesService>();
+        services.AddScoped<IUpdateProductTypesService, UpdateProductTypesService>();
+        services.AddScoped<IDeactivateProductTypesService, DeactivateProductTypesService>();
+        services.AddScoped<IReactivateProductTypesService, ReactivateProductTypesService>();
+
+        services.AddScoped<ICreateMeasurementUnitsService, CreateMeasurementUnitsService>();
+        services.AddScoped<IListMeasurementUnitsService, ListMeasurementUnitsService>();
+        services.AddScoped<IGetMeasurementUnitsService, GetMeasurementUnitsService>();
+        services.AddScoped<IUpdateMeasurementUnitsService, UpdateMeasurementUnitsService>();
+        services.AddScoped<IDeactivateMeasurementUnitsService, DeactivateMeasurementUnitsService>();
+        services.AddScoped<IReactivateMeasurementUnitsService, ReactivateMeasurementUnitsService>();
+
+        services.AddScoped<ICreateProductsService, CreateProductsService>();
+        services.AddScoped<IListProductsService, ListProductsService>();
+        services.AddScoped<IGetProductsService, GetProductsService>();
+        services.AddScoped<IUpdateProductsService, UpdateProductsService>();
+        services.AddScoped<IDeactivateProductsService, DeactivateProductsService>();
+        services.AddScoped<IReactivateProductsService, ReactivateProductsService>();
 
         return services;
     }
