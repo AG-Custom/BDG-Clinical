@@ -18,6 +18,7 @@ using BGD.CLINICAL.Application.Inventory.SupplierOrders;
 using BGD.CLINICAL.Application.Inventory.StockBalances;
 using BGD.CLINICAL.Application.Inventory.StockMovements;
 using BGD.CLINICAL.Application.Applications.PatientApplications;
+using BGD.CLINICAL.Application.Applications.Procedures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BGD.CLINICAL.Application;
@@ -123,6 +124,13 @@ public static class DependencyInjection
         services.AddScoped<IGetPatientApplicationsService, GetPatientApplicationsService>();
         services.AddScoped<IUpdatePatientApplicationsService, UpdatePatientApplicationsService>();
         services.AddScoped<ICancelPatientApplicationsService, CancelPatientApplicationsService>();
+
+        services.AddScoped<ICreateProceduresService, CreateProceduresService>();
+        services.AddScoped<IListProceduresService, ListProceduresService>();
+        services.AddScoped<IGetProceduresService, GetProceduresService>();
+        services.AddScoped<IUpdateProceduresService, UpdateProceduresService>();
+        services.AddScoped<IDeactivateProceduresService, DeactivateProceduresService>();
+        services.AddScoped<IReactivateProceduresService, ReactivateProceduresService>();
 
         return services;
     }

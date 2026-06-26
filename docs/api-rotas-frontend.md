@@ -1631,7 +1631,11 @@ Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **
       "unidadeMedidaNome": "Miligrama",
       "unidadeMedidaSigla": "mg",
       "nome": "Tirzepatida",
+      "sku": "TZP-001",
+      "codigoInterno": "MED-001",
+      "codigoBarras": null,
       "estoqueMinimo": 10,
+      "controlaEstoque": true,
       "ativo": true,
       "criadoEm": "2026-06-25T12:00:00Z",
       "atualizadoEm": null
@@ -1659,7 +1663,11 @@ Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **
   "tipoProdutoId": "d4e5f6a7-b8c9-0123-defa-234567890123",
   "unidadeMedidaId": "e5f6a7b8-c9d0-1234-efab-345678901234",
   "nome": "Tirzepatida",
-  "estoqueMinimo": 10
+  "estoqueMinimo": 10,
+  "sku": "TZP-001",
+  "codigoInterno": "MED-001",
+  "codigoBarras": null,
+  "controlaEstoque": true
 }
 ```
 
@@ -1669,6 +1677,10 @@ Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **
 | `unidadeMedidaId` | Sim | Unidade de medida ativa da empresa |
 | `nome` | Sim | Único na empresa |
 | `estoqueMinimo` | Sim | `>= 0` |
+| `sku` | Não | Único na empresa quando informado |
+| `codigoInterno` | Não | Único na empresa quando informado |
+| `codigoBarras` | Não | EAN/GTIN |
+| `controlaEstoque` | Não | Default `true`; `false` não gera movimentação |
 
 **Response 400** — exemplos:
 
@@ -1871,6 +1883,7 @@ Ordenação: `data` decrescente, depois `criadoEm` decrescente.
       "produtoId": "uuid",
       "produtoNome": "Tirzepatida",
       "tipo": "Entrada",
+      "motivo": "Compra",
       "quantidade": 15,
       "data": "2026-06-25T14:00:00Z",
       "origem": "PEDIDO_FORNECEDOR",
@@ -1919,11 +1932,61 @@ Mesmo body do ajuste. Valida saldo disponível na unidade (`estoque insuficiente
 
 **Response 200** — `origem: PERDA_MANUAL`, `tipo: Saida`.
 
+Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`motivo: Compra`), do cancelamento de aplicação (`motivo: Devolucao`) ou de ajuste manual (`motivo: Ajuste`, `tipo: Entrada`). Saídas vêm de `POST /api/patient-applications` (`motivo: Aplicacao`) ou de perda manual (`motivo: Perda`, `tipo: Saida`). O campo `origem` permanece para compatibilidade técnica.
+
 ---
 
-## 18. Aplicações em Pacientes — `/api/patient-applications`
+## 18. Procedimentos — `/api/procedures`
 
-Registro de aplicações realizadas. Ao criar, gera **saída** de estoque; ao cancelar, gera **entrada** de estorno.
+Kits reutilizáveis de insumos (e opcionalmente produto aplicado) para aplicações em pacientes.
+
+### GET `/api/procedures`
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `includeInactive` | `boolean` | `false` | Incluir inativos |
+| `produtoAplicadoId` | `uuid` | — | Filtrar por produto aplicado |
+| `search` | `string` | — | Busca por nome |
+| `limit` | `number` | — | Limite de resultados |
+
+### GET `/api/procedures/{id}`
+
+Detalhe com itens consumidos e nomes de produtos.
+
+### POST `/api/procedures`
+
+```json
+{
+  "nome": "Aplicação Tirzepatida",
+  "produtoAplicadoId": "uuid",
+  "observacoes": "Kit padrão",
+  "itens": [
+    { "produtoId": "uuid-luva", "quantidade": 2 },
+    { "produtoId": "uuid-seringa", "quantidade": 1 }
+  ]
+}
+```
+
+| Campo | Obrigatório | Regra |
+|-------|-------------|-------|
+| `nome` | Sim | Único na empresa |
+| `produtoAplicadoId` | Não | Produto ativo; **não** pode estar em `itens` |
+| `itens` | Condicional | Pelo menos um de `produtoAplicadoId` ou `itens` |
+| `observacoes` | Não | Máx. 2000 caracteres |
+
+### PUT `/api/procedures/{id}`
+
+Mesmo body do POST.
+
+### PATCH `/api/procedures/{id}/deactivate` | `/reactivate`
+
+Desativa ou reativa o procedimento.
+
+---
+
+## 19. Aplicações em Pacientes — `/api/patient-applications`
+
+Registro de aplicações realizadas. **Sempre** informe `procedimentoId` — o produto aplicado é resolvido internamente a partir do procedimento. Ao criar, gera saída(s) de estoque; ao cancelar, estorna todas.
 
 ### GET `/api/patient-applications`
 
@@ -1931,7 +1994,8 @@ Registro de aplicações realizadas. Ao criar, gera **saída** de estoque; ao ca
 |-------|------|---------|-----------|
 | `pacienteId` | `uuid` | — | Filtrar por paciente |
 | `unidadeId` | `uuid` | — | Filtrar por unidade |
-| `produtoId` | `uuid` | — | Filtrar por produto |
+| `produtoId` | `uuid` | — | Filtrar por produto aplicado |
+| `procedimentoId` | `uuid` | — | Filtrar por procedimento |
 | `aplicadorId` | `uuid` | — | Filtrar por funcionário aplicador |
 | `cancelada` | `boolean` | — | Filtrar por status de cancelamento |
 | `dataInicio` | `datetime` | — | Início do período (inclusivo) |
@@ -1942,37 +2006,42 @@ Registro de aplicações realizadas. Ao criar, gera **saída** de estoque; ao ca
 
 Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unidade, sintomas).
 
-### POST `/api/patient-applications`
+### POST `/api/patient-applications` — procedimento com medicamento
 
 ```json
 {
   "pacienteId": "uuid",
-  "produtoId": "uuid",
+  "procedimentoId": "uuid",
   "aplicadorId": "uuid",
   "unidadeId": "uuid",
-  "quantidadeUtilizada": 1.5,
-  "dataAplicacao": "2026-06-25T14:00:00Z",
-  "peso": 72.5,
-  "observacao": "Paciente relatou leve náusea",
-  "sintomaIds": ["uuid"],
-  "compraPacienteId": null
+  "quantidadeUtilizada": 2.5,
+  "dataAplicacao": "2026-06-25T14:00:00Z"
+}
+```
+
+### POST `/api/patient-applications` — procedimento só insumos (ex.: Curativo)
+
+```json
+{
+  "pacienteId": "uuid",
+  "procedimentoId": "uuid",
+  "aplicadorId": "uuid",
+  "unidadeId": "uuid",
+  "dataAplicacao": "2026-06-25T14:00:00Z"
 }
 ```
 
 | Campo | Obrigatório | Regra |
 |-------|-------------|-------|
 | `pacienteId` | Sim | Paciente ativo no tenant |
-| `produtoId` | Sim | Produto ativo |
-| `aplicadorId` | Sim | Funcionário com `flagAplicador` ativo na unidade/empresa |
+| `procedimentoId` | Sim | Procedimento ativo |
+| `quantidadeUtilizada` | Se o procedimento tem produto aplicado | &gt; 0; omitir em procedimento só com insumos |
+| `aplicadorId` | Sim | Funcionário aplicador ativo na unidade |
 | `unidadeId` | Sim | Unidade ativa |
-| `quantidadeUtilizada` | Sim | &gt; 0; saldo de estoque suficiente |
-| `dataAplicacao` | Sim | Data/hora da aplicação |
-| `peso` | Não | &gt; 0 quando informado |
-| `observacao` | Não | Máx. 2000 caracteres |
-| `sintomaIds` | Não | IDs de sintomas ativos da empresa |
-| `compraPacienteId` | Não | Se informado, deve pertencer ao paciente |
+| `dataAplicacao` | Sim | Data/hora |
+| `compraPacienteId` | Não | Só quando o procedimento tem produto aplicado |
 
-**Response 201** — gera `MovimentacaoEstoque` tipo `Saida` (`origem: APLICACAO_PACIENTE`).
+**Response 201** — inclui `procedimentoId`, `procedimentoNome`, `itensConsumidos[]`. Gera N saídas (`motivo: Aplicacao`) para produtos com `controlaEstoque = true`.
 
 ### PUT `/api/patient-applications/{id}`
 
@@ -1989,11 +2058,11 @@ Permite editar apenas `peso`, `observacao`, `dataAplicacao` e `sintomaIds`. Bloq
 
 ### POST `/api/patient-applications/{id}/cancel`
 
-Cancela aplicação realizada e gera `MovimentacaoEstoque` tipo `Entrada` (`origem: APLICACAO_PACIENTE_CANCELAMENTO`).
+Cancela aplicação realizada e estorna **todas** as saídas vinculadas (`motivo: Devolucao`).
 
 ---
 
-## 19. Tipos TypeScript (referência)
+## 20. Tipos TypeScript (referência)
 
 ```typescript
 interface ApiResponse<T> {
@@ -2259,35 +2328,45 @@ interface PatientApplicationSymptom {
   nome: string;
 }
 
+interface PatientApplicationConsumedItem {
+  produtoId: string;
+  produtoNome: string;
+  quantidade: number;
+  controlaEstoque: boolean;
+}
+
 interface PatientApplication {
   id: string;
   pacienteId: string;
   pacienteNome: string;
   compraPacienteId: string | null;
-  produtoId: string;
-  produtoNome: string;
+  produtoId: string | null;
+  produtoNome: string | null;
+  procedimentoId: string | null;
+  procedimentoNome: string | null;
   aplicadorId: string;
   aplicadorNome: string;
   unidadeId: string;
   unidadeNome: string;
   dataAplicacao: string;
-  quantidadeUtilizada: number;
+  quantidadeUtilizada: number | null;
   peso: number | null;
   observacao: string | null;
   realizado: boolean;
   cancelada: boolean;
   sintomas: PatientApplicationSymptom[];
+  itensConsumidos: PatientApplicationConsumedItem[];
   criadoEm: string;
   atualizadoEm: string | null;
 }
 
 interface CreatePatientApplicationRequest {
   pacienteId: string;
-  produtoId: string;
+  procedimentoId: string;
   aplicadorId: string;
   unidadeId: string;
-  quantidadeUtilizada: number;
   dataAplicacao: string;
+  quantidadeUtilizada?: number | null;
   peso?: number | null;
   observacao?: string | null;
   sintomaIds?: string[] | null;
@@ -2304,7 +2383,7 @@ interface UpdatePatientApplicationRequest {
 
 ---
 
-## 20. Fluxo sugerido no frontend
+## 21. Fluxo sugerido no frontend
 
 ```text
 1. Registrar clínica  → POST /api/auth/registrar  → guardar token (primeira clínica)
@@ -2328,7 +2407,8 @@ interface UpdatePatientApplicationRequest {
 19. CRUD pedidos      → /api/supplier-orders/* (PATCH receive para entrada no estoque)
 20. Saldo de estoque  → GET /api/stock-balances (filtro abaixoDoMinimo para alertas)
 21. Histórico estoque → GET /api/stock-movements
-22. Aplicações paciente → /api/patient-applications/* (POST gera saída; cancel estorna)
+22. CRUD procedimentos → /api/procedures/*
+23. Aplicações paciente → /api/patient-applications/* (sempre via procedimentoId)
 23. Funcionário abre link → /primeiro-acesso?token=...
    a. Digita e-mail   → POST /api/auth/primeiro-acesso/validar-email
    b. Define senha    → POST /api/auth/primeiro-acesso/concluir → guardar token
@@ -2338,7 +2418,7 @@ interface UpdatePatientApplicationRequest {
 
 ---
 
-## 21. Rotas ainda não disponíveis
+## 22. Rotas ainda não disponíveis
 
 | Recurso | Status |
 |---------|--------|
@@ -2347,4 +2427,4 @@ interface UpdatePatientApplicationRequest {
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + Symptoms + Inventory + Suppliers + SupplierOrders + StockBalances + StockMovements + PatientApplications + Auth + Primeiro acesso).*
+*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (… + Procedures simplificado + PatientApplications somente via procedimento).*

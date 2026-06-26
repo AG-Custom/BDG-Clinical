@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Applications.Dtos;
 using BGD.CLINICAL.Domain.Entities;
+using BGD.CLINICAL.Domain.Enums;
 
 namespace BGD.CLINICAL.Application.Applications.PatientApplications;
 
@@ -13,7 +14,9 @@ internal static class PatientApplicationsMapper
             aplicacao.Paciente?.Nome ?? string.Empty,
             aplicacao.CompraPacienteId,
             aplicacao.ProdutoId,
-            aplicacao.Produto?.Nome ?? string.Empty,
+            aplicacao.Produto?.Nome,
+            aplicacao.ProcedimentoId,
+            aplicacao.Procedimento?.Nome,
             aplicacao.FuncionarioId,
             aplicacao.Funcionario?.Nome ?? string.Empty,
             aplicacao.UnidadeId,
@@ -25,6 +28,7 @@ internal static class PatientApplicationsMapper
             aplicacao.Realizado,
             aplicacao.Cancelada,
             MapSintomas(aplicacao.Sintomas),
+            MapItensConsumidos(aplicacao),
             aplicacao.CriadoEm,
             aplicacao.AtualizadoEm);
     }
@@ -41,6 +45,19 @@ internal static class PatientApplicationsMapper
             .Select(aplicacaoSintoma => new PatientApplicationSymptomDto(
                 aplicacaoSintoma.SintomaId,
                 aplicacaoSintoma.Sintoma?.Nome ?? string.Empty))
+            .ToList();
+    }
+
+    private static IReadOnlyList<PatientApplicationConsumedItemDto> MapItensConsumidos(
+        AplicacaoPaciente aplicacao)
+    {
+        return aplicacao.MovimentacoesEstoque
+            .Where(movimentacao => movimentacao.Tipo == TipoMovimentacaoEstoque.Saida)
+            .Select(movimentacao => new PatientApplicationConsumedItemDto(
+                movimentacao.ProdutoId,
+                movimentacao.Produto?.Nome ?? string.Empty,
+                movimentacao.Quantidade,
+                movimentacao.Produto?.ControlaEstoque ?? true))
             .ToList();
     }
 }

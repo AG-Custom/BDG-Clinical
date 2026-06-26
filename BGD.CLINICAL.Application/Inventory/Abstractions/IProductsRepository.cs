@@ -36,6 +36,23 @@ public interface IProductsRepository
         Guid empresaId,
         CancellationToken cancellationToken = default);
 
+    Task<bool> ExistsBySkuAsync(
+        Guid empresaId,
+        string sku,
+        Guid? excludeId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsByCodigoInternoAsync(
+        Guid empresaId,
+        string codigoInterno,
+        Guid? excludeId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Produto>> GetActiveByIdsAndEmpresaIdAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(Produto produto, CancellationToken cancellationToken = default);
 
     void Update(Produto produto);

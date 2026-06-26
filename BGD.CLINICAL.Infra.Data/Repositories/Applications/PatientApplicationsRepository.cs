@@ -22,11 +22,13 @@ public sealed class PatientApplicationsRepository : IPatientApplicationsReposito
         return _context.AplicacoesPaciente
             .Include(aplicacao => aplicacao.Paciente)
             .Include(aplicacao => aplicacao.Produto)
+            .Include(aplicacao => aplicacao.Procedimento)
             .Include(aplicacao => aplicacao.Funcionario)
             .Include(aplicacao => aplicacao.Unidade)
             .Include(aplicacao => aplicacao.Sintomas)
                 .ThenInclude(aplicacaoSintoma => aplicacaoSintoma.Sintoma)
             .Include(aplicacao => aplicacao.MovimentacoesEstoque)
+                .ThenInclude(movimentacao => movimentacao.Produto)
             .FirstOrDefaultAsync(
                 aplicacao => aplicacao.Id == id && aplicacao.EmpresaId == empresaId,
                 cancellationToken);
@@ -37,6 +39,7 @@ public sealed class PatientApplicationsRepository : IPatientApplicationsReposito
         Guid? pacienteId,
         Guid? unidadeId,
         Guid? produtoId,
+        Guid? procedimentoId,
         Guid? aplicadorId,
         bool? cancelada,
         DateTime? dataInicio,
@@ -48,6 +51,7 @@ public sealed class PatientApplicationsRepository : IPatientApplicationsReposito
             .AsNoTracking()
             .Include(aplicacao => aplicacao.Paciente)
             .Include(aplicacao => aplicacao.Produto)
+            .Include(aplicacao => aplicacao.Procedimento)
             .Include(aplicacao => aplicacao.Funcionario)
             .Include(aplicacao => aplicacao.Unidade)
             .Include(aplicacao => aplicacao.Sintomas)
@@ -67,6 +71,11 @@ public sealed class PatientApplicationsRepository : IPatientApplicationsReposito
         if (produtoId.HasValue)
         {
             query = query.Where(aplicacao => aplicacao.ProdutoId == produtoId.Value);
+        }
+
+        if (procedimentoId.HasValue)
+        {
+            query = query.Where(aplicacao => aplicacao.ProcedimentoId == procedimentoId.Value);
         }
 
         if (aplicadorId.HasValue)

@@ -62,17 +62,27 @@ public sealed class CancelPatientApplicationsService : ICancelPatientApplication
 
             aplicacao.Cancel();
 
-            var movimentacao = MovimentacaoEstoque.CreateEntradaFromCancelamentoAplicacao(
-                empresaId,
-                aplicacao.UnidadeId,
-                aplicacao.ProdutoId,
-                aplicacao.Id,
-                aplicacao.FuncionarioId,
-                aplicacao.QuantidadeUtilizada,
-                dataCancelamento);
+            var saidas = aplicacao.MovimentacoesEstoque
+                .Where(movimentacao => movimentacao.Tipo == TipoMovimentacaoEstoque.Saida)
+                .ToList();
+
+            var movimentacoesEstorno = saidas
+                .Select(movimentacao => MovimentacaoEstoque.CreateEntradaFromCancelamentoAplicacao(
+                    empresaId,
+                    aplicacao.UnidadeId,
+                    movimentacao.ProdutoId,
+                    aplicacao.Id,
+                    aplicacao.FuncionarioId,
+                    movimentacao.Quantidade,
+                    dataCancelamento))
+                .ToList();
 
             _patientApplicationsRepository.Update(aplicacao);
-            await _stockMovementsRepository.AddRangeAsync([movimentacao], cancellationToken);
+            if (movimentacoesEstorno.Count > 0)
+            {
+                await _stockMovementsRepository.AddRangeAsync(movimentacoesEstorno, cancellationToken);
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var persisted = await _patientApplicationsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
@@ -90,14 +100,17 @@ public sealed class CancelPatientApplicationsService : ICancelPatientApplication
                 dadosNovos: PatientApplicationsAuditSerializer.Serialize(persisted ?? aplicacao),
                 cancellationToken: cancellationToken);
 
-            await _auditLogsService.RegisterEntityChangeAsync(
-                empresaId,
-                _tenantContext.UsuarioId,
-                nameof(MovimentacaoEstoque),
-                movimentacao.Id,
-                AcaoAuditoria.GerarMovimentacao,
-                dadosNovos: PatientApplicationsAuditSerializer.Serialize(movimentacao),
-                cancellationToken: cancellationToken);
+            foreach (var movimentacao in movimentacoesEstorno)
+            {
+                await _auditLogsService.RegisterEntityChangeAsync(
+                    empresaId,
+                    _tenantContext.UsuarioId,
+                    nameof(MovimentacaoEstoque),
+                    movimentacao.Id,
+                    AcaoAuditoria.GerarMovimentacao,
+                    dadosNovos: PatientApplicationsAuditSerializer.Serialize(movimentacao),
+                    cancellationToken: cancellationToken);
+            }
 
             return Result<PatientApplicationDto>.Success(
                 PatientApplicationsMapper.Map(persisted ?? aplicacao));

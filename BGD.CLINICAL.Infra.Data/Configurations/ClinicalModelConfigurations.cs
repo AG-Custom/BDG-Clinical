@@ -311,7 +311,11 @@ internal sealed class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.ToTable("produto");
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Nome).HasMaxLength(160).IsRequired();
+        builder.Property(entity => entity.Sku).HasMaxLength(50);
+        builder.Property(entity => entity.CodigoInterno).HasMaxLength(50);
+        builder.Property(entity => entity.CodigoBarras).HasMaxLength(50);
         builder.Property(entity => entity.EstoqueMinimo).HasPrecision(18, 4);
+        builder.Property(entity => entity.ControlaEstoque).HasDefaultValue(true);
         builder.HasOne(entity => entity.Empresa)
             .WithMany()
             .HasForeignKey(entity => entity.EmpresaId)
@@ -325,6 +329,12 @@ internal sealed class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
             .HasForeignKey(entity => entity.UnidadeMedidaId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(entity => new { entity.EmpresaId, entity.Nome }).IsUnique();
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.Sku })
+            .IsUnique()
+            .HasFilter("[sku] IS NOT NULL");
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.CodigoInterno })
+            .IsUnique()
+            .HasFilter("[codigo_interno] IS NOT NULL");
     }
 }
 
@@ -395,6 +405,7 @@ internal sealed class MovimentacaoEstoqueConfiguration : IEntityTypeConfiguratio
         builder.ToTable("movimentacao_estoque");
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Tipo).HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.Property(entity => entity.Motivo).HasConversion<string>().HasMaxLength(40).IsRequired();
         builder.Property(entity => entity.Quantidade).HasPrecision(18, 4);
         builder.Property(entity => entity.Origem).HasMaxLength(120).IsRequired();
         builder.Property(entity => entity.Observacao).HasMaxLength(2000);
@@ -421,7 +432,8 @@ internal sealed class AplicacaoPacienteConfiguration : IEntityTypeConfiguration<
         builder.HasOne(entity => entity.Paciente).WithMany(entity => entity.Aplicacoes).HasForeignKey(entity => entity.PacienteId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.CompraPaciente).WithMany(entity => entity.Aplicacoes).HasForeignKey(entity => entity.CompraPacienteId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
         builder.HasIndex(entity => new { entity.EmpresaId, entity.Cancelada });
-        builder.HasOne(entity => entity.Produto).WithMany().HasForeignKey(entity => entity.ProdutoId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Produto).WithMany().HasForeignKey(entity => entity.ProdutoId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+        builder.HasOne(entity => entity.Procedimento).WithMany().HasForeignKey(entity => entity.ProcedimentoId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
         builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Agendamento)
@@ -429,6 +441,46 @@ internal sealed class AplicacaoPacienteConfiguration : IEntityTypeConfiguration<
             .HasForeignKey<AplicacaoPaciente>(entity => entity.AgendamentoId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(entity => new { entity.EmpresaId, entity.PacienteId, entity.DataAplicacao });
+    }
+}
+
+internal sealed class ProcedimentoConfiguration : IEntityTypeConfiguration<Procedimento>
+{
+    public void Configure(EntityTypeBuilder<Procedimento> builder)
+    {
+        builder.ToTable("procedimento");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Nome).HasMaxLength(200).IsRequired();
+        builder.Property(entity => entity.Observacoes).HasMaxLength(2000);
+        builder.HasOne(entity => entity.Empresa)
+            .WithMany()
+            .HasForeignKey(entity => entity.EmpresaId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.ProdutoAplicado)
+            .WithMany()
+            .HasForeignKey(entity => entity.ProdutoAplicadoId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.Nome }).IsUnique();
+    }
+}
+
+internal sealed class ItemProcedimentoConfiguration : IEntityTypeConfiguration<ItemProcedimento>
+{
+    public void Configure(EntityTypeBuilder<ItemProcedimento> builder)
+    {
+        builder.ToTable("item_procedimento");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Quantidade).HasPrecision(18, 4);
+        builder.HasOne(entity => entity.Procedimento)
+            .WithMany(entity => entity.Itens)
+            .HasForeignKey(entity => entity.ProcedimentoId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(entity => entity.Produto)
+            .WithMany()
+            .HasForeignKey(entity => entity.ProdutoId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(entity => new { entity.ProcedimentoId, entity.ProdutoId }).IsUnique();
     }
 }
 

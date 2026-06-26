@@ -14,6 +14,7 @@ public interface IPatientApplicationsRepository
         Guid? pacienteId,
         Guid? unidadeId,
         Guid? produtoId,
+        Guid? procedimentoId,
         Guid? aplicadorId,
         bool? cancelada,
         DateTime? dataInicio,

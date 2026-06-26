@@ -13,11 +13,12 @@ public sealed class AplicacaoPaciente : AggregateRoot
         Guid empresaId,
         Guid pacienteId,
         Guid? compraPacienteId,
-        Guid produtoId,
+        Guid? produtoId,
+        Guid? procedimentoId,
         Guid funcionarioId,
         Guid unidadeId,
         DateTime dataAplicacao,
-        decimal quantidadeUtilizada,
+        decimal? quantidadeUtilizada,
         decimal? peso,
         string? observacao,
         Guid? agendamentoId)
@@ -27,6 +28,7 @@ public sealed class AplicacaoPaciente : AggregateRoot
         PacienteId = pacienteId;
         CompraPacienteId = compraPacienteId;
         ProdutoId = produtoId;
+        ProcedimentoId = procedimentoId;
         FuncionarioId = funcionarioId;
         UnidadeId = unidadeId;
         AgendamentoId = agendamentoId;
@@ -41,12 +43,13 @@ public sealed class AplicacaoPaciente : AggregateRoot
     public Guid EmpresaId { get; private set; }
     public Guid PacienteId { get; private set; }
     public Guid? CompraPacienteId { get; private set; }
-    public Guid ProdutoId { get; private set; }
+    public Guid? ProdutoId { get; private set; }
+    public Guid? ProcedimentoId { get; private set; }
     public Guid FuncionarioId { get; private set; }
     public Guid UnidadeId { get; private set; }
     public Guid? AgendamentoId { get; private set; }
     public DateTime DataAplicacao { get; private set; }
-    public decimal QuantidadeUtilizada { get; private set; }
+    public decimal? QuantidadeUtilizada { get; private set; }
     public decimal? Peso { get; private set; }
     public string? Observacao { get; private set; }
     public bool Realizado { get; private set; }
@@ -55,7 +58,8 @@ public sealed class AplicacaoPaciente : AggregateRoot
     public Empresa Empresa { get; private set; } = null!;
     public Paciente Paciente { get; private set; } = null!;
     public CompraPaciente? CompraPaciente { get; private set; }
-    public Produto Produto { get; private set; } = null!;
+    public Produto? Produto { get; private set; }
+    public Procedimento? Procedimento { get; private set; }
     public Funcionario Funcionario { get; private set; } = null!;
     public Unidade Unidade { get; private set; } = null!;
     public Agendamento? Agendamento { get; private set; }
@@ -66,11 +70,12 @@ public sealed class AplicacaoPaciente : AggregateRoot
         Guid empresaId,
         Guid pacienteId,
         Guid? compraPacienteId,
-        Guid produtoId,
+        Guid? produtoId,
+        Guid? procedimentoId,
         Guid funcionarioId,
         Guid unidadeId,
         DateTime dataAplicacao,
-        decimal quantidadeUtilizada,
+        decimal? quantidadeUtilizada,
         decimal? peso = null,
         string? observacao = null,
         Guid? agendamentoId = null)
@@ -85,9 +90,19 @@ public sealed class AplicacaoPaciente : AggregateRoot
             throw new DomainException("Informe o paciente da aplicação.");
         }
 
-        if (produtoId == Guid.Empty)
+        if (!procedimentoId.HasValue || procedimentoId.Value == Guid.Empty)
         {
-            throw new DomainException("Informe o produto da aplicação.");
+            throw new DomainException("Informe o procedimento da aplicação.");
+        }
+
+        if (produtoId.HasValue && produtoId.Value != Guid.Empty && quantidadeUtilizada is null or <= 0)
+        {
+            throw new DomainException("A quantidade utilizada deve ser maior que zero.");
+        }
+
+        if (!produtoId.HasValue && quantidadeUtilizada.HasValue)
+        {
+            throw new DomainException("Quantidade utilizada não se aplica a procedimentos sem produto aplicado.");
         }
 
         if (funcionarioId == Guid.Empty)
@@ -98,11 +113,6 @@ public sealed class AplicacaoPaciente : AggregateRoot
         if (unidadeId == Guid.Empty)
         {
             throw new DomainException("Informe a unidade da aplicação.");
-        }
-
-        if (quantidadeUtilizada <= 0)
-        {
-            throw new DomainException("A quantidade utilizada deve ser maior que zero.");
         }
 
         if (peso.HasValue && peso.Value <= 0)
@@ -120,6 +130,7 @@ public sealed class AplicacaoPaciente : AggregateRoot
             pacienteId,
             compraPacienteId,
             produtoId,
+            procedimentoId,
             funcionarioId,
             unidadeId,
             dataAplicacao,

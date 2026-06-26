@@ -10,10 +10,11 @@ internal static class StockMovementsMapper
         return new StockMovementDto(
             movimentacao.Id,
             movimentacao.UnidadeId,
-            movimentacao.Unidade.Nome,
+            movimentacao.Unidade?.Nome ?? string.Empty,
             movimentacao.ProdutoId,
-            movimentacao.Produto.Nome,
+            movimentacao.Produto?.Nome ?? string.Empty,
             movimentacao.Tipo.ToString(),
+            movimentacao.Motivo.ToString(),
             movimentacao.Quantidade,
             movimentacao.Data,
             movimentacao.Origem,

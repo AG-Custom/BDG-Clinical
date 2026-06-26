@@ -159,7 +159,11 @@ public sealed class Produto : AggregateRoot
         Guid tipoProdutoId,
         Guid unidadeMedidaId,
         string nome,
-        decimal estoqueMinimo)
+        decimal estoqueMinimo,
+        string? sku,
+        string? codigoInterno,
+        string? codigoBarras,
+        bool controlaEstoque)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -167,6 +171,10 @@ public sealed class Produto : AggregateRoot
         UnidadeMedidaId = unidadeMedidaId;
         Nome = nome;
         EstoqueMinimo = estoqueMinimo;
+        Sku = sku;
+        CodigoInterno = codigoInterno;
+        CodigoBarras = codigoBarras;
+        ControlaEstoque = controlaEstoque;
         Ativo = true;
     }
 
@@ -174,7 +182,11 @@ public sealed class Produto : AggregateRoot
     public Guid TipoProdutoId { get; private set; }
     public Guid UnidadeMedidaId { get; private set; }
     public string Nome { get; private set; } = string.Empty;
+    public string? Sku { get; private set; }
+    public string? CodigoInterno { get; private set; }
+    public string? CodigoBarras { get; private set; }
     public decimal EstoqueMinimo { get; private set; }
+    public bool ControlaEstoque { get; private set; }
     public bool Ativo { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
@@ -186,7 +198,11 @@ public sealed class Produto : AggregateRoot
         Guid tipoProdutoId,
         Guid unidadeMedidaId,
         string nome,
-        decimal estoqueMinimo)
+        decimal estoqueMinimo,
+        string? sku = null,
+        string? codigoInterno = null,
+        string? codigoBarras = null,
+        bool controlaEstoque = true)
     {
         if (empresaId == Guid.Empty)
         {
@@ -213,19 +229,29 @@ public sealed class Produto : AggregateRoot
             throw new DomainException("O estoque mínimo não pode ser negativo.");
         }
 
+        ValidateOptionalCodes(sku, codigoInterno, codigoBarras);
+
         return new Produto(
             empresaId,
             tipoProdutoId,
             unidadeMedidaId,
             nome.Trim(),
-            estoqueMinimo);
+            estoqueMinimo,
+            NormalizeOptionalCode(sku),
+            NormalizeOptionalCode(codigoInterno),
+            NormalizeOptionalCode(codigoBarras),
+            controlaEstoque);
     }
 
     public void UpdateDetails(
         Guid tipoProdutoId,
         Guid unidadeMedidaId,
         string nome,
-        decimal estoqueMinimo)
+        decimal estoqueMinimo,
+        string? sku,
+        string? codigoInterno,
+        string? codigoBarras,
+        bool controlaEstoque)
     {
         if (tipoProdutoId == Guid.Empty)
         {
@@ -247,11 +273,40 @@ public sealed class Produto : AggregateRoot
             throw new DomainException("O estoque mínimo não pode ser negativo.");
         }
 
+        ValidateOptionalCodes(sku, codigoInterno, codigoBarras);
+
         TipoProdutoId = tipoProdutoId;
         UnidadeMedidaId = unidadeMedidaId;
         Nome = nome.Trim();
         EstoqueMinimo = estoqueMinimo;
+        Sku = NormalizeOptionalCode(sku);
+        CodigoInterno = NormalizeOptionalCode(codigoInterno);
+        CodigoBarras = NormalizeOptionalCode(codigoBarras);
+        ControlaEstoque = controlaEstoque;
         AtualizadoEm = DateTime.UtcNow;
+    }
+
+    private static void ValidateOptionalCodes(string? sku, string? codigoInterno, string? codigoBarras)
+    {
+        if (!string.IsNullOrWhiteSpace(sku) && sku.Length > 50)
+        {
+            throw new DomainException("O SKU deve ter no máximo 50 caracteres.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(codigoInterno) && codigoInterno.Length > 50)
+        {
+            throw new DomainException("O código interno deve ter no máximo 50 caracteres.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(codigoBarras) && codigoBarras.Length > 50)
+        {
+            throw new DomainException("O código de barras deve ter no máximo 50 caracteres.");
+        }
+    }
+
+    private static string? NormalizeOptionalCode(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     public void Deactivate()
@@ -719,6 +774,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         Guid unidadeId,
         Guid produtoId,
         TipoMovimentacaoEstoque tipo,
+        MotivoMovimentacaoEstoque motivo,
         decimal quantidade,
         DateTime data,
         string origem,
@@ -729,6 +785,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         UnidadeId = unidadeId;
         ProdutoId = produtoId;
         Tipo = tipo;
+        Motivo = motivo;
         Quantidade = quantidade;
         Data = data;
         Origem = origem;
@@ -740,6 +797,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         Guid unidadeId,
         Guid produtoId,
         TipoMovimentacaoEstoque tipo,
+        MotivoMovimentacaoEstoque motivo,
         decimal quantidade,
         DateTime data,
         string origem,
@@ -751,6 +809,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         UnidadeId = unidadeId;
         ProdutoId = produtoId;
         Tipo = tipo;
+        Motivo = motivo;
         Quantidade = quantidade;
         Data = data;
         Origem = origem;
@@ -762,6 +821,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
     public Guid UnidadeId { get; private set; }
     public Guid ProdutoId { get; private set; }
     public TipoMovimentacaoEstoque Tipo { get; private set; }
+    public MotivoMovimentacaoEstoque Motivo { get; private set; }
     public decimal Quantidade { get; private set; }
     public DateTime Data { get; private set; }
     public string Origem { get; private set; } = string.Empty;
@@ -815,6 +875,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             unidadeId,
             produtoId,
             TipoMovimentacaoEstoque.Entrada,
+            MotivoMovimentacaoEstoque.Compra,
             quantidade,
             data,
             "PEDIDO_FORNECEDOR",
@@ -865,6 +926,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             unidadeId,
             produtoId,
             TipoMovimentacaoEstoque.Saida,
+            MotivoMovimentacaoEstoque.Aplicacao,
             quantidade,
             data,
             "APLICACAO_PACIENTE",
@@ -916,6 +978,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             unidadeId,
             produtoId,
             TipoMovimentacaoEstoque.Entrada,
+            MotivoMovimentacaoEstoque.Devolucao,
             quantidade,
             data,
             "APLICACAO_PACIENTE_CANCELAMENTO",
@@ -937,6 +1000,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             unidadeId,
             produtoId,
             TipoMovimentacaoEstoque.Entrada,
+            MotivoMovimentacaoEstoque.Ajuste,
             quantidade,
             data,
             "AJUSTE_MANUAL",
@@ -958,6 +1022,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             unidadeId,
             produtoId,
             TipoMovimentacaoEstoque.Saida,
+            MotivoMovimentacaoEstoque.Perda,
             quantidade,
             data,
             "PERDA_MANUAL",
@@ -970,6 +1035,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         Guid unidadeId,
         Guid produtoId,
         TipoMovimentacaoEstoque tipo,
+        MotivoMovimentacaoEstoque motivo,
         decimal quantidade,
         DateTime data,
         string origem,
@@ -1006,6 +1072,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             unidadeId,
             produtoId,
             tipo,
+            motivo,
             quantidade,
             data,
             origem,
@@ -1018,6 +1085,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         Guid unidadeId,
         Guid produtoId,
         TipoMovimentacaoEstoque tipo,
+        MotivoMovimentacaoEstoque motivo,
         decimal quantidade,
         DateTime data,
         string origem,
@@ -1029,6 +1097,7 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         UnidadeId = unidadeId;
         ProdutoId = produtoId;
         Tipo = tipo;
+        Motivo = motivo;
         Quantidade = quantidade;
         Data = data;
         Origem = origem;

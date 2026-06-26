@@ -19,7 +19,11 @@ internal static class ProductsAuditSerializer
             produto.TipoProdutoId,
             produto.UnidadeMedidaId,
             produto.Nome,
+            produto.Sku,
+            produto.CodigoInterno,
+            produto.CodigoBarras,
             produto.EstoqueMinimo,
+            produto.ControlaEstoque,
             produto.Ativo,
         }, Options);
     }

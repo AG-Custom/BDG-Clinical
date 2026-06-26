@@ -48,6 +48,10 @@ public sealed class CreateProductsService : ICreateProductsService
             request.UnidadeMedidaId,
             request.Nome,
             request.EstoqueMinimo,
+            request.Sku,
+            request.CodigoInterno,
+            request.CodigoBarras,
+            request.ControlaEstoque,
             excludeProductId: null,
             _productsRepository,
             cancellationToken);
@@ -65,7 +69,11 @@ public sealed class CreateProductsService : ICreateProductsService
                 data.TipoProdutoId,
                 data.UnidadeMedidaId,
                 data.Nome,
-                data.EstoqueMinimo);
+                data.EstoqueMinimo,
+                data.Sku,
+                data.CodigoInterno,
+                data.CodigoBarras,
+                data.ControlaEstoque);
 
             await _productsRepository.AddAsync(produto, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

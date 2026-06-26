@@ -99,6 +99,56 @@ public sealed class ProductsRepository : IProductsRepository
             cancellationToken);
     }
 
+    public Task<bool> ExistsBySkuAsync(
+        Guid empresaId,
+        string sku,
+        Guid? excludeId,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedSku = sku.Trim().ToUpperInvariant();
+
+        return _context.Produtos.AnyAsync(
+            produto => produto.EmpresaId == empresaId
+                && produto.Sku != null
+                && produto.Sku.ToUpper() == normalizedSku
+                && (!excludeId.HasValue || produto.Id != excludeId.Value),
+            cancellationToken);
+    }
+
+    public Task<bool> ExistsByCodigoInternoAsync(
+        Guid empresaId,
+        string codigoInterno,
+        Guid? excludeId,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedCodigo = codigoInterno.Trim().ToUpperInvariant();
+
+        return _context.Produtos.AnyAsync(
+            produto => produto.EmpresaId == empresaId
+                && produto.CodigoInterno != null
+                && produto.CodigoInterno.ToUpper() == normalizedCodigo
+                && (!excludeId.HasValue || produto.Id != excludeId.Value),
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Produto>> GetActiveByIdsAndEmpresaIdAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await _context.Produtos
+            .AsNoTracking()
+            .Where(produto => produto.EmpresaId == empresaId
+                && produto.Ativo
+                && ids.Contains(produto.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Produto produto, CancellationToken cancellationToken = default)
     {
         await _context.Produtos.AddAsync(produto, cancellationToken);

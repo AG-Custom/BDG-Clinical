@@ -25,6 +25,10 @@ internal static class ProductRequestValidator
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        string? sku,
+        string? codigoInterno,
+        string? codigoBarras,
+        bool controlaEstoque,
         Guid? excludeProductId,
         IProductsRepository productsRepository,
         CancellationToken cancellationToken)
@@ -50,6 +54,25 @@ internal static class ProductRequestValidator
             return Result<ValidatedProductData>.Failure(estoqueError);
         }
 
+        var skuTrimmed = string.IsNullOrWhiteSpace(sku) ? null : sku.Trim();
+        var codigoInternoTrimmed = string.IsNullOrWhiteSpace(codigoInterno) ? null : codigoInterno.Trim();
+        var codigoBarrasTrimmed = string.IsNullOrWhiteSpace(codigoBarras) ? null : codigoBarras.Trim();
+
+        if (skuTrimmed?.Length > 50)
+        {
+            return Result<ValidatedProductData>.Failure("O SKU deve ter no máximo 50 caracteres.");
+        }
+
+        if (codigoInternoTrimmed?.Length > 50)
+        {
+            return Result<ValidatedProductData>.Failure("O código interno deve ter no máximo 50 caracteres.");
+        }
+
+        if (codigoBarrasTrimmed?.Length > 50)
+        {
+            return Result<ValidatedProductData>.Failure("O código de barras deve ter no máximo 50 caracteres.");
+        }
+
         if (!await productsRepository.ExistsActiveTipoProdutoInEmpresaAsync(tipoProdutoId, empresaId, cancellationToken))
         {
             return Result<ValidatedProductData>.Failure("Tipo de produto não encontrado.");
@@ -66,11 +89,27 @@ internal static class ProductRequestValidator
             return Result<ValidatedProductData>.Failure("Já existe um produto com este nome.");
         }
 
+        if (skuTrimmed is not null
+            && await productsRepository.ExistsBySkuAsync(empresaId, skuTrimmed, excludeProductId, cancellationToken))
+        {
+            return Result<ValidatedProductData>.Failure("Já existe um produto com este SKU.");
+        }
+
+        if (codigoInternoTrimmed is not null
+            && await productsRepository.ExistsByCodigoInternoAsync(empresaId, codigoInternoTrimmed, excludeProductId, cancellationToken))
+        {
+            return Result<ValidatedProductData>.Failure("Já existe um produto com este código interno.");
+        }
+
         return Result<ValidatedProductData>.Success(new ValidatedProductData(
             tipoProdutoId,
             unidadeMedidaId,
             nomeTrimmed,
-            estoqueMinimo));
+            estoqueMinimo,
+            skuTrimmed,
+            codigoInternoTrimmed,
+            codigoBarrasTrimmed,
+            controlaEstoque));
     }
 }
 
@@ -78,4 +117,8 @@ internal sealed record ValidatedProductData(
     Guid TipoProdutoId,
     Guid UnidadeMedidaId,
     string Nome,
-    decimal EstoqueMinimo);
+    decimal EstoqueMinimo,
+    string? Sku,
+    string? CodigoInterno,
+    string? CodigoBarras,
+    bool ControlaEstoque);

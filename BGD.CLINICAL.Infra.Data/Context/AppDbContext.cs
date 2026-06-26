@@ -32,6 +32,8 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<Fornecedor> Fornecedores => Set<Fornecedor>();
     public DbSet<PedidoFornecedor> PedidosFornecedor => Set<PedidoFornecedor>();
     public DbSet<ItemPedidoFornecedor> ItensPedidoFornecedor => Set<ItemPedidoFornecedor>();
+    public DbSet<Procedimento> Procedimentos => Set<Procedimento>();
+    public DbSet<ItemProcedimento> ItensProcedimento => Set<ItemProcedimento>();
     public DbSet<MovimentacaoEstoque> MovimentacoesEstoque => Set<MovimentacaoEstoque>();
     public DbSet<AplicacaoPaciente> AplicacoesPaciente => Set<AplicacaoPaciente>();
     public DbSet<AplicacaoSintoma> AplicacoesSintomas => Set<AplicacaoSintoma>();

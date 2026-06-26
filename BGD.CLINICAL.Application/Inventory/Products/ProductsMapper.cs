@@ -15,7 +15,11 @@ internal static class ProductsMapper
             produto.UnidadeMedida?.Nome ?? string.Empty,
             produto.UnidadeMedida?.Sigla ?? string.Empty,
             produto.Nome,
+            produto.Sku,
+            produto.CodigoInterno,
+            produto.CodigoBarras,
             produto.EstoqueMinimo,
+            produto.ControlaEstoque,
             produto.Ativo,
             produto.CriadoEm,
             produto.AtualizadoEm);

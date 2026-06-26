@@ -1,12 +1,12 @@
 using BGD.CLINICAL.Application.Abstractions.Persistence;
 using BGD.CLINICAL.Application.Abstractions.Security;
 using BGD.CLINICAL.Application.Applications.Abstractions;
-using BGD.CLINICAL.Application.Patients.Abstractions;
 using BGD.CLINICAL.Application.Applications.Dtos;
 using BGD.CLINICAL.Application.Common;
-using BGD.CLINICAL.Application.Core.Abstractions;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
+using BGD.CLINICAL.Application.Patients.Abstractions;
+using BGD.CLINICAL.Application.Core.Abstractions;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -26,6 +26,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
     private readonly IPatientApplicationsRepository _patientApplicationsRepository;
     private readonly IPatientsRepository _patientsRepository;
     private readonly IProductsRepository _productsRepository;
+    private readonly IProceduresRepository _proceduresRepository;
     private readonly IUnitsRepository _unitsRepository;
     private readonly IEmployeesRepository _employeesRepository;
     private readonly ISymptomsRepository _symptomsRepository;
@@ -39,6 +40,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
         IPatientApplicationsRepository patientApplicationsRepository,
         IPatientsRepository patientsRepository,
         IProductsRepository productsRepository,
+        IProceduresRepository proceduresRepository,
         IUnitsRepository unitsRepository,
         IEmployeesRepository employeesRepository,
         ISymptomsRepository symptomsRepository,
@@ -51,6 +53,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
         _patientApplicationsRepository = patientApplicationsRepository;
         _patientsRepository = patientsRepository;
         _productsRepository = productsRepository;
+        _proceduresRepository = proceduresRepository;
         _unitsRepository = unitsRepository;
         _employeesRepository = employeesRepository;
         _symptomsRepository = symptomsRepository;
@@ -71,6 +74,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
             request,
             _patientsRepository,
             _productsRepository,
+            _proceduresRepository,
             _unitsRepository,
             _employeesRepository,
             _symptomsRepository,
@@ -91,6 +95,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                 data.PacienteId,
                 data.CompraPacienteId,
                 data.ProdutoId,
+                data.ProcedimentoId,
                 data.AplicadorId,
                 data.UnidadeId,
                 data.DataAplicacao,
@@ -103,17 +108,24 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                 aplicacao.Sintomas.Add(new AplicacaoSintoma(aplicacao.Id, sintomaId));
             }
 
-            var movimentacao = MovimentacaoEstoque.CreateSaidaFromAplicacao(
-                empresaId,
-                data.UnidadeId,
-                data.ProdutoId,
-                aplicacao.Id,
-                data.AplicadorId,
-                data.QuantidadeUtilizada,
-                data.DataAplicacao);
+            var movimentacoes = data.StockLines
+                .Where(line => line.ControlaEstoque)
+                .Select(line => MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                    empresaId,
+                    data.UnidadeId,
+                    line.ProdutoId,
+                    aplicacao.Id,
+                    data.AplicadorId,
+                    line.Quantidade,
+                    data.DataAplicacao))
+                .ToList();
 
             await _patientApplicationsRepository.AddAsync(aplicacao, cancellationToken);
-            await _stockMovementsRepository.AddRangeAsync([movimentacao], cancellationToken);
+            if (movimentacoes.Count > 0)
+            {
+                await _stockMovementsRepository.AddRangeAsync(movimentacoes, cancellationToken);
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var persisted = await _patientApplicationsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
@@ -130,14 +142,17 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                 dadosNovos: PatientApplicationsAuditSerializer.Serialize(persisted ?? aplicacao),
                 cancellationToken: cancellationToken);
 
-            await _auditLogsService.RegisterEntityChangeAsync(
-                empresaId,
-                _tenantContext.UsuarioId,
-                nameof(MovimentacaoEstoque),
-                movimentacao.Id,
-                AcaoAuditoria.GerarMovimentacao,
-                dadosNovos: PatientApplicationsAuditSerializer.Serialize(movimentacao),
-                cancellationToken: cancellationToken);
+            foreach (var movimentacao in movimentacoes)
+            {
+                await _auditLogsService.RegisterEntityChangeAsync(
+                    empresaId,
+                    _tenantContext.UsuarioId,
+                    nameof(MovimentacaoEstoque),
+                    movimentacao.Id,
+                    AcaoAuditoria.GerarMovimentacao,
+                    dadosNovos: PatientApplicationsAuditSerializer.Serialize(movimentacao),
+                    cancellationToken: cancellationToken);
+            }
 
             return Result<PatientApplicationDto>.Success(
                 PatientApplicationsMapper.Map(persisted ?? aplicacao));

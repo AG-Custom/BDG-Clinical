@@ -7,6 +7,7 @@ public sealed record StockMovementDto(
     Guid ProdutoId,
     string ProdutoNome,
     string Tipo,
+    string Motivo,
     decimal Quantidade,
     DateTime Data,
     string Origem,

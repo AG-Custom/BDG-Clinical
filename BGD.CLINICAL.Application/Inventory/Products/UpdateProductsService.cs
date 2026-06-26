@@ -61,6 +61,10 @@ public sealed class UpdateProductsService : IUpdateProductsService
             request.UnidadeMedidaId,
             request.Nome,
             request.EstoqueMinimo,
+            request.Sku,
+            request.CodigoInterno,
+            request.CodigoBarras,
+            request.ControlaEstoque,
             excludeProductId: id,
             _productsRepository,
             cancellationToken);
@@ -79,7 +83,11 @@ public sealed class UpdateProductsService : IUpdateProductsService
                 data.TipoProdutoId,
                 data.UnidadeMedidaId,
                 data.Nome,
-                data.EstoqueMinimo);
+                data.EstoqueMinimo,
+                data.Sku,
+                data.CodigoInterno,
+                data.CodigoBarras,
+                data.ControlaEstoque);
 
             _productsRepository.Update(produto);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
