@@ -130,7 +130,7 @@ public sealed class Sintoma : AggregateRoot
     {
     }
 
-    public Sintoma(Guid empresaId, string nome)
+    private Sintoma(Guid empresaId, string nome)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -144,4 +144,42 @@ public sealed class Sintoma : AggregateRoot
 
     public Empresa Empresa { get; private set; } = null!;
     public ICollection<AplicacaoSintoma> Aplicacoes { get; private set; } = [];
+
+    public static Sintoma Create(Guid empresaId, string nome)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa do sintoma.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do sintoma.");
+        }
+
+        return new Sintoma(empresaId, nome.Trim());
+    }
+
+    public void UpdateDetails(string nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome do sintoma.");
+        }
+
+        Nome = nome.Trim();
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Reactivate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

@@ -783,7 +783,7 @@ aplicacao_paciente
 - id
 - empresa_id
 - paciente_id
-- compra_paciente_id
+- compra_paciente_id (opcional)
 - produto_id
 - funcionario_id
 - unidade_id
@@ -792,6 +792,7 @@ aplicacao_paciente
 - quantidade_utilizada
 - peso
 - realizado
+- cancelada
 - observacao
 - criado_em
 - atualizado_em
@@ -802,7 +803,7 @@ Relacionamentos:
 ```text
 AplicacaoPaciente N:1 Empresa
 AplicacaoPaciente N:1 Paciente
-AplicacaoPaciente N:1 CompraPaciente
+AplicacaoPaciente N:0..1 CompraPaciente
 AplicacaoPaciente N:1 Produto
 AplicacaoPaciente N:1 Funcionario
 AplicacaoPaciente N:1 Unidade
@@ -814,12 +815,12 @@ AplicacaoPaciente N:N Sintoma via AplicacaoSintoma
 Regras:
 
 ```text
-AplicacaoPaciente só altera estoque quando realizado = true.
-Aplicação realizada deve validar funcionário aplicador.
-Aplicação realizada deve validar compra ativa do paciente.
-Aplicação realizada deve validar saldo do pacote.
+AplicacaoPaciente só altera estoque quando realizado = true e cancelada = false.
+Aplicação realizada deve validar funcionário aplicador (flag_aplicador no vínculo).
 Aplicação realizada deve validar estoque disponível na unidade.
 Aplicação realizada deve gerar MovimentacaoEstoque do tipo SAIDA.
+Cancelamento gera MovimentacaoEstoque do tipo ENTRADA (estorno).
+Após criação, campos de estoque (paciente, produto, aplicador, unidade, quantidade) são imutáveis.
 ```
 
 ---

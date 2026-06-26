@@ -378,6 +378,7 @@ Retorna o usuário autenticado a partir do token. **Requer Bearer token.**
 | Campo | Descrição |
 |-------|-----------|
 | `isAdmin` | `true` = perfil Admin; `false` = perfil Funcionario |
+| `flagAplicador` | `true` se Admin; se Funcionario, `true` quando houver vínculo ativo com `flagAplicador` em `funcionario_vinculo` na empresa do token |
 
 **Response 200**
 
@@ -387,7 +388,8 @@ Retorna o usuário autenticado a partir do token. **Requer Bearer token.**
     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "nome": "João Admin",
     "email": "admin@clinica.com",
-    "isAdmin": true
+    "isAdmin": true,
+    "flagAplicador": true
   },
   "success": true,
   "message": null
@@ -1369,7 +1371,63 @@ Reativa um paciente inativo. Sem body.
 
 ---
 
-## 10. Tipos de Produto — `/api/product-types`
+## 10. Sintomas — `/api/symptoms`
+
+Cadastro de sintomas informados em aplicações (ex.: Náusea, Dor local, Fadiga). Use o **GET** para popular o multi-select em aplicações (`sintomaIds`). Mesmo padrão de soft delete dos demais cadastros.
+
+### GET `/api/symptoms`
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `includeInactive` | `boolean` | `false` | Incluir sintomas inativos |
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "nome": "Náusea",
+      "ativo": true,
+      "criadoEm": "2026-06-25T10:00:00Z",
+      "atualizadoEm": null
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+### GET `/api/symptoms/{id}`
+
+### POST `/api/symptoms`
+
+```json
+{ "nome": "Náusea" }
+```
+
+**Response 201** — `Location: /api/symptoms/{id}`
+
+### PUT `/api/symptoms/{id}`
+
+```json
+{ "nome": "Náusea leve" }
+```
+
+Bloqueado se o sintoma estiver inativo.
+
+### DELETE `/api/symptoms/{id}`
+
+Inativa o sintoma (soft delete).
+
+### PATCH `/api/symptoms/{id}/reactivate`
+
+Reativa sintoma inativo. Falha se já existir outro ativo com o mesmo nome.
+
+---
+
+## 11. Tipos de Produto — `/api/product-types`
 
 Cadastro dos tipos de produto da clínica (ex.: Medicamento, Insumo, Implante, Material descartável, Equipamento, Outro). Todas as rotas exigem **Bearer token**.
 
@@ -1435,7 +1493,7 @@ Reativa um tipo inativo.
 
 ---
 
-## 11. Unidades de Medida — `/api/measurement-units`
+## 12. Unidades de Medida — `/api/measurement-units`
 
 Cadastro das unidades de medida utilizadas pela clínica (ex.: mg, g, ml, L, un, caixa). Todas as rotas exigem **Bearer token**.
 
@@ -1545,7 +1603,7 @@ Reativa uma unidade inativa.
 
 ---
 
-## 12. Produtos — `/api/products`
+## 13. Produtos — `/api/products`
 
 Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **Bearer token**.
 
@@ -1646,7 +1704,7 @@ Reativa um produto inativo. Falha se o tipo ou a unidade de medida vinculados es
 
 ---
 
-## 13. Fornecedores — `/api/suppliers`
+## 14. Fornecedores — `/api/suppliers`
 
 Cadastro de fornecedores vinculados à empresa. Todas as rotas exigem **Bearer token**.
 
@@ -1684,7 +1742,7 @@ Mesmo padrão de produtos/tipos. DELETE inativa (soft delete). Falha se houver p
 
 ---
 
-## 14. Pedidos ao Fornecedor — `/api/supplier-orders`
+## 15. Pedidos ao Fornecedor — `/api/supplier-orders`
 
 Pedidos de compra com itens de produto. Criar pedido **não** altera estoque; use `receive` para entrada.
 
@@ -1739,7 +1797,7 @@ Marca como `Recebido pela Unidade` e gera `MovimentacaoEstoque` tipo **Entrada**
 
 ---
 
-## 15. Saldo de Estoque — `/api/stock-balances`
+## 16. Saldo de Estoque — `/api/stock-balances`
 
 Saldo atual por **unidade + produto**, calculado a partir das movimentações:
 
@@ -1784,7 +1842,7 @@ Somente combinações com ao menos uma movimentação aparecem na listagem.
 
 ---
 
-## 16. Histórico de Movimentações — `/api/stock-movements`
+## 17. Histórico de Movimentações — `/api/stock-movements`
 
 Extrato cronológico de entradas, saídas, ajustes e perdas.
 
@@ -1827,11 +1885,83 @@ Ordenação: `data` decrescente, depois `criadoEm` decrescente.
 }
 ```
 
-Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`). Saídas por aplicação ainda não estão ativas na API.
+Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`) ou do cancelamento de aplicação (`origem: APLICACAO_PACIENTE_CANCELAMENTO`). Saídas vêm de `POST /api/patient-applications` (`origem: APLICACAO_PACIENTE`).
 
 ---
 
-## 17. Tipos TypeScript (referência)
+## 18. Aplicações em Pacientes — `/api/patient-applications`
+
+Registro de aplicações realizadas. Ao criar, gera **saída** de estoque; ao cancelar, gera **entrada** de estorno.
+
+### GET `/api/patient-applications`
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `pacienteId` | `uuid` | — | Filtrar por paciente |
+| `unidadeId` | `uuid` | — | Filtrar por unidade |
+| `produtoId` | `uuid` | — | Filtrar por produto |
+| `aplicadorId` | `uuid` | — | Filtrar por funcionário aplicador |
+| `cancelada` | `boolean` | — | Filtrar por status de cancelamento |
+| `dataInicio` | `datetime` | — | Início do período (inclusivo) |
+| `dataFim` | `datetime` | — | Fim do período (inclusivo) |
+| `limit` | `number` | `100` | Máx. 500 |
+
+### GET `/api/patient-applications/{id}`
+
+Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unidade, sintomas).
+
+### POST `/api/patient-applications`
+
+```json
+{
+  "pacienteId": "uuid",
+  "produtoId": "uuid",
+  "aplicadorId": "uuid",
+  "unidadeId": "uuid",
+  "quantidadeUtilizada": 1.5,
+  "dataAplicacao": "2026-06-25T14:00:00Z",
+  "peso": 72.5,
+  "observacao": "Paciente relatou leve náusea",
+  "sintomaIds": ["uuid"],
+  "compraPacienteId": null
+}
+```
+
+| Campo | Obrigatório | Regra |
+|-------|-------------|-------|
+| `pacienteId` | Sim | Paciente ativo no tenant |
+| `produtoId` | Sim | Produto ativo |
+| `aplicadorId` | Sim | Funcionário com `flagAplicador` ativo na unidade/empresa |
+| `unidadeId` | Sim | Unidade ativa |
+| `quantidadeUtilizada` | Sim | &gt; 0; saldo de estoque suficiente |
+| `dataAplicacao` | Sim | Data/hora da aplicação |
+| `peso` | Não | &gt; 0 quando informado |
+| `observacao` | Não | Máx. 2000 caracteres |
+| `sintomaIds` | Não | IDs de sintomas ativos da empresa |
+| `compraPacienteId` | Não | Se informado, deve pertencer ao paciente |
+
+**Response 201** — gera `MovimentacaoEstoque` tipo `Saida` (`origem: APLICACAO_PACIENTE`).
+
+### PUT `/api/patient-applications/{id}`
+
+Permite editar apenas `peso`, `observacao`, `dataAplicacao` e `sintomaIds`. Bloqueado se `cancelada = true`.
+
+```json
+{
+  "dataAplicacao": "2026-06-25T14:30:00Z",
+  "peso": 73.0,
+  "observacao": "Observação atualizada",
+  "sintomaIds": ["uuid"]
+}
+```
+
+### POST `/api/patient-applications/{id}/cancel`
+
+Cancela aplicação realizada e gera `MovimentacaoEstoque` tipo `Entrada` (`origem: APLICACAO_PACIENTE_CANCELAMENTO`).
+
+---
+
+## 19. Tipos TypeScript (referência)
 
 ```typescript
 interface ApiResponse<T> {
@@ -1879,6 +2009,7 @@ interface AuthenticatedUser {
   nome: string;
   email: string;
   isAdmin: boolean;
+  flagAplicador: boolean;
 }
 
 interface ValidateFirstAccessEmailRequest {
@@ -2017,6 +2148,22 @@ interface Patient {
   atualizadoEm: string | null;
 }
 
+interface Symptom {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
+interface CreateSymptomRequest {
+  nome: string;
+}
+
+interface UpdateSymptomRequest {
+  nome: string;
+}
+
 interface EmployeeLink {
   id: string;
   empresaId: string | null;
@@ -2066,11 +2213,58 @@ interface StockMovement {
   observacao: string | null;
   criadoEm: string;
 }
+
+interface PatientApplicationSymptom {
+  id: string;
+  nome: string;
+}
+
+interface PatientApplication {
+  id: string;
+  pacienteId: string;
+  pacienteNome: string;
+  compraPacienteId: string | null;
+  produtoId: string;
+  produtoNome: string;
+  aplicadorId: string;
+  aplicadorNome: string;
+  unidadeId: string;
+  unidadeNome: string;
+  dataAplicacao: string;
+  quantidadeUtilizada: number;
+  peso: number | null;
+  observacao: string | null;
+  realizado: boolean;
+  cancelada: boolean;
+  sintomas: PatientApplicationSymptom[];
+  criadoEm: string;
+  atualizadoEm: string | null;
+}
+
+interface CreatePatientApplicationRequest {
+  pacienteId: string;
+  produtoId: string;
+  aplicadorId: string;
+  unidadeId: string;
+  quantidadeUtilizada: number;
+  dataAplicacao: string;
+  peso?: number | null;
+  observacao?: string | null;
+  sintomaIds?: string[] | null;
+  compraPacienteId?: string | null;
+}
+
+interface UpdatePatientApplicationRequest {
+  dataAplicacao: string;
+  peso?: number | null;
+  observacao?: string | null;
+  sintomaIds?: string[] | null;
+}
 ```
 
 ---
 
-## 18. Fluxo sugerido no frontend
+## 20. Fluxo sugerido no frontend
 
 ```text
 1. Registrar clínica  → POST /api/auth/registrar  → guardar token (primeira clínica)
@@ -2086,14 +2280,16 @@ interface StockMovement {
 11. CRUD cargos       → /api/positions/* (popular select antes de cadastrar funcionário)
 12. CRUD funcionários → POST/PUT /api/employees (somente Admin) → e-mail de convite no create
 13. CRUD pacientes    → /api/patients/*
-14. CRUD tipos produto → /api/product-types/*
-15. CRUD unidades medida → /api/measurement-units/* (antes de cadastrar produtos)
-16. CRUD produtos     → /api/products/*
-17. CRUD fornecedores → /api/suppliers/*
-18. CRUD pedidos      → /api/supplier-orders/* (PATCH receive para entrada no estoque)
-19. Saldo de estoque  → GET /api/stock-balances (filtro abaixoDoMinimo para alertas)
-20. Histórico estoque → GET /api/stock-movements
-21. Funcionário abre link → /primeiro-acesso?token=...
+14. CRUD sintomas     → /api/symptoms/* (popular multi-select em aplicações)
+15. CRUD tipos produto → /api/product-types/*
+16. CRUD unidades medida → /api/measurement-units/* (antes de cadastrar produtos)
+17. CRUD produtos     → /api/products/*
+18. CRUD fornecedores → /api/suppliers/*
+19. CRUD pedidos      → /api/supplier-orders/* (PATCH receive para entrada no estoque)
+20. Saldo de estoque  → GET /api/stock-balances (filtro abaixoDoMinimo para alertas)
+21. Histórico estoque → GET /api/stock-movements
+22. Aplicações paciente → /api/patient-applications/* (POST gera saída; cancel estorna)
+23. Funcionário abre link → /primeiro-acesso?token=...
    a. Digita e-mail   → POST /api/auth/primeiro-acesso/validar-email
    b. Define senha    → POST /api/auth/primeiro-acesso/concluir → guardar token
 20. Login funcionário → se message = "É necessário definir a senha no primeiro acesso."
@@ -2102,15 +2298,14 @@ interface StockMovement {
 
 ---
 
-## 19. Rotas ainda não disponíveis
+## 21. Rotas ainda não disponíveis
 
 | Recurso | Status |
 |---------|--------|
 | Reenvio de convite de primeiro acesso | Não implementado |
 | Permissões por módulo | Não implementado |
-| Aplicações em pacientes (saída de estoque) | Domínio preparado (`CreateSaidaFromAplicacao`); API não implementada |
 | Ajuste/Perda manual de estoque | Não implementado |
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + Inventory + Suppliers + SupplierOrders + StockBalances + StockMovements + Auth + Primeiro acesso).*
+*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (Companies + Units + Positions + Employees + Patients + Symptoms + Inventory + Suppliers + SupplierOrders + StockBalances + StockMovements + PatientApplications + Auth + Primeiro acesso).*

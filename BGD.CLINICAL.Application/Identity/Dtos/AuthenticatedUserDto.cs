@@ -4,4 +4,5 @@ public sealed record AuthenticatedUserDto(
     Guid Id,
     string Nome,
     string Email,
-    bool IsAdmin);
+    bool IsAdmin,
+    bool FlagAplicador);

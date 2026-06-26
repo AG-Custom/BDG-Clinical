@@ -9,6 +9,7 @@ using BGD.CLINICAL.Application.Core.Companies;
 using BGD.CLINICAL.Application.Core.Employees;
 using BGD.CLINICAL.Application.Core.Positions;
 using BGD.CLINICAL.Application.Patients.Patients;
+using BGD.CLINICAL.Application.Patients.Symptoms;
 using BGD.CLINICAL.Application.Inventory.ProductTypes;
 using BGD.CLINICAL.Application.Inventory.Products;
 using BGD.CLINICAL.Application.Inventory.MeasurementUnits;
@@ -16,6 +17,7 @@ using BGD.CLINICAL.Application.Inventory.Suppliers;
 using BGD.CLINICAL.Application.Inventory.SupplierOrders;
 using BGD.CLINICAL.Application.Inventory.StockBalances;
 using BGD.CLINICAL.Application.Inventory.StockMovements;
+using BGD.CLINICAL.Application.Applications.PatientApplications;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BGD.CLINICAL.Application;
@@ -69,6 +71,13 @@ public static class DependencyInjection
         services.AddScoped<IDeactivatePatientsService, DeactivatePatientsService>();
         services.AddScoped<IReactivatePatientsService, ReactivatePatientsService>();
 
+        services.AddScoped<ICreateSymptomsService, CreateSymptomsService>();
+        services.AddScoped<IListSymptomsService, ListSymptomsService>();
+        services.AddScoped<IGetSymptomsService, GetSymptomsService>();
+        services.AddScoped<IUpdateSymptomsService, UpdateSymptomsService>();
+        services.AddScoped<IDeactivateSymptomsService, DeactivateSymptomsService>();
+        services.AddScoped<IReactivateSymptomsService, ReactivateSymptomsService>();
+
         services.AddScoped<ICreateProductTypesService, CreateProductTypesService>();
         services.AddScoped<IListProductTypesService, ListProductTypesService>();
         services.AddScoped<IGetProductTypesService, GetProductTypesService>();
@@ -106,6 +115,12 @@ public static class DependencyInjection
 
         services.AddScoped<IListStockBalancesService, ListStockBalancesService>();
         services.AddScoped<IListStockMovementsService, ListStockMovementsService>();
+
+        services.AddScoped<ICreatePatientApplicationsService, CreatePatientApplicationsService>();
+        services.AddScoped<IListPatientApplicationsService, ListPatientApplicationsService>();
+        services.AddScoped<IGetPatientApplicationsService, GetPatientApplicationsService>();
+        services.AddScoped<IUpdatePatientApplicationsService, UpdatePatientApplicationsService>();
+        services.AddScoped<ICancelPatientApplicationsService, CancelPatientApplicationsService>();
 
         return services;
     }

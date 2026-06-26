@@ -13,7 +13,26 @@ internal static class AuthenticatedUsersMapper
             usuario.Id,
             usuario.Nome,
             usuario.EmailLogin,
-            usuario.TipoUsuario == TipoUsuario.Admin);
+            usuario.TipoUsuario == TipoUsuario.Admin,
+            ResolveFlagAplicador(usuario));
+    }
+
+    private static bool ResolveFlagAplicador(Usuario usuario)
+    {
+        if (usuario.TipoUsuario == TipoUsuario.Admin)
+        {
+            return true;
+        }
+
+        if (usuario.Funcionario is null || !usuario.Funcionario.Ativo)
+        {
+            return false;
+        }
+
+        return usuario.Funcionario.Vinculos.Any(vinculo =>
+            vinculo.Ativo
+            && vinculo.FlagAplicador
+            && vinculo.BelongsToEmpresa(usuario.EmpresaId));
     }
 }
 

@@ -871,4 +871,55 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             aplicacaoPacienteId,
             funcionarioId);
     }
+
+    public static MovimentacaoEstoque CreateEntradaFromCancelamentoAplicacao(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        Guid aplicacaoPacienteId,
+        Guid funcionarioId,
+        decimal quantidade,
+        DateTime data)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa da movimentação.");
+        }
+
+        if (unidadeId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade da movimentação.");
+        }
+
+        if (produtoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o produto da movimentação.");
+        }
+
+        if (aplicacaoPacienteId == Guid.Empty)
+        {
+            throw new DomainException("Informe a aplicação da movimentação.");
+        }
+
+        if (funcionarioId == Guid.Empty)
+        {
+            throw new DomainException("Informe o funcionário da movimentação.");
+        }
+
+        if (quantidade <= 0)
+        {
+            throw new DomainException("A quantidade da movimentação deve ser maior que zero.");
+        }
+
+        return new MovimentacaoEstoque(
+            empresaId,
+            unidadeId,
+            produtoId,
+            TipoMovimentacaoEstoque.Entrada,
+            quantidade,
+            data,
+            "APLICACAO_PACIENTE_CANCELAMENTO",
+            aplicacaoPacienteId,
+            funcionarioId);
+    }
 }

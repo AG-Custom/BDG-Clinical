@@ -17,8 +17,7 @@ public sealed class UsersRepository : IUsersRepository
 
     public Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return _context.Usuarios
-            .Include(usuario => usuario.Empresa)
+        return WithAuthDetails(_context.Usuarios)
             .FirstOrDefaultAsync(usuario => usuario.Id == id, cancellationToken);
     }
 
@@ -26,8 +25,7 @@ public sealed class UsersRepository : IUsersRepository
         string emailLogin,
         CancellationToken cancellationToken = default)
     {
-        return await _context.Usuarios
-            .Include(usuario => usuario.Empresa)
+        return await WithAuthDetails(_context.Usuarios)
             .Where(usuario =>
                 usuario.EmailLogin == emailLogin
                 && usuario.AuthProvider == IdentityConstants.AuthProviderLocal)
@@ -39,8 +37,7 @@ public sealed class UsersRepository : IUsersRepository
         Guid empresaId,
         CancellationToken cancellationToken = default)
     {
-        return _context.Usuarios
-            .Include(usuario => usuario.Empresa)
+        return WithAuthDetails(_context.Usuarios)
             .FirstOrDefaultAsync(
                 usuario =>
                     usuario.EmailLogin == emailLogin
@@ -103,5 +100,14 @@ public sealed class UsersRepository : IUsersRepository
         {
             _context.Usuarios.Update(usuario);
         }
+    }
+
+    private static IQueryable<Usuario> WithAuthDetails(IQueryable<Usuario> query)
+    {
+        return query
+            .Include(usuario => usuario.Empresa)
+            .Include(usuario => usuario.Funcionario)
+                .ThenInclude(funcionario => funcionario!.Vinculos)
+                    .ThenInclude(vinculo => vinculo.Unidade);
     }
 }
