@@ -12,10 +12,17 @@ namespace BGD.CLINICAL.WebApi.Controllers.StockMovement;
 public sealed class StockMovementController : ControllerBase
 {
     private readonly IListStockMovementsService _listStockMovementsService;
+    private readonly ICreateStockAdjustmentsService _createStockAdjustmentsService;
+    private readonly ICreateStockLossesService _createStockLossesService;
 
-    public StockMovementController(IListStockMovementsService listStockMovementsService)
+    public StockMovementController(
+        IListStockMovementsService listStockMovementsService,
+        ICreateStockAdjustmentsService createStockAdjustmentsService,
+        ICreateStockLossesService createStockLossesService)
     {
         _listStockMovementsService = listStockMovementsService;
+        _createStockAdjustmentsService = createStockAdjustmentsService;
+        _createStockLossesService = createStockLossesService;
     }
 
     [HttpGet]
@@ -43,5 +50,35 @@ public sealed class StockMovementController : ControllerBase
         }
 
         return Ok(new ApiResponse<IReadOnlyList<StockMovementDto>>(result.Value!, true));
+    }
+
+    [HttpPost("adjustment")]
+    public async Task<IActionResult> CreateAdjustment(
+        [FromBody] CreateManualStockMovementRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _createStockAdjustmentsService.ExecuteAsync(request, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new ApiResponse<object?>(null!, false, result.Error));
+        }
+
+        return Ok(new ApiResponse<StockMovementDto>(result.Value!, true));
+    }
+
+    [HttpPost("loss")]
+    public async Task<IActionResult> CreateLoss(
+        [FromBody] CreateManualStockMovementRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _createStockLossesService.ExecuteAsync(request, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new ApiResponse<object?>(null!, false, result.Error));
+        }
+
+        return Ok(new ApiResponse<StockMovementDto>(result.Value!, true));
     }
 }

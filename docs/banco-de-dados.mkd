@@ -765,9 +765,10 @@ Regras:
 Todo estoque deve ser calculado por MovimentacaoEstoque.
 ENTRADA aumenta saldo.
 SAIDA reduz saldo.
-AJUSTE corrige saldo.
-PERDA reduz saldo.
-Estoque atual = ENTRADAS - SAIDAS + AJUSTES - PERDAS.
+Ajuste manual via API grava tipo ENTRADA com origem AJUSTE_MANUAL.
+Perda manual via API grava tipo SAIDA com origem PERDA_MANUAL.
+Valores AJUSTE e PERDA no enum permanecem apenas para compatibilidade com registros legados.
+Estoque atual = ENTRADAS - SAIDAS (+ AJUSTES - PERDAS legados, se houver).
 ```
 
 ---

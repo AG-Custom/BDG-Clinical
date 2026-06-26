@@ -15,6 +15,13 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
         _context = context;
     }
 
+    public async Task AddAsync(
+        MovimentacaoEstoque movimentacao,
+        CancellationToken cancellationToken = default)
+    {
+        await _context.MovimentacoesEstoque.AddAsync(movimentacao, cancellationToken);
+    }
+
     public async Task AddRangeAsync(
         IReadOnlyList<MovimentacaoEstoque> movimentacoes,
         CancellationToken cancellationToken = default)
@@ -68,5 +75,18 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
             .ThenByDescending(movimentacao => movimentacao.CriadoEm)
             .Take(limit)
             .ToListAsync(cancellationToken);
+    }
+
+    public Task<MovimentacaoEstoque?> GetByIdAndEmpresaIdWithDetailsAsync(
+        Guid id,
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.MovimentacoesEstoque
+            .Include(movimentacao => movimentacao.Unidade)
+            .Include(movimentacao => movimentacao.Produto)
+            .FirstOrDefaultAsync(
+                movimentacao => movimentacao.Id == id && movimentacao.EmpresaId == empresaId,
+                cancellationToken);
     }
 }

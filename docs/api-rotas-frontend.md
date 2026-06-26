@@ -1885,7 +1885,39 @@ Ordenação: `data` decrescente, depois `criadoEm` decrescente.
 }
 ```
 
-Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`) ou do cancelamento de aplicação (`origem: APLICACAO_PACIENTE_CANCELAMENTO`). Saídas vêm de `POST /api/patient-applications` (`origem: APLICACAO_PACIENTE`).
+Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`), do cancelamento de aplicação (`origem: APLICACAO_PACIENTE_CANCELAMENTO`) ou de ajuste manual (`origem: AJUSTE_MANUAL`, `tipo: Entrada`). Saídas vêm de `POST /api/patient-applications` (`origem: APLICACAO_PACIENTE`) ou de perda manual (`origem: PERDA_MANUAL`, `tipo: Saida`). A distinção entre operação automática e manual é feita pelo campo `origem`.
+
+### POST `/api/stock-movements/adjustment`
+
+Inclui estoque manualmente (tipo **Entrada** — soma no saldo).
+
+```json
+{
+  "unidadeId": "uuid",
+  "produtoId": "uuid",
+  "quantidade": 10,
+  "data": "2026-06-25T14:00:00Z",
+  "observacao": "Inventário físico"
+}
+```
+
+| Campo | Obrigatório | Regra |
+|-------|-------------|-------|
+| `unidadeId` | Sim | Unidade ativa no tenant |
+| `produtoId` | Sim | Produto ativo |
+| `quantidade` | Sim | &gt; 0 |
+| `data` | Sim | Data/hora da movimentação |
+| `observacao` | Não | Máx. 2000 caracteres |
+
+**Response 200** — `origem: AJUSTE_MANUAL`, `tipo: Entrada`.
+
+### POST `/api/stock-movements/loss`
+
+Remove estoque manualmente (tipo **Saida** — subtrai do saldo).
+
+Mesmo body do ajuste. Valida saldo disponível na unidade (`estoque insuficiente` se `quantidade` &gt; saldo atual).
+
+**Response 200** — `origem: PERDA_MANUAL`, `tipo: Saida`.
 
 ---
 
@@ -2214,6 +2246,14 @@ interface StockMovement {
   criadoEm: string;
 }
 
+interface CreateManualStockMovementRequest {
+  unidadeId: string;
+  produtoId: string;
+  quantidade: number;
+  data: string;
+  observacao?: string | null;
+}
+
 interface PatientApplicationSymptom {
   id: string;
   nome: string;
@@ -2304,7 +2344,6 @@ interface UpdatePatientApplicationRequest {
 |---------|--------|
 | Reenvio de convite de primeiro acesso | Não implementado |
 | Permissões por módulo | Não implementado |
-| Ajuste/Perda manual de estoque | Não implementado |
 
 ---
 

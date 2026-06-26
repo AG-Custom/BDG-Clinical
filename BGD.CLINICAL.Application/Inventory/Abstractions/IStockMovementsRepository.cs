@@ -5,8 +5,17 @@ namespace BGD.CLINICAL.Application.Inventory.Abstractions;
 
 public interface IStockMovementsRepository
 {
+    Task AddAsync(
+        MovimentacaoEstoque movimentacao,
+        CancellationToken cancellationToken = default);
+
     Task AddRangeAsync(
         IReadOnlyList<MovimentacaoEstoque> movimentacoes,
+        CancellationToken cancellationToken = default);
+
+    Task<MovimentacaoEstoque?> GetByIdAndEmpresaIdWithDetailsAsync(
+        Guid id,
+        Guid empresaId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MovimentacaoEstoque>> ListByEmpresaIdAsync(

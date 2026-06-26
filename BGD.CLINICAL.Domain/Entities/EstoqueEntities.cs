@@ -922,4 +922,117 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             aplicacaoPacienteId,
             funcionarioId);
     }
+
+    public static MovimentacaoEstoque CreateAjusteManual(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        decimal quantidade,
+        DateTime data,
+        Guid? funcionarioId = null,
+        string? observacao = null)
+    {
+        return CreateManual(
+            empresaId,
+            unidadeId,
+            produtoId,
+            TipoMovimentacaoEstoque.Entrada,
+            quantidade,
+            data,
+            "AJUSTE_MANUAL",
+            funcionarioId,
+            observacao);
+    }
+
+    public static MovimentacaoEstoque CreatePerdaManual(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        decimal quantidade,
+        DateTime data,
+        Guid? funcionarioId = null,
+        string? observacao = null)
+    {
+        return CreateManual(
+            empresaId,
+            unidadeId,
+            produtoId,
+            TipoMovimentacaoEstoque.Saida,
+            quantidade,
+            data,
+            "PERDA_MANUAL",
+            funcionarioId,
+            observacao);
+    }
+
+    private static MovimentacaoEstoque CreateManual(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        TipoMovimentacaoEstoque tipo,
+        decimal quantidade,
+        DateTime data,
+        string origem,
+        Guid? funcionarioId,
+        string? observacao)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa da movimentação.");
+        }
+
+        if (unidadeId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade da movimentação.");
+        }
+
+        if (produtoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o produto da movimentação.");
+        }
+
+        if (quantidade <= 0)
+        {
+            throw new DomainException("A quantidade da movimentação deve ser maior que zero.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(observacao) && observacao.Length > 2000)
+        {
+            throw new DomainException("A observação deve ter no máximo 2000 caracteres.");
+        }
+
+        return new MovimentacaoEstoque(
+            empresaId,
+            unidadeId,
+            produtoId,
+            tipo,
+            quantidade,
+            data,
+            origem,
+            funcionarioId,
+            string.IsNullOrWhiteSpace(observacao) ? null : observacao.Trim());
+    }
+
+    private MovimentacaoEstoque(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        TipoMovimentacaoEstoque tipo,
+        decimal quantidade,
+        DateTime data,
+        string origem,
+        Guid? funcionarioId,
+        string? observacao)
+        : base(Guid.NewGuid())
+    {
+        EmpresaId = empresaId;
+        UnidadeId = unidadeId;
+        ProdutoId = produtoId;
+        Tipo = tipo;
+        Quantidade = quantidade;
+        Data = data;
+        Origem = origem;
+        FuncionarioId = funcionarioId;
+        Observacao = observacao;
+    }
 }

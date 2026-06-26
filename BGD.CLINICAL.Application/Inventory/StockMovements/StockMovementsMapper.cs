@@ -5,14 +5,7 @@ namespace BGD.CLINICAL.Application.Inventory.StockMovements;
 
 internal static class StockMovementsMapper
 {
-    public static IReadOnlyList<StockMovementDto> Map(IReadOnlyList<MovimentacaoEstoque> movimentacoes)
-    {
-        return movimentacoes
-            .Select(Map)
-            .ToList();
-    }
-
-    private static StockMovementDto Map(MovimentacaoEstoque movimentacao)
+    public static StockMovementDto Map(MovimentacaoEstoque movimentacao)
     {
         return new StockMovementDto(
             movimentacao.Id,
@@ -28,5 +21,12 @@ internal static class StockMovementsMapper
             movimentacao.AplicacaoPacienteId,
             movimentacao.Observacao,
             movimentacao.CriadoEm);
+    }
+
+    public static IReadOnlyList<StockMovementDto> Map(IReadOnlyList<MovimentacaoEstoque> movimentacoes)
+    {
+        return movimentacoes
+            .Select(Map)
+            .ToList();
     }
 }

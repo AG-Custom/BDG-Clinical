@@ -115,6 +115,8 @@ public static class DependencyInjection
 
         services.AddScoped<IListStockBalancesService, ListStockBalancesService>();
         services.AddScoped<IListStockMovementsService, ListStockMovementsService>();
+        services.AddScoped<ICreateStockAdjustmentsService, CreateStockAdjustmentsService>();
+        services.AddScoped<ICreateStockLossesService, CreateStockLossesService>();
 
         services.AddScoped<ICreatePatientApplicationsService, CreatePatientApplicationsService>();
         services.AddScoped<IListPatientApplicationsService, ListPatientApplicationsService>();

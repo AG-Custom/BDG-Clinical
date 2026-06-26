@@ -14,3 +14,10 @@ public sealed record StockMovementDto(
     Guid? AplicacaoPacienteId,
     string? Observacao,
     DateTime CriadoEm);
+
+public sealed record CreateManualStockMovementRequest(
+    Guid UnidadeId,
+    Guid ProdutoId,
+    decimal Quantidade,
+    DateTime Data,
+    string? Observacao = null);
