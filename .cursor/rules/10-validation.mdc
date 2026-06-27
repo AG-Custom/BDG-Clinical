@@ -1,0 +1,29 @@
+---
+description: Validação de entrada na Application vs regras de negócio no Domain
+alwaysApply: true
+---
+
+# Validação
+
+## Duas camadas
+
+| Tipo | Onde | Exemplo |
+|------|------|---------|
+| Formato, obrigatoriedade, unicidade | Application | CPF inválido, email duplicado, GUID vazio |
+| Invariante de negócio | Domain | Pedido cancelado não pode ser recebido |
+
+## Padrão atual (sem FluentValidation)
+
+- Classes estáticas `{Entity}RequestValidator` com `ValidateAsync` retornando `Result<T>`.
+- Classes `{Entity}Validation` para regras puras reutilizáveis (CPF, datas).
+- Value Objects no Domain quando o tipo se repetir (`Cpf`, `Email`).
+
+## FluentValidation
+
+Opcional. Se adotar, manter **mensagens idênticas** para não alterar contrato HTTP.
+
+## O que NÃO fazer
+
+- Data Annotations nos DTOs como única validação.
+- Regra de negócio em validator da Application que deveria estar no Domain.
+- Validar tenant (`empresa_id`) a partir do body — resolver do token.

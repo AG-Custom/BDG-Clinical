@@ -1,0 +1,36 @@
+---
+description: Convenções para migrations EF Core
+alwaysApply: true
+---
+
+# Migrations
+
+## Criação
+
+```bash
+dotnet ef migrations add {DescricaoPascalCase} --project BGD.CLINICAL.Infra.Data --startup-project BGD.CLINICAL.WebApi
+```
+
+## Nomenclatura
+
+- Formato: `{yyyyMMddHHmmss}_{Descricao}.cs`
+- Descrição em inglês, PascalCase: `AddPatientCpfUniqueIndex`, `CreateSupplierOrdersTables`.
+- Sempre gerar via CLI — **nunca** migration manual sem `.Designer.cs` e snapshot atualizado.
+
+## Responsabilidade
+
+- Uma migration por alteração lógica de schema (não misturar features não relacionadas).
+- Revisar SQL gerado antes de aplicar em produção.
+- Tabelas e colunas em **snake_case** (configurado globalmente no `AppDbContext`).
+
+## Aplicação
+
+```bash
+dotnet ef database update --project BGD.CLINICAL.Infra.Data --startup-project BGD.CLINICAL.WebApi
+```
+
+## Anti-padrões
+
+- Editar migration já aplicada em produção — criar nova migration corretiva.
+- Migration manual sem atualizar `AppDbContextModelSnapshot`.
+- Segredos ou dados seed sensíveis na migration.

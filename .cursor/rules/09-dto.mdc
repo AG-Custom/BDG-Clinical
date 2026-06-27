@@ -1,0 +1,28 @@
+---
+description: DTOs — requests e responses, nunca expor entidades
+alwaysApply: true
+---
+
+# DTOs
+
+## Regras
+
+- Nunca retornar Entity na API — sempre DTO.
+- Nunca receber Entity no body — sempre Request.
+- DTOs em `Application/{Context}/Dtos/`.
+- Records para requests imutáveis: `CreatePatientRequest`, `UpdateProductRequest`.
+- Responses: `{Entity}Dto` ou `{Action}Response`.
+
+## O que não expor
+
+- `SenhaHash`, tokens internos, campos de auditoria interna.
+- Propriedades de navegação EF.
+
+## Mapeamento
+
+Mappers estáticos ou classes `{Entity}Mapper` na feature. Entity → DTO na Application, nunca no Domain.
+
+## Anti-padrões
+
+- DTO na raiz `Application/DTOs/` (pasta legado removida).
+- Entidade serializada diretamente no controller.

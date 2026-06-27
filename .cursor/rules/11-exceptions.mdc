@@ -1,0 +1,33 @@
+---
+description: Padrão de exceções e fluxo de erro
+alwaysApply: true
+---
+
+# Exceptions
+
+## Mecanismos
+
+| Situação | Mecanismo | HTTP |
+|----------|-----------|------|
+| Falha esperada (not found, credencial) | `Result<T>.Failure(message)` | Controller mapeia (400/401/404) |
+| Invariante de domínio violada | `DomainException` | Middleware → 400 problem+json |
+| Erro inesperado | `Exception` | Middleware → 500 problem+json |
+
+## Tipos no projeto
+
+- `DomainException` — Domain e alguns services.
+- `Result<T>` — falhas previsíveis sem exceção.
+- `InvalidOperationException` — contexto de tenant ausente (tratar como erro de configuração).
+
+## Formato dual (intencional)
+
+1. **Falha esperada**: `ApiResponse<T>` com `success: false` e `message`.
+2. **Exceção**: RFC 7807 simplificado (`status`, `title`, `detail`).
+
+Não unificar sem acordo com frontend.
+
+## Regras
+
+- Nunca retornar stack trace ao cliente.
+- Nunca esconder exceção — logar no middleware para 500.
+- Mensagem genérica para credenciais inválidas.

@@ -1,0 +1,45 @@
+---
+description: Padrões Entity Framework Core — configurações, queries e persistência
+alwaysApply: true
+---
+
+# Entity Framework
+
+## Configurações
+
+- Sempre usar `IEntityTypeConfiguration<T>`.
+- Nunca configurar entidade inline no `DbContext`.
+- Localização: `Infra.Data/Configurations/{Context}/{Entidade}Configuration.cs`.
+- `AppDbContext.OnModelCreating`: `ApplyConfigurationsFromAssembly` + snake_case global.
+
+## Queries
+
+- Leituras (listagens, relatórios): `AsNoTracking()`.
+- Carga para mutação: tracking (sem `AsNoTracking`).
+- Métodos read-only dedicados quando necessário: `GetByIdAsNoTrackingAsync`.
+- Sempre `CancellationToken` em métodos async.
+- Nunca Lazy Loading — usar Explicit Loading ou Projection.
+- Nunca regra de negócio nas configurações EF.
+
+## Persistência
+
+- Application persiste via `IUnitOfWork.SaveChangesAsync()`, não direto no `DbContext`.
+- Nunca expor `DbContext` fora do Infra.
+- Filtro por `empresa_id` explícito nos repositórios customizados (sem global query filter hoje).
+
+## Provider
+
+- SQL Server via `AddDbContext` em `Infra.Data/DependencyInjection.cs`.
+
+## Anti-padrões
+
+```csharp
+// Incorreto — config inline no DbContext
+modelBuilder.Entity<Produto>().HasKey(p => p.Id);
+
+// Incorreto — leitura com tracking desnecessário
+return await _dbSet.Where(...).ToListAsync(ct);
+
+// Correto
+return await _dbSet.AsNoTracking().Where(...).ToListAsync(ct);
+```

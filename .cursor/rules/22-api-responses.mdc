@@ -1,0 +1,58 @@
+---
+description: Formato único de respostas da API — sucesso, erro e paginação
+alwaysApply: true
+---
+
+# Respostas da API
+
+## Envelope de sucesso
+
+```json
+{
+  "data": { },
+  "success": true,
+  "message": null
+}
+```
+
+Tipo: `ApiResponse<T>` — `Models/Common/ApiResponses.cs`.
+
+## Falha esperada (Result.Failure)
+
+Mesmo envelope com `success: false`:
+
+```json
+{
+  "data": null,
+  "success": false,
+  "message": "Paciente não encontrado."
+}
+```
+
+Status HTTP definido no controller (400, 401, 404).
+
+## Exceções (middleware)
+
+`application/problem+json`:
+
+```json
+{
+  "status": 400,
+  "title": "BadRequest",
+  "detail": "Mensagem da DomainException"
+}
+```
+
+## Criação (201)
+
+`CreatedAtAction` com `ApiResponse<T>` no body.
+
+## Paginação (quando implementada)
+
+Manter envelope externo; `data` contém `{ items, page, pageSize, totalCount }`.
+
+## Regras
+
+- **Não alterar** formato sem acordo com frontend (`docs/api-rotas-frontend.md`).
+- Nunca retornar entidade de domínio.
+- `HealthController` é exceção (objeto anônimo).

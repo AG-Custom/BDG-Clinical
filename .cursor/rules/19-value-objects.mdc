@@ -1,0 +1,40 @@
+---
+description: Value Objects — Cpf, Email, Money e tipos reutilizáveis
+alwaysApply: true
+---
+
+# Value Objects
+
+## Localização
+
+`Domain/ValueObjects/{Nome}.cs` herdando de `ValueObject`.
+
+## Tipos prioritários
+
+| VO | Uso |
+|----|-----|
+| `Cpf` | Pacientes, validação única |
+| `Email` | Usuários, fornecedores |
+| `Money` | Valores financeiros, pacotes |
+| `Percentage` | Descontos, comissões |
+| `Address` | Endereços de empresa/unidade |
+
+## Regras
+
+- Imutáveis após criação.
+- Validação no construtor/factory — lança `DomainException` ou retorna erro tipado.
+- Igualdade por componentes (`ValueObject` base).
+- Application delega: `Cpf.Create(request.Cpf)` mantendo mesma mensagem de erro para o HTTP.
+
+## Migração gradual
+
+1. Criar VO no Domain.
+2. Validators da Application chamam o VO.
+3. Entidades passam a usar VO internamente quando refatoradas.
+
+Não refatorar todas as entidades de uma vez.
+
+## Anti-padrões
+
+- String crua para CPF/email espalhada sem validação centralizada.
+- VO com acesso a banco ou HTTP.

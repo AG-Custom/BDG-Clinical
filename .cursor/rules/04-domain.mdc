@@ -1,0 +1,75 @@
+---
+description: Regras do domínio — entidades, invariantes, domain services e value objects
+alwaysApply: true
+---
+
+# Domain
+
+O domínio é soberano. Toda regra de negócio obrigatoriamente existe no Domain.
+
+## Onde NÃO colocar regra de negócio
+
+- Controller
+- Repository
+- Application (exceto orquestração e validação de formato de entrada)
+- Configurações Entity Framework
+
+## Entidades
+
+- Herdar de `Entity` ou `AggregateRoot`.
+- Propriedades com `private set`; mutação via métodos nomeados.
+- Construtor privado sem parâmetros para EF; factory `static Create` para criação válida.
+- `DomainException` para regras que impedem a operação.
+
+### Comportamento correto
+
+```csharp
+user.CompleteFirstAccess(senhaHash);
+produto.Deactivate();
+pedido.MarkAsReceived();
+```
+
+### Comportamento incorreto
+
+```csharp
+user.Save();
+user.SendEmail();
+user.Find();
+```
+
+## Entidades nunca possuem
+
+- Acesso ao banco, repository, HTTP, cache ou filesystem.
+
+## Domain Services
+
+Quando a regra envolve mais de uma entidade ou não cabe numa entidade:
+
+```
+Domain/Services/{Context}/{Context}DomainService.cs
+```
+
+Exemplo: cálculo de saldo de pacote cruzando `CompraPaciente` + `AplicacaoPaciente`.
+
+Criar apenas quando necessário; preferir comportamento na entidade.
+
+## Value Objects
+
+Tipos reutilizáveis em `Domain/ValueObjects/`:
+
+- `Cpf`, `Email`, `Money`, `Percentage`, `Address`
+
+Validação encapsulada no VO; Application delega ao VO mantendo mesmas mensagens de erro.
+
+## Domain Events
+
+Infraestrutura em `Entity.AddDomainEvent()`. Usar para efeitos colaterais entre contextos sem acoplamento direto (ex.: aplicação realizada → movimentação de estoque). Nunca disparar integrações externas diretamente das entidades.
+
+## Organização de arquivos
+
+Atual: entidades agrupadas por contexto em `Domain/Entities/{Context}Entities.cs`.
+Ao crescer: migrar para `Domain/{Context}/Entities/{Entidade}.cs` incrementalmente.
+
+## Contextos novos (Packages, Schedules, Financial)
+
+Implementar domínio rico desde o início: métodos `Cancel()`, `MarkAsPaid()`, transições de status encapsuladas — não deixar entidades anêmicas.

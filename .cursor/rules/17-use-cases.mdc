@@ -1,0 +1,37 @@
+---
+description: Padrão de casos de uso — application services sem MediatR
+alwaysApply: true
+---
+
+# Casos de uso (Use Cases)
+
+Toda operação segue fluxo previsível **sem MediatR/CQRS**:
+
+```
+CreatePatient
+  → CreatePatientRequest
+  → PatientRequestValidator (opcional)
+  → CreatePatientsService.ExecuteAsync
+  → ICreatePatientsService (em Abstractions/)
+```
+
+## Convenção
+
+| Peça | Nome |
+|------|------|
+| Service | `{Ação}{Entidade plural}Service` |
+| Interface | `I{Ação}{Entidade plural}Service` |
+| Request | `{Ação}{Entidade}Request` |
+| Validator | `{Entidade}RequestValidator` |
+| Método | `ExecuteAsync(..., CancellationToken)` |
+| Retorno | `Task<Result<TDto>>` |
+
+## Por que não MediatR
+
+O padrão atual é equivalente em previsibilidade. Migrar para Commands/Handlers adiciona cerimônia sem ganho funcional neste projeto.
+
+## Anti-padrões
+
+- Pastas `Commands/`, `Queries/` na raiz
+- Múltiplos métodos públicos no mesmo service (um caso de uso = um service)
+- `ExecutarAsync` em português em código novo (usar `ExecuteAsync`)

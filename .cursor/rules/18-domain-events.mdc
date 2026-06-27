@@ -1,0 +1,37 @@
+---
+description: Eventos de domínio — quando usar e quando evitar
+alwaysApply: true
+---
+
+# Domain Events
+
+## Infraestrutura
+
+`Entity` expõe `AddDomainEvent()`, `DomainEvents` e `ClearDomainEvents()`.
+
+## Quando usar
+
+- Efeito colateral em **outro contexto** após commit bem-sucedido.
+- Desacoplar agregados do mesmo contexto que não devem se conhecer diretamente.
+- Exemplo: `AplicacaoPacienteRealizada` → handler cria `MovimentacaoEstoque`.
+
+## Quando evitar
+
+- Integração externa disparada diretamente da entidade (HTTP, email, Google).
+- Substituir chamada simples e síncrona no mesmo caso de uso.
+- Over-engineering em CRUD sem efeitos colaterais.
+
+## Fluxo recomendado
+
+```
+Entity.AddDomainEvent(evento)
+  → Application persiste (UnitOfWork)
+  → Após SaveChanges, despachar handlers
+  → Handler chama outro caso de uso ou repositório
+```
+
+Handlers na Application ou Infra — nunca na entidade.
+
+## Implementação incremental
+
+Usar ao implementar integrações cross-context (Packages → Inventory, Applications → Inventory). Não refatorar código estável só para adotar events.

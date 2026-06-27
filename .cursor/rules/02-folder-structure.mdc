@@ -1,0 +1,73 @@
+---
+description: Estrutura de pastas por contexto (Application/Infra) e por recurso HTTP (WebApi)
+alwaysApply: true
+---
+
+# Estrutura de pastas por contexto
+
+Organizar por **contexto delimitado**, não por tipo técnico (`Services/`, `Commands/`, `Repositories/` na raiz).
+
+## Application e Infra.Data — por contexto
+
+```
+Application/{Context}/
+  Abstractions/           → interfaces de repositório e caso de uso
+  Dtos/
+  {Feature plural}/       → Authentications, StockMovements, Patients
+    {Action}{Entity}Service.cs
+
+Infra.Data/
+  Repositories/{Context}/
+  Configurations/{Context}/
+  Services/{Feature plural}/
+```
+
+## WebApi — por recurso HTTP (exceção intencional)
+
+A WebApi organiza por **recurso REST** (`Product/`, `StockMovement/`), não por bounded context. Um contexto (`Inventory`) pode ter vários controllers.
+
+```
+WebApi/
+  Controllers/{Resource}/{Resource}Controller.cs
+  Extensions/{Resource}/
+  Infrastructure/{Resource}/
+  Middlewares/
+  Models/Common/
+```
+
+| Correto | Incorreto |
+|---------|-----------|
+| `Controllers/Auth/AuthController.cs` | `Controllers/AuthController.cs` |
+| `Extensions/Auth/AuthServiceCollectionExtensions.cs` | `Extensions/AuthServiceCollectionExtensions.cs` |
+| `Infrastructure/Auth/JwtTokensService.cs` | `Infrastructure/Identidade/JwtTokenService.cs` |
+
+## Mapeamento negócio → código
+
+| Conceito (PT) | Pasta (EN) |
+|---------------|------------|
+| Identidade | `Identity/` |
+| Login | `Authentications/` |
+| Cadastro empresa | `Registrations/` |
+| Usuário autenticado | `Users/` |
+| Estoque | `Inventory/` |
+| Pacientes | `Patients/` |
+
+## Checklist ao adicionar código
+
+1. Identificar contexto (Application/Infra) ou recurso HTTP (WebApi).
+2. Criar subpasta em inglês; features no plural.
+3. Interface de caso de uso em `{Context}/Abstractions/`.
+4. Registrar DI via `Extensions/{Resource}/`, não inline em `Program.cs`.
+
+## Fronteiras entre contextos
+
+- Nenhum `using` de outro contexto na Application.
+- Comunicação via interface em `Abstractions/` ou evento de domínio.
+- Controller não injeta service de outro contexto sem orquestração explícita.
+
+## Anti-padrões
+
+- Pastas `Identidade`, `Obter`, `Registrar`, `Login` (português ou verbo solto)
+- `Services/`, `DTOs/`, `Validators/` na raiz da Application
+- Controllers ou extensions na raiz de `Controllers/` ou `Extensions/`
+- Reorganizar WebApi por bounded context (quebra contrato REST e `docs/api-rotas-frontend.md`)

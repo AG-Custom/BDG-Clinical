@@ -1,0 +1,96 @@
+---
+description: Arquitetura, camadas, dependências e SOLID do backend BGD Clinical
+alwaysApply: true
+---
+
+# Arquitetura — BGD Clinical
+
+Sistema SaaS white label para clínicas. Cada `Empresa` é um tenant isolado. Módulos são contratados via `LicencaModulo` e acessados conforme `PermissaoUsuario`.
+
+## Projetos da solução
+
+| Projeto | Responsabilidade |
+|---------|------------------|
+| `BGD.CLINICAL.Domain` | Entidades, enums, value objects, exceções, regras de negócio |
+| `BGD.CLINICAL.Application` | Casos de uso por contexto, DTOs, validações, abstrações |
+| `BGD.CLINICAL.Infra.Data` | EF Core, DbContext, migrations, repositórios |
+| `BGD.CLINICAL.Infra.ExternalApis` | Integrações externas (Google Calendar, etc.) |
+| `BGD.CLINICAL.Infra.Jobs` | Workers e jobs em background |
+| `BGD.CLINICAL.WebApi` | Controllers, middlewares, composição DI da API REST |
+| `BGD.CLINICAL.Jobs.Web` | Host dos jobs em background |
+
+## Contextos delimitados
+
+| Contexto (código EN) | Escopo |
+|----------------------|--------|
+| `Core` | Empresa, Unidade, Cargo, Funcionario |
+| `Identity` | Usuario, autenticação, sessão, login/logout |
+| `Modules` | ModuloSistema, LicencaModulo, PermissaoUsuario |
+| `Patients` | Paciente, Sintoma |
+| `Packages` | Pacote, ItemPacote, CompraPaciente |
+| `Inventory` | Produto, Fornecedor, PedidoFornecedor, MovimentacaoEstoque |
+| `Applications` | AplicacaoPaciente, AplicacaoSintoma, Procedimento |
+| `Schedules` | Agendamento, Disponibilidade, BloqueioAgenda |
+| `GoogleCalendar` | ContaGoogle, AgendaGoogle, Sync |
+| `Financial` | FormaPagamento, ContaReceber, PagamentoPaciente |
+| `Audits` | LogAuditoria |
+
+Referência de dados: `100.Documentos/banco-de-dados.mkd`.
+
+## Direção de dependências
+
+```
+WebApi / Jobs.Web
+    ↓
+Application ← Abstractions (interfaces)
+    ↓
+Domain
+
+Infra.Data / Infra.ExternalApis / Infra.Jobs
+    ↓ implementam
+Application.Abstractions
+    ↓ referenciam
+Domain
+```
+
+| Origem | Não pode referenciar |
+|--------|----------------------|
+| Domain | Application, Infra, WebApi |
+| Application | Infra.Data, Infra.ExternalApis, WebApi |
+| Infra.Data | WebApi |
+| WebApi | Domain diretamente (exceto quando inevitável em contratos) |
+
+## Fluxo da aplicação
+
+```
+Controller → Application Service (ExecuteAsync) → Domain → Repository → Database
+```
+
+## Princípios inegociáveis
+
+- Organizar por **contexto delimitado**, nunca por tipo técnico solto na raiz.
+- Toda operação respeita isolamento por `empresa_id`.
+- Regras de negócio no Domain; orquestração na Application; I/O no Infra.
+- Controllers finos: recebem request, delegam ao Application, retornam response.
+- `Result<T>` para falha esperada; `DomainException` para violação de invariante.
+- Comunicação entre contextos via contratos explícitos ou eventos de domínio.
+
+## SOLID (resumo)
+
+| Princípio | Regra prática |
+|-----------|---------------|
+| SRP | Um service = um caso de uso; controller só HTTP; repositório só dados |
+| OCP | Estender via interfaces; integrações em `Infra.ExternalApis` |
+| LSP | Repositórios honram filtros de tenant e contratos |
+| ISP | Interfaces específicas por agregado/caso de uso |
+| DIP | Application define abstrações; Infra implementa |
+
+## Composição DI
+
+Cada camada expõe extensão: `AddApplication()`, `AddInfraData()`, `AddExternalApis()`. Novos serviços no `DependencyInjection.cs` da camada, não espalhados em `Program.cs`.
+
+## Testabilidade
+
+- Application testável com mocks das abstrações.
+- Domain testável sem infraestrutura.
+- Não instanciar `AppDbContext` em testes de Application.

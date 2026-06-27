@@ -1,0 +1,49 @@
+---
+description: Estrutura de referência do contexto Identity — Login e autenticação
+globs: "**/Identity/**,**/Auth/**,**/Login*"
+alwaysApply: false
+---
+
+# Exemplo — Contexto Identity (Login)
+
+Login, registro e sessão pertencem ao contexto `Identity`. Não implementar auth em `Core`, `Modules` ou na raiz da WebApi.
+
+Ver também: `01-architecture.mdc`, `15-security.mdc`, `22-api-responses.mdc`.
+
+## Árvore esperada
+
+```
+BGD.CLINICAL.Application/Identity/
+  Abstractions/          → ILoginUsersService, IUsersRepository, ITokenService
+  Authentications/       → LoginUsersService
+  Registrations/         → RegisterCompaniesService
+  Users/                 → GetAuthenticatedUsersService
+  Dtos/
+
+BGD.CLINICAL.Infra.Data/Repositories/Identity/UsersRepository.cs
+BGD.CLINICAL.WebApi/Controllers/Auth/AuthController.cs
+BGD.CLINICAL.WebApi/Extensions/Auth/AuthServiceCollectionExtensions.cs
+BGD.CLINICAL.WebApi/Infrastructure/Auth/JwtTokensService.cs
+```
+
+## Fluxo Login
+
+```
+AuthController
+  → LoginUsersService.ExecuteAsync
+    → IUsersRepository
+    → IPasswordHashGenerator.Verify
+    → ITokenService.GenerateToken
+    → IAuditLogsService.RegisterLoginAsync
+  → ApiResponse<LoginResponse>
+```
+
+## Tenant
+
+`ICurrentTenantContext` resolve `empresa_id` da claim JWT — não há `TenantResolutionMiddleware`.
+
+## Segurança
+
+- `SenhaHash` nunca em DTO de response.
+- Mensagem genérica: "Credenciais inválidas."
+- JWT: `ExpirationMinutes` em Development / `Jwt__Secret` em produção.

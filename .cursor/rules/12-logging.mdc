@@ -1,0 +1,28 @@
+---
+description: Quando logar e quando não logar
+alwaysApply: true
+---
+
+# Logging
+
+## Quando logar
+
+- Exceções não tratadas (500) — `LogError` com exception completa no servidor.
+- Falhas de integração externa (Google, jobs).
+- Operações de background com falha após retry.
+
+## Quando NÃO logar
+
+- Falhas esperadas de negócio (`Result.Failure`) — são fluxo normal.
+- Credenciais inválidas em login (evitar log com dados sensíveis).
+- Validação de entrada rejeitada.
+
+## Regras
+
+- Nunca esconder exceção — sempre logar no catch do middleware para 500.
+- Não logar senhas, tokens ou PII desnecessário.
+- Usar `ILogger<T>` injetado; evitar `Console.WriteLine`.
+
+## Evolução
+
+Logging estruturado (correlation id, tenant id) quando escalar observabilidade.

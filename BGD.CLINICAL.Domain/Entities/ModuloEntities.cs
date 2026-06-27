@@ -53,6 +53,21 @@ public sealed class LicencaModulo : AggregateRoot
 
     public Empresa Empresa { get; private set; } = null!;
     public ModuloSistema Modulo { get; private set; } = null!;
+
+    public bool IsActiveAt(DateTime referenceUtc)
+    {
+        if (Status is not (StatusLicencaModulo.Ativo or StatusLicencaModulo.Teste))
+        {
+            return false;
+        }
+
+        if (DataInicio > referenceUtc)
+        {
+            return false;
+        }
+
+        return DataFim is null || DataFim >= referenceUtc;
+    }
 }
 
 public sealed class PermissaoUsuario : AggregateRoot
@@ -81,4 +96,13 @@ public sealed class PermissaoUsuario : AggregateRoot
 
     public Usuario Usuario { get; private set; } = null!;
     public ModuloSistema Modulo { get; private set; } = null!;
+
+    public bool Allows(ModulePermissionAction action) => action switch
+    {
+        ModulePermissionAction.View => PodeVisualizar,
+        ModulePermissionAction.Create => PodeCriar,
+        ModulePermissionAction.Edit => PodeEditar,
+        ModulePermissionAction.Delete => PodeExcluir,
+        _ => false
+    };
 }

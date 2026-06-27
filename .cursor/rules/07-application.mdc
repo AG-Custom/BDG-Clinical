@@ -1,0 +1,55 @@
+---
+description: Camada Application — orquestração, validação de entrada e casos de uso
+alwaysApply: true
+---
+
+# Application
+
+Application **apenas orquestra**. Nunca decide regra de negócio — delega ao Domain.
+
+## Fluxo
+
+```
+Controller → Application Service → Domain → Repository → Database
+```
+
+## Responsabilidades
+
+- Resolver tenant via `ICurrentTenantContext`.
+- Validar formato e unicidade de entrada (antes do Domain).
+- Chamar factories e métodos de entidade.
+- Persistir via `IUnitOfWork`.
+- Registrar auditoria via `IAuditLogsService`.
+- Mapear Entity → DTO.
+
+## Padrão de caso de uso
+
+```csharp
+public sealed class CreatePatientsService : ICreatePatientsService
+{
+    public async Task<Result<PatientDto>> ExecuteAsync(
+        CreatePatientRequest request,
+        CancellationToken cancellationToken)
+    {
+        // validação entrada → domain.Create() → persist → audit → map
+    }
+}
+```
+
+Um service por caso de uso. Interface em `{Context}/Abstractions/`.
+
+## Retorno
+
+- `Result<T>.Success(value)` para sucesso.
+- `Result<T>.Failure(message)` para falha esperada (not found, credencial inválida).
+- Capturar `DomainException` e converter em `Failure` quando apropriado.
+
+## O que NÃO fazer
+
+- Lógica de invariante que pertence ao Domain.
+- Acesso direto a `DbContext`.
+- Retornar entidade de domínio para a WebApi.
+
+## Registro DI
+
+Todos os services em `Application/DependencyInjection.cs`. Quando passar de ~150 serviços, extrair `AddInventoryApplication()`, etc.

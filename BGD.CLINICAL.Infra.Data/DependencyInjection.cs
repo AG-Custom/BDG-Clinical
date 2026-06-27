@@ -4,6 +4,7 @@ using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Patients.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Application.Applications.Abstractions;
+using BGD.CLINICAL.Application.Modules.Abstractions;
 using BGD.CLINICAL.Infra.Data.Context;
 using BGD.CLINICAL.Infra.Data.Repositories;
 using BGD.CLINICAL.Infra.Data.Repositories.Core;
@@ -11,6 +12,7 @@ using BGD.CLINICAL.Infra.Data.Repositories.Identity;
 using BGD.CLINICAL.Infra.Data.Repositories.Inventory;
 using BGD.CLINICAL.Infra.Data.Repositories.Patients;
 using BGD.CLINICAL.Infra.Data.Repositories.Applications;
+using BGD.CLINICAL.Infra.Data.Repositories.Modules;
 using BGD.CLINICAL.Infra.Data.Services.Audits;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -49,6 +51,8 @@ public static class DependencyInjection
         services.AddScoped<IPatientApplicationsRepository, PatientApplicationsRepository>();
         services.AddScoped<IProceduresRepository, ProceduresRepository>();
         services.AddScoped<ISymptomsRepository, SymptomsRepository>();
+        services.AddScoped<IModuleLicensesRepository, ModuleLicensesRepository>();
+        services.AddScoped<IUserPermissionsRepository, UserPermissionsRepository>();
 
         return services;
     }

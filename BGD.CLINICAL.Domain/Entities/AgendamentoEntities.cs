@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Domain.Common;
 using BGD.CLINICAL.Domain.Enums;
+using BGD.CLINICAL.Domain.Exceptions;
 
 namespace BGD.CLINICAL.Domain.Entities;
 
@@ -59,6 +60,56 @@ public sealed class Agendamento : AggregateRoot
     public Usuario? CanceladoPor { get; private set; }
     public AplicacaoPaciente? AplicacaoPaciente { get; private set; }
     public AgendamentoGoogleSync? GoogleSync { get; private set; }
+
+    public void Cancel(Guid canceladoPorId, string motivo)
+    {
+        if (Status == StatusAgendamento.Cancelado)
+        {
+            throw new DomainException("Agendamento já está cancelado.");
+        }
+
+        if (Status == StatusAgendamento.Concluido)
+        {
+            throw new DomainException("Agendamento concluído não pode ser cancelado.");
+        }
+
+        if (canceladoPorId == Guid.Empty)
+        {
+            throw new DomainException("Informe o usuário que cancela o agendamento.");
+        }
+
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            throw new DomainException("Informe o motivo do cancelamento.");
+        }
+
+        Status = StatusAgendamento.Cancelado;
+        CanceladoPorId = canceladoPorId;
+        MotivoCancelamento = motivo.Trim();
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Confirm()
+    {
+        if (Status != StatusAgendamento.Agendado)
+        {
+            throw new DomainException("Somente agendamentos pendentes podem ser confirmados.");
+        }
+
+        Status = StatusAgendamento.Confirmado;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void MarkAsCompleted()
+    {
+        if (Status == StatusAgendamento.Cancelado)
+        {
+            throw new DomainException("Agendamento cancelado não pode ser concluído.");
+        }
+
+        Status = StatusAgendamento.Concluido;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }
 
 public sealed class DisponibilidadeFuncionario : AggregateRoot

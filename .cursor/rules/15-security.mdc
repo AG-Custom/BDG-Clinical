@@ -1,0 +1,66 @@
+---
+description: Segurança, multi-tenant, módulos, permissões e configuração
+alwaysApply: true
+---
+
+# Segurança
+
+## Input e output
+
+- Nunca confiar em input — validar na Application e Domain.
+- Nunca retornar stack trace ao cliente.
+- Nunca armazenar segredo em `appsettings.json` versionado.
+- Sempre parametrizar consultas (EF Core já parametriza).
+
+## Multi-tenant
+
+- Resolver `empresa_id` do token (`ICurrentTenantContext`), nunca do body.
+- Repositórios filtram por `empresa_id`.
+- Rotas cross-tenant apenas com super-admin explícito.
+
+## Licenciamento de módulos
+
+Códigos: `ESTOQUE`, `APLICACOES`, `AGENDAMENTOS`, `FINANCEIRO`, `RELATORIOS`.
+
+Ordem de validação em endpoint de módulo:
+
+1. Usuário autenticado
+2. `empresa_id` resolvido
+3. `LicencaModulo` ativa — attribute `[RequireModuleLicense("ESTOQUE")]`
+4. `PermissaoUsuario` — attribute `[RequirePermission(ModuleAction.Create)]`
+5. Executar caso de uso
+
+## Permissões
+
+| Flag | Ação HTTP |
+|------|-----------|
+| `pode_visualizar` | GET |
+| `pode_criar` | POST |
+| `pode_editar` | PUT, PATCH |
+| `pode_excluir` | DELETE |
+
+## JWT
+
+- Secret em `appsettings.Development.json` (local) ou `Jwt__Secret` (produção).
+- Claims: `sub`, `email`, `empresa_id`, `tipo_usuario`.
+- `SenhaHash` nunca em response.
+
+## AppSettings
+
+Cada host (`WebApi`, `Jobs.Web`) com seus próprios arquivos:
+
+```
+appsettings.json                      → sem segredos
+appsettings.Development.json          → local, .gitignore
+appsettings.Development.example.json    → template
+```
+
+Produção: variáveis de ambiente com `__` (ex.: `ConnectionStrings__DefaultConnection`).
+
+Bibliotecas (`Application`, `Domain`, `Infra.*`) **não** possuem appsettings.
+
+## Anti-padrões
+
+- Connection string em `appsettings.json` versionado
+- Commitar `appsettings.Development.json`
+- Hardcodar segredo em `Program.cs`

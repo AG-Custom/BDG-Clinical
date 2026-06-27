@@ -1,0 +1,60 @@
+---
+description: Controllers, envelope de resposta e mapeamento HTTP
+alwaysApply: true
+---
+
+# WebApi — Controllers
+
+Controller deve apenas:
+
+1. Receber Request
+2. Chamar Application (`ExecuteAsync`)
+3. Retornar Response
+
+Nada além disso. Sem lógica de negócio, sem acesso a repositório ou `DbContext`.
+
+## Organização
+
+`Controllers/{Resource}/{Resource}Controller.cs` — ver `02-folder-structure.mdc`.
+
+## Envelope de sucesso e falha esperada
+
+```csharp
+return Ok(new ApiResponse<PatientDto>(result.Value, true));
+return BadRequest(new ApiResponse<object?>(null!, false, result.Error));
+```
+
+Record `ApiResponse<T>(T Data, bool Success, string? Message)` em `Models/Common/ApiResponses.cs`.
+Serializa como `{ data, success, message }` (camelCase).
+
+## Mapeamento HTTP (falha esperada via Result)
+
+| Situação | Status |
+|----------|--------|
+| Validação / regra de negócio esperada | 400 + `ApiResponse` |
+| Credencial inválida | 401 + `ApiResponse` |
+| Recurso não encontrado | 404 + `ApiResponse` |
+| Criação | 201 + `ApiResponse` + `CreatedAtAction` |
+
+## Exceções (middleware)
+
+| Tipo | HTTP | Formato |
+|------|------|---------|
+| `DomainException` | 400 | `application/problem+json` |
+| Exceção não tratada | 500 | `application/problem+json` (sem stack trace) |
+
+**Não unificar** os dois formatos de erro sem acordo com o frontend — é intencional.
+
+## Autorização
+
+- `[Authorize]` no controller; `[AllowAnonymous]` em endpoints públicos.
+- Policy `AdminOnly` para operações sensíveis.
+- Módulo e permissão: attributes `RequireModuleLicense` e `RequirePermission` (ver `15-security.mdc`).
+
+## Middleware
+
+`ExceptionHandlingMiddleware` registrado via `UseApiExceptionHandling()` **antes** de auth.
+
+## Exceção
+
+`HealthController` retorna objeto anônimo — endpoint de infraestrutura.

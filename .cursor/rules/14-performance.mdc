@@ -1,0 +1,30 @@
+---
+description: Performance — queries, paginação e CancellationToken
+alwaysApply: true
+---
+
+# Performance
+
+## Queries
+
+- Sempre paginação em listagens (quando volume crescer).
+- Nunca `SELECT *` desnecessário — usar projeções quando possível.
+- `AsNoTracking()` em leituras.
+- `CancellationToken` em todo método async.
+- Evitar N+1 — `Include` planejado ou projeção direta.
+
+## Repositórios
+
+- Métodos read-only com sufixo ou flag explícita quando tracking não é necessário.
+- Índices compostos com `empresa_id` nas configurations EF.
+
+## Application
+
+- Não carregar grafos inteiros quando DTO precisa de subset.
+- Auditoria assíncrona sem bloquear resposta quando possível (futuro).
+
+## Anti-padrões
+
+- Lazy Loading (desabilitado — não usar).
+- Loop com query por item (N+1).
+- Listagem sem limite de registros em tabelas grandes.

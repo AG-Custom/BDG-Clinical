@@ -1,0 +1,28 @@
+---
+description: Código limpo — métodos pequenos, nomes claros, sem helpers genéricos
+alwaysApply: true
+---
+
+# Código limpo
+
+## Métodos
+
+- Pequenos, uma responsabilidade.
+- Nomes claros que expressam intenção.
+- Evitar comentários óbvios; comentar apenas lógica de negócio não evidente.
+
+## Classes
+
+- Um caso de uso por service.
+- Não usar `Helper1`, `Util`, classes estáticas gigantes.
+- Não usar métodos estáticos para regra de negócio (exceto factories e validators puros).
+
+## Organização
+
+- Código novo na pasta do contexto, não na raiz.
+- Interfaces de caso de uso em `Abstractions/`.
+- Evitar duplicação de mapeamento HTTP — extrair helper interno na WebApi se repetir muito (sem alterar contrato).
+
+## SOLID
+
+Ver `01-architecture.mdc` para detalhes de SRP, OCP, LSP, ISP, DIP.

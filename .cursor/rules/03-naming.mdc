@@ -1,0 +1,39 @@
+---
+description: Convenções de nomenclatura de classes, pastas e arquivos
+alwaysApply: true
+---
+
+# Nomenclatura
+
+Pastas **sempre em inglês**. Features **no plural**. Arquivos seguem a classe principal.
+
+## Tabela de padrões
+
+| Elemento | Padrão | Exemplo |
+|----------|--------|---------|
+| Pasta de contexto | Inglês, PascalCase singular | `Identity`, `Inventory` |
+| Pasta de feature | Inglês, plural | `Authentications`, `StockMovements` |
+| Pasta WebApi | Inglês, singular do recurso HTTP | `Auth`, `Patient` |
+| Service | `{Ação}{Entidade plural}Service` | `CreatePatientsService`, `LoginUsersService` |
+| Interface service | `I{NomeService}` em `Abstractions/` | `ILoginUsersService` |
+| Interface repositório | `I{Entidade plural}Repository` | `IUsersRepository` |
+| Request DTO | `{Ação}{Entidade}Request` | `CreatePatientRequest` |
+| Response/DTO | `{Entidade}Dto` ou `{Ação}Response` | `PatientDto`, `AuthResponse` |
+| Controller | `{Recurso}Controller` | `PatientController` |
+| Validator | `{Entidade}RequestValidator` | `PatientRequestValidator` |
+| Mapper | `{Entidade}Mapper` | `PatientMapper` |
+| EF Configuration | `{Entidade}Configuration` | `ProductConfiguration` |
+
+## Método de caso de uso
+
+Todo service expõe `ExecuteAsync(..., CancellationToken cancellationToken)`.
+
+## Anti-padrões
+
+| Evitar | Usar |
+|--------|------|
+| `ServiceProduct` | `CreateProductsService` |
+| `RepositoryProduct` | `ProductsRepository` |
+| `Helper1`, `Util` | Nome descritivo por responsabilidade |
+| Pastas em português | Inglês singular/plural conforme tabela |
+| Verbos soltos (`Obter/`, `Registrar/`) | Feature plural (`Authentications/`) |

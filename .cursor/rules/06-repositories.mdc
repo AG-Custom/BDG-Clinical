@@ -1,0 +1,42 @@
+---
+description: Repositórios — acesso a dados sem regra de negócio
+alwaysApply: true
+---
+
+# Repositories
+
+Repositório **apenas acessa dados**. Nunca calcula, valida, decide ou aplica regra de negócio.
+
+## Organização
+
+```
+Infra.Data/Repositories/{Context}/{Entity}Repository.cs
+```
+
+Interfaces em `Application/{Context}/Abstractions/I{Entity}Repository.cs`.
+
+## Regras
+
+- Filtro explícito por `empresa_id` em consultas customizadas.
+- `CancellationToken` em todos os métodos async.
+- `AsNoTracking()` em listagens e leituras sem mutação.
+- `Include`/`ThenInclude` apenas quando necessário; evitar N+1.
+- `AddAsync` + `Update` com checagem de `EntityState.Detached` quando aplicável.
+
+## Anti-padrão multi-tenant
+
+```csharp
+return await _dbSet.FirstOrDefaultAsync(u => u.EmailLogin == email);
+```
+
+## Padrão
+
+```csharp
+return await _dbSet.FirstOrDefaultAsync(
+    u => u.EmpresaId == empresaId && u.EmailLogin == email,
+    cancellationToken);
+```
+
+## Base genérica
+
+`Repository<T>` existe como base, mas repositórios concretos são `sealed` standalone com métodos específicos por agregado.

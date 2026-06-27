@@ -1,0 +1,56 @@
+---
+description: Checklist obrigatório ao criar uma nova feature no backend
+alwaysApply: true
+---
+
+# Checklist — Nova feature
+
+Antes de implementar, identificar o **contexto delimitado**. Se cruza contextos, definir contrato explícito.
+
+## 1. Planejamento
+
+- [ ] Contexto definido (ex.: `Inventory`, `Identity`)
+- [ ] Regras em `100.Documentos/banco-de-dados.mkd`
+- [ ] `LicencaModulo` se módulo pago
+- [ ] Permissões (`pode_visualizar`, `pode_criar`, `pode_editar`, `pode_excluir`)
+- [ ] `empresa_id` em toda query e comando
+
+## 2. Domain
+
+- [ ] Entidade com factory `Create` e métodos de comportamento
+- [ ] Enums em `Domain/Enums/` se necessário
+- [ ] `DomainException` para regras impeditivas
+- [ ] Value Object se tipo reutilizável (CPF, Email)
+
+## 3. Application
+
+- [ ] `Application/{Context}/{Feature}/`
+- [ ] DTOs em `{Context}/Dtos/`
+- [ ] Interface em `{Context}/Abstractions/`
+- [ ] `Result<T>` para falha esperada
+- [ ] Registro em `DependencyInjection.cs`
+
+## 4. Infra.Data
+
+- [ ] `IEntityTypeConfiguration` em `Configurations/{Context}/`
+- [ ] Repositório em `Repositories/{Context}/`
+- [ ] Migration via `dotnet ef migrations add`
+- [ ] Filtro `empresa_id`
+
+## 5. WebApi
+
+- [ ] `Controllers/{Resource}/{Resource}Controller.cs`
+- [ ] `RequireModuleLicense` / `RequirePermission` se módulo contratável
+- [ ] `ApiResponse<T>` nas respostas
+- [ ] Documentar em `docs/api-rotas-frontend.md`
+
+## 6. Transversal
+
+- [ ] `LogAuditoria` em ações críticas
+- [ ] Testes happy path e regras de negócio
+
+## Anti-padrões
+
+- Controller com lógica de negócio ou `DbContext`
+- Service importando entidade de outro contexto sem abstração
+- Query sem filtro de tenant

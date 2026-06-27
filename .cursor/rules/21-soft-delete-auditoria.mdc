@@ -1,0 +1,40 @@
+---
+description: Soft delete, auditoria, timestamps e concorrência
+alwaysApply: true
+---
+
+# Soft delete e auditoria
+
+## Auditoria (implementado)
+
+Ações críticas geram `LogAuditoria` via `IAuditLogsService`:
+
+- CRIAR, EDITAR, EXCLUIR, CANCELAR em entidades sensíveis
+- LOGIN, LOGOUT
+- GERAR_MOVIMENTACAO (Inventory)
+- SINCRONIZAR_GOOGLE (GoogleCalendar)
+
+Regras:
+
+- Alterações sensíveis registram `dados_anteriores` e `dados_novos`.
+- Login registra `usuario_id`, data, IP.
+- Auditoria não contém regra de negócio de outros contextos.
+
+## Timestamps (implementado)
+
+`Entity` base: `CriadoEm`, `AtualizadoEm`. Entidades atualizam `AtualizadoEm` em mutações.
+
+## Soft delete (não implementado)
+
+O schema atual **não** usa soft delete global (`IsDeleted`, `ExcluidoEm`).
+
+- Desativação via flags (`Ativo`, `Deactivate()`) onde aplicável.
+- Introduzir soft delete exige decisão de produto + migration — não adotar globalmente sem alinhamento.
+
+## Concorrência
+
+`RowVersion` não é padrão hoje. Avaliar por agregado crítico (estoque, financeiro) quando necessário.
+
+## Usuário criador/alterador
+
+Não é padrão global nas entidades. Usar `LogAuditoria` para rastreabilidade de ações críticas.
