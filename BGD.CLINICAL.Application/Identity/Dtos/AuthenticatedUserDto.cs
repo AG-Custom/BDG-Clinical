@@ -5,4 +5,5 @@ public sealed record AuthenticatedUserDto(
     string Nome,
     string Email,
     bool IsAdmin,
-    bool FlagAplicador);
+    bool FlagAplicador,
+    IReadOnlyList<string> Permissions);

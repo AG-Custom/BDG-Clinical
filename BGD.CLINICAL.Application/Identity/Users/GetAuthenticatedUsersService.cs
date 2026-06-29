@@ -1,6 +1,7 @@
 using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Identity.Dtos;
+using BGD.CLINICAL.Application.Modules.Abstractions;
 using BGD.CLINICAL.Domain.Enums;
 using System.Security.Claims;
 
@@ -9,10 +10,14 @@ namespace BGD.CLINICAL.Application.Identity.Users;
 public sealed class GetAuthenticatedUsersService : IGetAuthenticatedUsersService
 {
     private readonly IUsersRepository _usersRepository;
+    private readonly IPermissionChecker _permissionChecker;
 
-    public GetAuthenticatedUsersService(IUsersRepository usersRepository)
+    public GetAuthenticatedUsersService(
+        IUsersRepository usersRepository,
+        IPermissionChecker permissionChecker)
     {
         _usersRepository = usersRepository;
+        _permissionChecker = permissionChecker;
     }
 
     public async Task<Result<AuthenticatedUserDto>> ExecuteAsync(
@@ -39,6 +44,9 @@ public sealed class GetAuthenticatedUsersService : IGetAuthenticatedUsersService
             return Result<AuthenticatedUserDto>.Failure("Usuário não autenticado.");
         }
 
-        return Result<AuthenticatedUserDto>.Success(AuthenticatedUsersMapper.Map(usuario));
+        var permissions = await _permissionChecker.GetEffectivePermissionsAsync(usuarioId, cancellationToken);
+
+        return Result<AuthenticatedUserDto>.Success(
+            AuthenticatedUsersMapper.Map(usuario, permissions.OrderBy(key => key).ToList()));
     }
 }

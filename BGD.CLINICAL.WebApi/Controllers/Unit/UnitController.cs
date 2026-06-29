@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Core.Dtos;
 using BGD.CLINICAL.Application.Core.Units;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class UnitController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Units)]
     public async Task<IActionResult> List(
         [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
@@ -45,6 +47,7 @@ public sealed class UnitController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Units)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getUnitsService.ExecuteAsync(id, cancellationToken);
@@ -58,6 +61,7 @@ public sealed class UnitController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("unidade.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateUnitRequest request,
         CancellationToken cancellationToken)
@@ -76,6 +80,7 @@ public sealed class UnitController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("unidade.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateUnitRequest request,
@@ -96,6 +101,7 @@ public sealed class UnitController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("unidade.editar")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateUnitsService.ExecuteAsync(id, cancellationToken);
@@ -113,6 +119,7 @@ public sealed class UnitController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("unidade.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivateUnitsService.ExecuteAsync(id, cancellationToken);

@@ -19,7 +19,9 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<Cargo> Cargos => Set<Cargo>();
     public DbSet<ModuloSistema> ModulosSistema => Set<ModuloSistema>();
     public DbSet<LicencaModulo> LicencasModulo => Set<LicencaModulo>();
-    public DbSet<PermissaoUsuario> PermissoesUsuario => Set<PermissaoUsuario>();
+    public DbSet<PermissaoSistema> PermissoesSistema => Set<PermissaoSistema>();
+    public DbSet<CargoPermissaoItem> CargoPermissaoItens => Set<CargoPermissaoItem>();
+    public DbSet<UsuarioPermissaoOverride> UsuarioPermissoesOverride => Set<UsuarioPermissaoOverride>();
     public DbSet<ConvitePrimeiroAcesso> ConvitesPrimeiroAcesso => Set<ConvitePrimeiroAcesso>();
     public DbSet<Paciente> Pacientes => Set<Paciente>();
     public DbSet<Sintoma> Sintomas => Set<Sintoma>();
@@ -32,6 +34,7 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<Fornecedor> Fornecedores => Set<Fornecedor>();
     public DbSet<PedidoFornecedor> PedidosFornecedor => Set<PedidoFornecedor>();
     public DbSet<ItemPedidoFornecedor> ItensPedidoFornecedor => Set<ItemPedidoFornecedor>();
+    public DbSet<AnexoPedidoFornecedor> AnexosPedidoFornecedor => Set<AnexoPedidoFornecedor>();
     public DbSet<Procedimento> Procedimentos => Set<Procedimento>();
     public DbSet<ItemProcedimento> ItensProcedimento => Set<ItemProcedimento>();
     public DbSet<MovimentacaoEstoque> MovimentacoesEstoque => Set<MovimentacaoEstoque>();

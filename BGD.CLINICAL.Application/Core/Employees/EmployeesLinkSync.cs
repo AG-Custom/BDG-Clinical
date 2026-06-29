@@ -12,13 +12,12 @@ internal static class EmployeesLinkSync
         bool linkToEmpresa,
         IReadOnlyList<Guid>? unidadeIds,
         Guid? cargoId,
-        bool flagAplicador,
         IEmployeesRepository employeesRepository,
         CancellationToken cancellationToken)
     {
         if (linkToEmpresa)
         {
-            SyncEmpresaVinculo(funcionario, empresaId, cargoId, flagAplicador);
+            SyncEmpresaVinculo(funcionario, empresaId, cargoId);
             return Result.Success();
         }
 
@@ -37,15 +36,14 @@ internal static class EmployeesLinkSync
             return Result.Failure("Uma ou mais unidades não pertencem à empresa.");
         }
 
-        SyncUnidadeVinculos(funcionario, empresaId, distinctUnidadeIds, cargoId, flagAplicador);
+        SyncUnidadeVinculos(funcionario, empresaId, distinctUnidadeIds, cargoId);
         return Result.Success();
     }
 
     private static void SyncEmpresaVinculo(
         Funcionario funcionario,
         Guid empresaId,
-        Guid? cargoId,
-        bool flagAplicador)
+        Guid? cargoId)
     {
         var vinculosNaEmpresa = GetVinculosInEmpresa(funcionario, empresaId);
 
@@ -63,22 +61,22 @@ internal static class EmployeesLinkSync
                 empresaVinculo.Reactivate();
             }
 
-            empresaVinculo.UpdateAssignment(cargoId, flagAplicador);
+            empresaVinculo.UpdateAssignment(cargoId);
             return;
         }
 
-        funcionario.AddEmpresaVinculo(empresaId, cargoId, flagAplicador);
+        funcionario.AddEmpresaVinculo(empresaId, cargoId);
     }
 
     private static void SyncUnidadeVinculos(
         Funcionario funcionario,
         Guid empresaId,
         IReadOnlyList<Guid> unidadeIds,
-        Guid? cargoId,
-        bool flagAplicador)
+        Guid? cargoId)
     {
-        var vinculosNaEmpresa = GetVinculosInEmpresa(funcionario, empresaId);
         var requestedUnidadeIds = unidadeIds.ToHashSet();
+        var knownUnidadeIdsInEmpresa = BuildKnownUnidadeIdsInEmpresa(funcionario, empresaId, requestedUnidadeIds);
+        var vinculosNaEmpresa = GetVinculosInEmpresa(funcionario, empresaId, knownUnidadeIdsInEmpresa);
 
         foreach (var vinculo in vinculosNaEmpresa.Where(v => v.EmpresaId.HasValue && v.Ativo))
         {
@@ -87,7 +85,7 @@ internal static class EmployeesLinkSync
 
         foreach (var unidadeId in unidadeIds)
         {
-            var existingVinculo = vinculosNaEmpresa.FirstOrDefault(v => v.UnidadeId == unidadeId);
+            var existingVinculo = funcionario.Vinculos.FirstOrDefault(v => v.UnidadeId == unidadeId);
 
             if (existingVinculo is not null)
             {
@@ -96,26 +94,71 @@ internal static class EmployeesLinkSync
                     existingVinculo.Reactivate();
                 }
 
-                existingVinculo.UpdateAssignment(cargoId, flagAplicador);
+                existingVinculo.UpdateAssignment(cargoId);
                 continue;
             }
 
-            funcionario.AddUnidadeVinculo(unidadeId, cargoId, flagAplicador);
+            funcionario.AddUnidadeVinculo(unidadeId, cargoId);
         }
 
-        foreach (var vinculo in vinculosNaEmpresa.Where(v =>
+        foreach (var vinculo in funcionario.Vinculos.Where(v =>
                      v.UnidadeId.HasValue
                      && v.Ativo
-                     && !requestedUnidadeIds.Contains(v.UnidadeId.Value)))
+                     && !requestedUnidadeIds.Contains(v.UnidadeId.Value)
+                     && BelongsToEmpresa(v, empresaId, knownUnidadeIdsInEmpresa)))
         {
             vinculo.Deactivate();
         }
     }
 
-    private static List<FuncionarioVinculo> GetVinculosInEmpresa(Funcionario funcionario, Guid empresaId)
+    private static HashSet<Guid> BuildKnownUnidadeIdsInEmpresa(
+        Funcionario funcionario,
+        Guid empresaId,
+        IReadOnlySet<Guid> requestedUnidadeIds)
+    {
+        var knownUnidadeIds = new HashSet<Guid>(requestedUnidadeIds);
+
+        foreach (var vinculo in funcionario.Vinculos.Where(v => v.UnidadeId.HasValue))
+        {
+            if (vinculo.Unidade?.EmpresaId == empresaId)
+            {
+                knownUnidadeIds.Add(vinculo.UnidadeId!.Value);
+            }
+        }
+
+        return knownUnidadeIds;
+    }
+
+    private static List<FuncionarioVinculo> GetVinculosInEmpresa(
+        Funcionario funcionario,
+        Guid empresaId,
+        IReadOnlySet<Guid>? knownUnidadeIdsInEmpresa = null)
     {
         return funcionario.Vinculos
-            .Where(vinculo => vinculo.BelongsToEmpresa(empresaId))
+            .Where(vinculo => BelongsToEmpresa(vinculo, empresaId, knownUnidadeIdsInEmpresa))
             .ToList();
+    }
+
+    private static bool BelongsToEmpresa(
+        FuncionarioVinculo vinculo,
+        Guid empresaId,
+        IReadOnlySet<Guid>? knownUnidadeIdsInEmpresa = null)
+    {
+        if (vinculo.EmpresaId == empresaId)
+        {
+            return true;
+        }
+
+        if (!vinculo.UnidadeId.HasValue)
+        {
+            return false;
+        }
+
+        if (vinculo.Unidade?.EmpresaId == empresaId)
+        {
+            return true;
+        }
+
+        return knownUnidadeIdsInEmpresa?.Contains(vinculo.UnidadeId.Value) == true;
     }
 }

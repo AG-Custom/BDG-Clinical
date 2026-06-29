@@ -1,3 +1,4 @@
+using BGD.CLINICAL.Application.Abstractions.Storage;
 using BGD.CLINICAL.Application.Abstractions.Persistence;
 using BGD.CLINICAL.Application.Abstractions.Security;
 using BGD.CLINICAL.Application.Common;
@@ -24,19 +25,22 @@ public sealed class ReceiveSupplierOrdersService : IReceiveSupplierOrdersService
     private readonly IStockMovementsRepository _stockMovementsRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IObjectStorageService _objectStorageService;
 
     public ReceiveSupplierOrdersService(
         ICurrentTenantContext tenantContext,
         ISupplierOrdersRepository supplierOrdersRepository,
         IStockMovementsRepository stockMovementsRepository,
         IAuditLogsService auditLogsService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IObjectStorageService objectStorageService)
     {
         _tenantContext = tenantContext;
         _supplierOrdersRepository = supplierOrdersRepository;
         _stockMovementsRepository = stockMovementsRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
+        _objectStorageService = objectStorageService;
     }
 
     public async Task<Result<SupplierOrderDto>> ExecuteAsync(
@@ -98,7 +102,8 @@ public sealed class ReceiveSupplierOrdersService : IReceiveSupplierOrdersService
                 empresaId,
                 cancellationToken);
 
-            return Result<SupplierOrderDto>.Success(SupplierOrdersMapper.Map(persisted ?? pedido));
+            return Result<SupplierOrderDto>.Success(
+                SupplierOrdersMapper.Map(persisted ?? pedido, _objectStorageService));
         }
         catch (DomainException exception)
         {

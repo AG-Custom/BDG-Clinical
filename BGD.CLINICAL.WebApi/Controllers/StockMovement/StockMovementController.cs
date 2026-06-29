@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Application.Inventory.StockMovements;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,7 @@ public sealed class StockMovementController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("estoque.visualizar")]
     public async Task<IActionResult> List(
         [FromQuery] Guid? unidadeId = null,
         [FromQuery] Guid? produtoId = null,
@@ -53,6 +55,7 @@ public sealed class StockMovementController : ControllerBase
     }
 
     [HttpPost("adjustment")]
+    [RequirePermission("estoque.ajustar")]
     public async Task<IActionResult> CreateAdjustment(
         [FromBody] CreateManualStockMovementRequest request,
         CancellationToken cancellationToken)
@@ -68,6 +71,7 @@ public sealed class StockMovementController : ControllerBase
     }
 
     [HttpPost("loss")]
+    [RequirePermission("estoque.movimentar")]
     public async Task<IActionResult> CreateLoss(
         [FromBody] CreateManualStockMovementRequest request,
         CancellationToken cancellationToken)

@@ -20,6 +20,7 @@ public sealed record SupplierOrderDto(
     decimal ValorTotal,
     string? Observacao,
     IReadOnlyList<SupplierOrderItemDto> Itens,
+    IReadOnlyList<SupplierOrderAttachmentDto> Anexos,
     DateTime CriadoEm,
     DateTime? AtualizadoEm);
 

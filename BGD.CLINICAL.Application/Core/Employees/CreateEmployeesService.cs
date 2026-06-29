@@ -96,7 +96,6 @@ public sealed class CreateEmployeesService : ICreateEmployeesService
                 request.LinkToEmpresa,
                 request.UnidadeIds,
                 request.CargoId,
-                request.FlagAplicador,
                 _employeesRepository,
                 cancellationToken);
 

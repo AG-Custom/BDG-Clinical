@@ -26,6 +26,11 @@ public interface IEmployeesRepository
         Guid empresaId,
         CancellationToken cancellationToken = default);
 
+    Task<Guid?> GetUsuarioIdByFuncionarioAndEmpresaAsync(
+        Guid funcionarioId,
+        Guid empresaId,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(Funcionario funcionario, CancellationToken cancellationToken = default);
 
     void Update(Funcionario funcionario);

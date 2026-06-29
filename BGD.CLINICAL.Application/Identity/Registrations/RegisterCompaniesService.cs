@@ -4,6 +4,8 @@ using BGD.CLINICAL.Application.Core.Abstractions;
 using BGD.CLINICAL.Application.Core.Companies;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Identity.Dtos;
+using BGD.CLINICAL.Application.Modules.Abstractions;
+using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -17,6 +19,8 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
     private readonly IUsersRepository _usersRepository;
     private readonly IPasswordHashGenerator _passwordHashGenerator;
     private readonly ITokenService _tokenService;
+    private readonly ICompanyModuleLicensesProvisioner _moduleLicensesProvisioner;
+    private readonly ICompanyDefaultMeasurementUnitsProvisioner _defaultMeasurementUnitsProvisioner;
     private readonly IUnitOfWork _unitOfWork;
 
     public RegisterCompaniesService(
@@ -25,6 +29,8 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
         IUsersRepository usersRepository,
         IPasswordHashGenerator passwordHashGenerator,
         ITokenService tokenService,
+        ICompanyModuleLicensesProvisioner moduleLicensesProvisioner,
+        ICompanyDefaultMeasurementUnitsProvisioner defaultMeasurementUnitsProvisioner,
         IUnitOfWork unitOfWork)
     {
         _empresaRepository = empresaRepository;
@@ -32,6 +38,8 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
         _usersRepository = usersRepository;
         _passwordHashGenerator = passwordHashGenerator;
         _tokenService = tokenService;
+        _moduleLicensesProvisioner = moduleLicensesProvisioner;
+        _defaultMeasurementUnitsProvisioner = defaultMeasurementUnitsProvisioner;
         _unitOfWork = unitOfWork;
     }
 
@@ -99,6 +107,9 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
         await _empresaRepository.AddAsync(empresa, cancellationToken);
         await _usersRepository.AddAsync(usuario, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _moduleLicensesProvisioner.ProvisionAllModulesAsync(empresa.Id, cancellationToken);
+        await _defaultMeasurementUnitsProvisioner.ProvisionDefaultMeasurementUnitsAsync(empresa.Id, cancellationToken);
 
         var token = _tokenService.GenerateToken(usuario);
 

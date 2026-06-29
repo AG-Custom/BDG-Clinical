@@ -7,6 +7,12 @@ Documento de contrato HTTP entre o backend (`BGD.CLINICAL.WebApi`) e o frontend.
 **Formato:** JSON (`Content-Type: application/json`)  
 **Nomenclatura JSON:** camelCase (padrão ASP.NET Core)
 
+**Documentos complementares:**
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [api-cargos-permissoes.md](./api-cargos-permissoes.md) | Cargos, mapa de permissões, permissões por cargo/funcionário, modelo e fluxo no front |
+
 ---
 
 ## 1. Autenticação
@@ -378,7 +384,8 @@ Retorna o usuário autenticado a partir do token. **Requer Bearer token.**
 | Campo | Descrição |
 |-------|-----------|
 | `isAdmin` | `true` = perfil Admin; `false` = perfil Funcionario |
-| `flagAplicador` | `true` se Admin; se Funcionario, `true` quando houver vínculo ativo com `flagAplicador` em `funcionario_vinculo` na empresa do token |
+| `flagAplicador` | `true` se Admin; se Funcionario, `true` quando houver vínculo ativo na empresa do token cujo **cargo** tem `flagAplicador = true` |
+| `permissions` | Lista de chaves efetivas resolvidas no servidor (ex.: `agendamento.criar`). Admin recebe todas as chaves do catálogo. **Não** vai no JWT. |
 
 **Response 200**
 
@@ -389,7 +396,8 @@ Retorna o usuário autenticado a partir do token. **Requer Bearer token.**
     "nome": "João Admin",
     "email": "admin@clinica.com",
     "isAdmin": true,
-    "flagAplicador": true
+    "flagAplicador": true,
+    "permissions": ["agenda.visualizar", "agendamento.criar"]
   },
   "success": true,
   "message": null
@@ -825,109 +833,16 @@ Reativa uma unidade inativa. Sem body.
 
 ---
 
-## 7. Cargos — `/api/positions`
+## 7. Cargos e permissões
 
-Cadastro de cargos vinculados aos funcionários (ex.: Médico, Enfermeiro, Recepcionista). Todas as rotas exigem **Bearer token**. Os dados são filtrados pela empresa do token.
+Documentação completa em **[api-cargos-permissoes.md](./api-cargos-permissoes.md)**.
 
-### GET `/api/positions`
-
-Lista cargos da empresa logada.
-
-**Query params**
-
-| Param | Tipo | Default | Descrição |
-|-------|------|---------|-----------|
-| `includeInactive` | `boolean` | `false` | Incluir cargos desativados |
-
-**Exemplo:** `GET /api/positions?includeInactive=false`
-
-**Response 200**
-
-```json
-{
-  "data": [
-    {
-      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "nome": "Médico",
-      "ativo": true,
-      "criadoEm": "2026-06-25T12:00:00Z",
-      "atualizadoEm": null
-    }
-  ],
-  "success": true,
-  "message": null
-}
-```
-
----
-
-### GET `/api/positions/{id}`
-
-**Response 200** — um `PositionDto` em `data`.
-
-**Response 404**
-
-```json
-{
-  "data": null,
-  "success": false,
-  "message": "Cargo não encontrado."
-}
-```
-
----
-
-### POST `/api/positions`
-
-**Request**
-
-```json
-{
-  "nome": "Enfermeiro"
-}
-```
-
-| Campo | Obrigatório |
-|-------|-------------|
-| `nome` | Sim |
-
-**Response 201** — `Location: /api/positions/{id}`
-
-**Response 400** — nome duplicado na empresa:
-
-```json
-{
-  "data": null,
-  "success": false,
-  "message": "Já existe um cargo com este nome."
-}
-```
-
----
-
-### PUT `/api/positions/{id}`
-
-**Request** — mesmo body do POST.
-
-**Response 200** — `PositionDto` atualizado em `data`.  
-**Response 404** — cargo não encontrado.  
-**Response 400** — cargo inativo ou nome duplicado.
-
----
-
-### DELETE `/api/positions/{id}`
-
-Desativa o cargo (soft delete). Funcionários que já possuem o cargo vinculado mantêm a referência histórica; novos vínculos devem usar apenas cargos ativos.
-
-**Response 200** — `PositionDto` com `ativo: false`.
-
----
-
-### PATCH `/api/positions/{id}/reactivate`
-
-Reativa um cargo inativo. Sem body.
-
-**Response 200** — `PositionDto` com `ativo: true`.
+| Recurso | Rotas |
+|---------|-------|
+| Mapa do catálogo | `GET /api/permissions/map` |
+| CRUD cargos | `GET/POST/PUT/DELETE/PATCH /api/positions` |
+| Permissões do cargo | `GET/PUT /api/positions/{id}/permissions` |
+| Overrides do funcionário | `GET/PUT /api/employees/{id}/permissions` |
 
 ---
 
@@ -946,7 +861,9 @@ Cadastro de colaboradores com acesso à plataforma. Todas as rotas exigem **Bear
 | `emailLogin` | E-mail usado para login na plataforma |
 | `isAdmin` | `true` = usuário da plataforma com perfil **Admin**; `false` = **Funcionario** |
 | `pendentePrimeiroAcesso` | `true` = usuário criado sem senha; deve passar pelo fluxo de primeiro acesso |
-| `links` | Vínculos do funcionário com empresa/unidade na resposta |
+| `links` | Vínculos do funcionário com empresa/unidade e cargo na resposta |
+
+> Permissões e `flagAplicador`: ver [api-cargos-permissoes.md](./api-cargos-permissoes.md). Defina `cargoId` no cadastro — as permissões vêm do cargo.
 
 **Não enviar senha no cadastro** — a senha é definida no primeiro acesso via link enviado por e-mail para `emailLogin`.
 
@@ -992,7 +909,6 @@ Se o envio do e-mail falhar, a API retorna **400** (funcionário e convite já p
           "empresaId": null,
           "unidadeId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
           "cargoId": null,
-          "flagAplicador": true,
           "ativo": true
         }
       ],
@@ -1039,8 +955,7 @@ Se o envio do e-mail falhar, a API retorna **400** (funcionário e convite já p
   "unidadeIds": [
     "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
   ],
-  "cargoId": null,
-  "flagAplicador": true,
+  "cargoId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "isAdmin": false
 }
 ```
@@ -1056,7 +971,6 @@ Se o envio do e-mail falhar, a API retorna **400** (funcionário e convite já p
   "linkToEmpresa": true,
   "unidadeIds": null,
   "cargoId": null,
-  "flagAplicador": false,
   "isAdmin": true
 }
 ```
@@ -1069,8 +983,7 @@ Se o envio do e-mail falhar, a API retorna **400** (funcionário e convite já p
 | `emailLogin` | Sim | E-mail válido; único por empresa |
 | `linkToEmpresa` | Sim | `true` ou `false` |
 | `unidadeIds` | Condicional | Obrigatório (≥1) quando `linkToEmpresa = false` |
-| `cargoId` | Não | Deve existir na empresa, se informado |
-| `flagAplicador` | Sim | Indica se pode realizar aplicações |
+| `cargoId` | Não | Deve existir na empresa, se informado. **Permissões** do funcionário vêm do cargo; `flagAplicador` também vem do cargo |
 | `isAdmin` | Não | Default `false`. `true` cria usuário com `tipo_usuario = Admin` |
 
 **Response 201**
@@ -1092,7 +1005,6 @@ Se o envio do e-mail falhar, a API retorna **400** (funcionário e convite já p
         "empresaId": null,
         "unidadeId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         "cargoId": null,
-        "flagAplicador": true,
         "ativo": true
       }
     ],
@@ -1141,7 +1053,6 @@ Atualiza dados pessoais, perfil de acesso (`isAdmin`) e **substitui** os víncul
     "d4e5f6a7-b8c9-0123-defa-234567890123"
   ],
   "cargoId": null,
-  "flagAplicador": true,
   "isAdmin": false
 }
 ```
@@ -1174,9 +1085,8 @@ Desativa funcionário, vínculos na empresa e usuário de acesso.
         "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
         "empresaId": null,
         "unidadeId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        "cargoId": null,
-        "flagAplicador": true,
-        "ativo": false
+          "cargoId": null,
+          "ativo": false
       }
     ],
     "criadoEm": "2026-06-24T12:00:00Z",
@@ -1211,7 +1121,6 @@ Reativa funcionário inativo, os vínculos inativos na empresa logada e o usuár
         "empresaId": null,
         "unidadeId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         "cargoId": null,
-        "flagAplicador": true,
         "ativo": true
       }
     ],
@@ -1237,6 +1146,12 @@ Reativa funcionário inativo, os vínculos inativos na empresa logada e o usuár
 
 > Para listar inativos antes de reativar: `GET /api/employees?includeInactive=true`  
 > Para listar por unidade: `GET /api/employees?unidadeId={uuid}`
+
+---
+
+### Permissões do funcionário
+
+`GET` / `PUT` `/api/employees/{id}/permissions` — documentados em [api-cargos-permissoes.md § 6](./api-cargos-permissoes.md).
 
 ---
 
@@ -1743,7 +1658,8 @@ Cadastro de fornecedores vinculados à empresa. Todas as rotas exigem **Bearer t
   "nome": "Distribuidora ABC",
   "cnpj": "12.345.678/0001-90",
   "telefone": "11999998888",
-  "email": "contato@abc.com"
+  "email": "contato@abc.com",
+  "observacao": "Entrega às terças e quintas"
 }
 ```
 
@@ -1753,6 +1669,7 @@ Cadastro de fornecedores vinculados à empresa. Todas as rotas exigem **Bearer t
 | `cnpj` | Sim | 14 dígitos, único na empresa |
 | `telefone` | Não | — |
 | `email` | Não | — |
+| `observacao` | Não | Texto livre, máx. 2000 caracteres |
 
 ### PUT / DELETE / PATCH reactivate
 
@@ -1801,6 +1718,16 @@ Pedidos de compra com itens de produto. Criar pedido **não** altera estoque; us
 
 Response inclui `valorTotal` do pedido (soma dos itens) e `itens[]` com `valorUnitario` e `valorTotal` por linha.
 
+**Content-Type:** `application/json` (body acima) **ou** `multipart/form-data` (campo `data` = JSON acima; campo `files` = anexos opcionais).
+
+### Anexos — disponíveis em todo o ciclo de vida
+
+Os anexos **não** seguem as mesmas restrições de edição do pedido (`PUT`). Podem ser **listados, enviados e removidos em qualquer status**: `Pendente`, `Enviado para Fornecedor`, `Recebido pela Unidade`, `Cancelado` ou `Recusado`.
+
+Use para nota fiscal na criação, comprovante após envio ou documentação histórica após recebimento/cancelamento.
+
+Rotas dedicadas: `/api/supplier-orders/{id}/attachments` (detalhes abaixo). O campo `anexos[]` também vem em `GET /api/supplier-orders` e `GET /api/supplier-orders/{id}`.
+
 ### PUT `/api/supplier-orders/{id}`
 
 Mesmo body do POST. Bloqueado se status `Recebido pela Unidade`, `Cancelado` ou `Recusado`.
@@ -1812,6 +1739,51 @@ Cancela pedido em `Pendente` ou `Enviado para Fornecedor`.
 ### PATCH `/api/supplier-orders/{id}/receive`
 
 Marca como `Recebido pela Unidade` e gera `MovimentacaoEstoque` tipo **Entrada** para cada item.
+
+### Anexos — `/api/supplier-orders/{id}/attachments`
+
+Documentos vinculados ao pedido (nota fiscal, ordem de compra, etc.). **Sem restrição de status** — ver seção acima. Armazenamento em R2 (mesmo serviço da logo da empresa). Formatos: PDF, PNG, JPEG, WebP, DOC, DOCX, XLS, XLSX. Tamanho máximo por arquivo: **10 MB**.
+
+Os anexos também aparecem em `anexos[]` no `GET /api/supplier-orders/{id}` e na listagem.
+
+#### GET `/api/supplier-orders/{id}/attachments`
+
+Lista anexos do pedido.
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "nomeArquivo": "nota-fiscal.pdf",
+      "contentType": "application/pdf",
+      "url": "https://...",
+      "tamanhoBytes": 102400,
+      "criadoEm": "2026-06-28T12:00:00Z"
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+#### POST `/api/supplier-orders/{id}/attachments`
+
+Upload multipart. Campo do arquivo: `file`.
+
+**Response 201** — `SupplierOrderAttachmentDto` em `data`.
+
+**Response 400** — arquivo inválido, pedido não encontrado ou R2 não configurado.
+
+#### DELETE `/api/supplier-orders/{id}/attachments/{attachmentId}`
+
+Remove anexo do pedido e do armazenamento.
+
+**Response 200** — `data: null`, `success: true`.
+
+**Response 404** — anexo não encontrado.
 
 ---
 
@@ -2307,6 +2279,7 @@ interface AuthenticatedUser {
   email: string;
   isAdmin: boolean;
   flagAplicador: boolean;
+  permissions: string[];
 }
 
 interface ValidateFirstAccessEmailRequest {
@@ -2350,6 +2323,7 @@ interface Company {
 interface Position {
   id: string;
   nome: string;
+  flagAplicador: boolean;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string | null;
@@ -2393,9 +2367,19 @@ interface Supplier {
   cnpj: string;
   telefone: string | null;
   email: string | null;
+  observacao: string | null;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string | null;
+}
+
+interface SupplierOrderAttachment {
+  id: string;
+  nomeArquivo: string;
+  contentType: string;
+  url: string;
+  tamanhoBytes: number;
+  criadoEm: string;
 }
 
 interface SupplierOrderItem {
@@ -2427,6 +2411,7 @@ interface SupplierOrder {
   valorTotal: number;
   observacao: string | null;
   itens: SupplierOrderItem[];
+  anexos: SupplierOrderAttachment[];
   criadoEm: string;
   atualizadoEm: string | null;
 }
@@ -2466,7 +2451,6 @@ interface EmployeeLink {
   empresaId: string | null;
   unidadeId: string | null;
   cargoId: string | null;
-  flagAplicador: boolean;
   ativo: boolean;
 }
 
@@ -2640,7 +2624,7 @@ interface CompleteAppointmentRequest {
 8. Upload da logo     → POST /api/companies/current/logo (somente Admin, multipart)
 9. Editar clínica     → PUT  /api/companies/current (somente Admin)
 10. CRUD unidades     → /api/units/*
-11. CRUD cargos       → /api/positions/* (popular select antes de cadastrar funcionário)
+11. Cargos e permissões → [api-cargos-permissoes.md](./api-cargos-permissoes.md) (`/api/positions`, `/api/permissions/map`, overrides em `/api/employees/{id}/permissions`)
 12. CRUD funcionários → POST/PUT /api/employees (somente Admin) → e-mail de convite no create
 13. CRUD pacientes    → /api/patients/*
 14. CRUD sintomas     → /api/symptoms/* (popular multi-select em aplicações)
@@ -2668,7 +2652,6 @@ interface CompleteAppointmentRequest {
 | Recurso | Status |
 |---------|--------|
 | Reenvio de convite de primeiro acesso | Não implementado |
-| Permissões por módulo | Não implementado (attributes prontos para uso futuro) |
 
 ---
 

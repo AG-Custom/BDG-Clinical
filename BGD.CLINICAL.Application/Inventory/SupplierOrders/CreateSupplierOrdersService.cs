@@ -1,3 +1,4 @@
+using BGD.CLINICAL.Application.Abstractions.Storage;
 using BGD.CLINICAL.Application.Abstractions.Persistence;
 using BGD.CLINICAL.Application.Abstractions.Security;
 using BGD.CLINICAL.Application.Common;
@@ -27,6 +28,7 @@ public sealed class CreateSupplierOrdersService : ICreateSupplierOrdersService
     private readonly IProductsRepository _productsRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IObjectStorageService _objectStorageService;
 
     public CreateSupplierOrdersService(
         ICurrentTenantContext tenantContext,
@@ -35,7 +37,8 @@ public sealed class CreateSupplierOrdersService : ICreateSupplierOrdersService
         IUnitsRepository unitsRepository,
         IProductsRepository productsRepository,
         IAuditLogsService auditLogsService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IObjectStorageService objectStorageService)
     {
         _tenantContext = tenantContext;
         _supplierOrdersRepository = supplierOrdersRepository;
@@ -44,6 +47,7 @@ public sealed class CreateSupplierOrdersService : ICreateSupplierOrdersService
         _productsRepository = productsRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
+        _objectStorageService = objectStorageService;
     }
 
     public async Task<Result<SupplierOrderDto>> ExecuteAsync(
@@ -101,7 +105,8 @@ public sealed class CreateSupplierOrdersService : ICreateSupplierOrdersService
                 dadosNovos: SupplierOrdersAuditSerializer.Serialize(persisted ?? pedido),
                 cancellationToken: cancellationToken);
 
-            return Result<SupplierOrderDto>.Success(SupplierOrdersMapper.Map(persisted ?? pedido));
+            return Result<SupplierOrderDto>.Success(
+                SupplierOrdersMapper.Map(persisted ?? pedido, _objectStorageService));
         }
         catch (DomainException exception)
         {

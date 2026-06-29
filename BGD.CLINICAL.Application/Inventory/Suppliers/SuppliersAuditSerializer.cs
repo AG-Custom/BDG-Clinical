@@ -20,6 +20,7 @@ internal static class SuppliersAuditSerializer
             fornecedor.Cnpj,
             fornecedor.Telefone,
             fornecedor.Email,
+            fornecedor.Observacao,
             fornecedor.Ativo,
         }, Options);
     }

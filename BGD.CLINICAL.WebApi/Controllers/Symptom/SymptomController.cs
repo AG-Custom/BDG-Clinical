@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Patients.Dtos;
 using BGD.CLINICAL.Application.Patients.Symptoms;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class SymptomController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Symptoms)]
     public async Task<IActionResult> List(
         [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
@@ -45,6 +47,7 @@ public sealed class SymptomController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Symptoms)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getSymptomsService.ExecuteAsync(id, cancellationToken);
@@ -58,6 +61,7 @@ public sealed class SymptomController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("sintoma.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateSymptomRequest request,
         CancellationToken cancellationToken)
@@ -76,6 +80,7 @@ public sealed class SymptomController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("sintoma.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateSymptomRequest request,
@@ -96,6 +101,7 @@ public sealed class SymptomController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("sintoma.excluir")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateSymptomsService.ExecuteAsync(id, cancellationToken);
@@ -113,6 +119,7 @@ public sealed class SymptomController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("sintoma.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivateSymptomsService.ExecuteAsync(id, cancellationToken);

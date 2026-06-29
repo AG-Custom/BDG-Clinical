@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Application.Inventory.ProductTypes;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class ProductTypeController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.ProductTypes)]
     public async Task<IActionResult> List(
         [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
@@ -45,6 +47,7 @@ public sealed class ProductTypeController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.ProductTypes)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getProductTypesService.ExecuteAsync(id, cancellationToken);
@@ -58,6 +61,7 @@ public sealed class ProductTypeController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("tipo_produto.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateProductTypeRequest request,
         CancellationToken cancellationToken)
@@ -76,6 +80,7 @@ public sealed class ProductTypeController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("tipo_produto.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductTypeRequest request,
@@ -96,6 +101,7 @@ public sealed class ProductTypeController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("tipo_produto.excluir")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateProductTypesService.ExecuteAsync(id, cancellationToken);
@@ -113,6 +119,7 @@ public sealed class ProductTypeController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("tipo_produto.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivateProductTypesService.ExecuteAsync(id, cancellationToken);

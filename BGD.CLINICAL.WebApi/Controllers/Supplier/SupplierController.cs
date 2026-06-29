@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Application.Inventory.Suppliers;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class SupplierController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Suppliers)]
     public async Task<IActionResult> List(
         [FromQuery] bool includeInactive = false,
         [FromQuery] string? search = null,
@@ -52,6 +54,7 @@ public sealed class SupplierController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Suppliers)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getSuppliersService.ExecuteAsync(id, cancellationToken);
@@ -65,6 +68,7 @@ public sealed class SupplierController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("fornecedor.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateSupplierRequest request,
         CancellationToken cancellationToken)
@@ -83,6 +87,7 @@ public sealed class SupplierController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("fornecedor.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateSupplierRequest request,
@@ -103,6 +108,7 @@ public sealed class SupplierController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("fornecedor.excluir")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateSuppliersService.ExecuteAsync(id, cancellationToken);
@@ -120,6 +126,7 @@ public sealed class SupplierController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("fornecedor.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivateSuppliersService.ExecuteAsync(id, cancellationToken);

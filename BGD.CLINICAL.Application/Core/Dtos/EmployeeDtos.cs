@@ -5,7 +5,6 @@ public sealed record EmployeeLinkDto(
     Guid? EmpresaId,
     Guid? UnidadeId,
     Guid? CargoId,
-    bool FlagAplicador,
     bool Ativo);
 
 public sealed record EmployeeDto(
@@ -29,7 +28,6 @@ public sealed record CreateEmployeeRequest(
     bool LinkToEmpresa,
     IReadOnlyList<Guid>? UnidadeIds,
     Guid? CargoId,
-    bool FlagAplicador,
     bool IsAdmin = false);
 
 public sealed record UpdateEmployeeRequest(
@@ -39,5 +37,4 @@ public sealed record UpdateEmployeeRequest(
     bool LinkToEmpresa,
     IReadOnlyList<Guid>? UnidadeIds,
     Guid? CargoId,
-    bool FlagAplicador,
     bool IsAdmin = false);

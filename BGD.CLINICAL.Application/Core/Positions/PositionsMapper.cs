@@ -10,6 +10,7 @@ internal static class PositionsMapper
         return new PositionDto(
             cargo.Id,
             cargo.Nome,
+            cargo.FlagAplicador,
             cargo.Ativo,
             cargo.CriadoEm,
             cargo.AtualizadoEm);

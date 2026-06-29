@@ -24,7 +24,6 @@ public sealed class ModuloSistema : AggregateRoot
     public bool Ativo { get; private set; }
 
     public ICollection<LicencaModulo> Licencas { get; private set; } = [];
-    public ICollection<PermissaoUsuario> PermissoesUsuario { get; private set; } = [];
 }
 
 public sealed class LicencaModulo : AggregateRoot
@@ -68,41 +67,4 @@ public sealed class LicencaModulo : AggregateRoot
 
         return DataFim is null || DataFim >= referenceUtc;
     }
-}
-
-public sealed class PermissaoUsuario : AggregateRoot
-{
-    private PermissaoUsuario()
-    {
-    }
-
-    public PermissaoUsuario(Guid usuarioId, Guid moduloId, bool podeVisualizar, bool podeCriar, bool podeEditar, bool podeExcluir)
-        : base(Guid.NewGuid())
-    {
-        UsuarioId = usuarioId;
-        ModuloId = moduloId;
-        PodeVisualizar = podeVisualizar;
-        PodeCriar = podeCriar;
-        PodeEditar = podeEditar;
-        PodeExcluir = podeExcluir;
-    }
-
-    public Guid UsuarioId { get; private set; }
-    public Guid ModuloId { get; private set; }
-    public bool PodeVisualizar { get; private set; }
-    public bool PodeCriar { get; private set; }
-    public bool PodeEditar { get; private set; }
-    public bool PodeExcluir { get; private set; }
-
-    public Usuario Usuario { get; private set; } = null!;
-    public ModuloSistema Modulo { get; private set; } = null!;
-
-    public bool Allows(ModulePermissionAction action) => action switch
-    {
-        ModulePermissionAction.View => PodeVisualizar,
-        ModulePermissionAction.Create => PodeCriar,
-        ModulePermissionAction.Edit => PodeEditar,
-        ModulePermissionAction.Delete => PodeExcluir,
-        _ => false
-    };
 }

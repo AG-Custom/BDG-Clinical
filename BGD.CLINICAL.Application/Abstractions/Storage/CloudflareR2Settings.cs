@@ -16,11 +16,25 @@ public sealed class CloudflareR2Settings
 
     public long MaxLogoSizeBytes { get; set; } = 2 * 1024 * 1024;
 
+    public long MaxAttachmentSizeBytes { get; set; } = 10 * 1024 * 1024;
+
     public string[] AllowedContentTypes { get; set; } =
     [
         "image/png",
         "image/jpeg",
         "image/webp",
+    ];
+
+    public string[] AllowedAttachmentContentTypes { get; set; } =
+    [
+        "application/pdf",
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ];
 
     public bool IsConfigured =>

@@ -48,6 +48,7 @@ public sealed class CreateSuppliersService : ICreateSuppliersService
             request.Cnpj,
             request.Telefone,
             request.Email,
+            request.Observacao,
             excludeSupplierId: null,
             _suppliersRepository,
             cancellationToken);
@@ -65,7 +66,8 @@ public sealed class CreateSuppliersService : ICreateSuppliersService
                 data.Nome,
                 data.Cnpj,
                 data.Telefone,
-                data.Email);
+                data.Email,
+                data.Observacao);
 
             await _suppliersRepository.AddAsync(fornecedor, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

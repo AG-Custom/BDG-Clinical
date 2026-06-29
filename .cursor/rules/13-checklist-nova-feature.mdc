@@ -36,6 +36,8 @@ Antes de implementar, identificar o **contexto delimitado**. Se cruza contextos,
 - [ ] Repositório em `Repositories/{Context}/`
 - [ ] Migration via `dotnet ef migrations add`
 - [ ] Filtro `empresa_id`
+- [ ] Agregado com filhos em coleção: `Update` normaliza tracking (`Added` vs `Modified`) — ver `05-entity-framework.mdc`
+- [ ] Testar mutação *alterar filho existente + adicionar filho novo* na mesma operação
 
 ## 5. WebApi
 

@@ -8,7 +8,8 @@ internal sealed record ValidatedSupplierData(
     string Nome,
     string Cnpj,
     string? Telefone,
-    string? Email);
+    string? Email,
+    string? Observacao);
 
 internal static class SupplierRequestValidator
 {
@@ -18,6 +19,7 @@ internal static class SupplierRequestValidator
         string? cnpj,
         string? telefone,
         string? email,
+        string? observacao,
         Guid? excludeSupplierId,
         ISuppliersRepository suppliersRepository,
         CancellationToken cancellationToken)
@@ -46,10 +48,17 @@ internal static class SupplierRequestValidator
             return Result<ValidatedSupplierData>.Failure("Já existe um fornecedor com este CNPJ.");
         }
 
+        var observacaoError = SupplierValidation.ValidateObservacao(observacao);
+        if (observacaoError is not null)
+        {
+            return Result<ValidatedSupplierData>.Failure(observacaoError);
+        }
+
         return Result<ValidatedSupplierData>.Success(new ValidatedSupplierData(
             normalizedNome,
             normalizedCnpj,
             SupplierValidation.NormalizeTelefone(telefone),
-            SupplierValidation.NormalizeEmail(email)));
+            SupplierValidation.NormalizeEmail(email),
+            SupplierValidation.NormalizeObservacao(observacao)));
     }
 }

@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Application.Inventory.Products;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class ProductController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Products)]
     public async Task<IActionResult> List(
         [FromQuery] Guid? tipoProdutoId = null,
         [FromQuery] bool includeInactive = false,
@@ -46,6 +48,7 @@ public sealed class ProductController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Products)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getProductsService.ExecuteAsync(id, cancellationToken);
@@ -59,6 +62,7 @@ public sealed class ProductController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("produto.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateProductRequest request,
         CancellationToken cancellationToken)
@@ -77,6 +81,7 @@ public sealed class ProductController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("produto.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductRequest request,
@@ -97,6 +102,7 @@ public sealed class ProductController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("produto.excluir")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateProductsService.ExecuteAsync(id, cancellationToken);
@@ -114,6 +120,7 @@ public sealed class ProductController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("produto.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivateProductsService.ExecuteAsync(id, cancellationToken);

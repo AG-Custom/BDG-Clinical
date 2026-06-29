@@ -1,7 +1,7 @@
 using BGD.CLINICAL.Application.Core.Companies;
 using BGD.CLINICAL.Application.Core.Dtos;
-using BGD.CLINICAL.Application.Identity;
 using BGD.CLINICAL.Application.Identity.Dtos;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -80,7 +80,7 @@ public sealed class CompanyController : ControllerBase
     }
 
     [HttpPut("current")]
-    [Authorize(Policy = IdentityConstants.PolicyAdmin)]
+    [RequirePermission("empresa.editar")]
     public async Task<IActionResult> UpdateCurrent(
         [FromBody] UpdateCompanyRequest request,
         CancellationToken cancellationToken)
@@ -100,7 +100,7 @@ public sealed class CompanyController : ControllerBase
     }
 
     [HttpPatch("{empresaId:guid}/reactivate")]
-    [Authorize(Policy = IdentityConstants.PolicyAdmin)]
+    [RequirePermission("empresa.editar")]
     public async Task<IActionResult> Reactivate(Guid empresaId, CancellationToken cancellationToken)
     {
         var result = await _reactivateCompanyService.ExecuteAsync(empresaId, cancellationToken);
@@ -118,7 +118,7 @@ public sealed class CompanyController : ControllerBase
     }
 
     [HttpPost("current/logo")]
-    [Authorize(Policy = IdentityConstants.PolicyAdmin)]
+    [RequirePermission("empresa.editar")]
     [RequestSizeLimit(MaxLogoUploadBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxLogoUploadBytes)]
     public async Task<IActionResult> UploadLogo(

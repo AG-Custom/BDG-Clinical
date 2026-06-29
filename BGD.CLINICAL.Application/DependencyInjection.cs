@@ -21,6 +21,9 @@ using BGD.CLINICAL.Application.Applications.PatientApplications;
 using BGD.CLINICAL.Application.Applications.Procedures;
 using BGD.CLINICAL.Application.Schedules.Appointments;
 using BGD.CLINICAL.Application.Schedules.UnitOperatingHours;
+using BGD.CLINICAL.Application.Modules.EmployeePermissions;
+using BGD.CLINICAL.Application.Core.PositionPermissions;
+using BGD.CLINICAL.Application.Modules.Permissions;
 using BGD.CLINICAL.Application.Notifications.EmailOutbox;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -116,6 +119,9 @@ public static class DependencyInjection
         services.AddScoped<IUpdateSupplierOrdersService, UpdateSupplierOrdersService>();
         services.AddScoped<ICancelSupplierOrdersService, CancelSupplierOrdersService>();
         services.AddScoped<IReceiveSupplierOrdersService, ReceiveSupplierOrdersService>();
+        services.AddScoped<IUploadSupplierOrderAttachmentService, UploadSupplierOrderAttachmentService>();
+        services.AddScoped<IListSupplierOrderAttachmentsService, ListSupplierOrderAttachmentsService>();
+        services.AddScoped<IDeleteSupplierOrderAttachmentService, DeleteSupplierOrderAttachmentService>();
 
         services.AddScoped<IListStockBalancesService, ListStockBalancesService>();
         services.AddScoped<IListStockMovementsService, ListStockMovementsService>();
@@ -150,6 +156,13 @@ public static class DependencyInjection
         services.AddScoped<ICreateUnitOperatingHoursService, CreateUnitOperatingHoursService>();
         services.AddScoped<IUpdateUnitOperatingHoursService, UpdateUnitOperatingHoursService>();
         services.AddScoped<ISetUnitOperatingHourActiveStatusService, SetUnitOperatingHourActiveStatusService>();
+
+        services.AddScoped<IGetPermissionMapService, GetPermissionMapService>();
+        services.AddScoped<IGetPositionPermissionsService, GetPositionPermissionsService>();
+        services.AddScoped<IUpdatePositionPermissionsService, UpdatePositionPermissionsService>();
+        services.AddScoped<IGetEmployeePermissionsService, GetEmployeePermissionsService>();
+        services.AddScoped<IUpdateEmployeePermissionsService, UpdateEmployeePermissionsService>();
+        services.AddScoped<IUsersPermissionMutationService, UsersPermissionMutationService>();
 
         return services;
     }

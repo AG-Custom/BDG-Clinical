@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Schedules.Dtos;
 using BGD.CLINICAL.Application.Schedules.UnitOperatingHours;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,7 @@ public sealed class UnitOperatingHourController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.OperatingHours)]
     public async Task<IActionResult> List(
         Guid unitId,
         [FromQuery] bool includeInactive = false,
@@ -42,6 +44,7 @@ public sealed class UnitOperatingHourController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("unidade.editar")]
     public async Task<IActionResult> Create(
         Guid unitId,
         [FromBody] CreateUnitOperatingHourRequest request,
@@ -61,6 +64,7 @@ public sealed class UnitOperatingHourController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("unidade.editar")]
     public async Task<IActionResult> Update(
         Guid unitId,
         Guid id,

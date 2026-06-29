@@ -1,4 +1,5 @@
 using BGD.CLINICAL.Application.Abstractions.Security;
+using BGD.CLINICAL.Application.Abstractions.Storage;
 using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Dtos;
@@ -16,13 +17,16 @@ public sealed class GetSupplierOrdersService : IGetSupplierOrdersService
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly ISupplierOrdersRepository _supplierOrdersRepository;
+    private readonly IObjectStorageService _objectStorageService;
 
     public GetSupplierOrdersService(
         ICurrentTenantContext tenantContext,
-        ISupplierOrdersRepository supplierOrdersRepository)
+        ISupplierOrdersRepository supplierOrdersRepository,
+        IObjectStorageService objectStorageService)
     {
         _tenantContext = tenantContext;
         _supplierOrdersRepository = supplierOrdersRepository;
+        _objectStorageService = objectStorageService;
     }
 
     public async Task<Result<SupplierOrderDto>> ExecuteAsync(
@@ -39,6 +43,6 @@ public sealed class GetSupplierOrdersService : IGetSupplierOrdersService
             return Result<SupplierOrderDto>.Failure("Pedido não encontrado.");
         }
 
-        return Result<SupplierOrderDto>.Success(SupplierOrdersMapper.Map(pedido));
+        return Result<SupplierOrderDto>.Success(SupplierOrdersMapper.Map(pedido, _objectStorageService));
     }
 }

@@ -87,6 +87,7 @@ cargo
 - id
 - empresa_id
 - nome
+- flag_aplicador
 - ativo
 - criado_em
 - atualizado_em
@@ -97,6 +98,13 @@ Relacionamentos:
 ```text
 Cargo N:1 Empresa
 Cargo 1:N FuncionarioVinculo
+```
+
+Regras:
+
+```text
+flag_aplicador indica se funcionários com este cargo podem realizar aplicações.
+Alterar a flag no cargo impacta todos os vínculos que referenciam aquele cargo.
 ```
 
 ---
@@ -141,7 +149,6 @@ funcionario_vinculo
 - empresa_id
 - unidade_id
 - cargo_id
-- flag_aplicador
 - ativo
 - criado_em
 - atualizado_em
@@ -163,8 +170,7 @@ Cada vínculo deve ter exatamente empresa_id OU unidade_id preenchido.
 Vínculo por empresa = atua em todas as unidades daquela empresa.
 Vínculo por unidade = atua somente na unidade informada.
 Funcionário precisa de ao menos um vínculo ativo.
-flag_aplicador indica se o funcionário pode realizar aplicações naquele vínculo.
-Somente funcionários aplicadores devem ser selecionados para AplicacaoPaciente realizada.
+Somente funcionários com cargo aplicador (flag_aplicador no cargo) e vínculo ativo devem ser selecionados para AplicacaoPaciente realizada.
 ```
 
 ---
@@ -185,6 +191,7 @@ usuario
 - auth_provider
 - google_id
 - tipo_usuario
+- permission_version
 - ativo
 - criado_em
 - atualizado_em
@@ -202,7 +209,8 @@ Relacionamentos:
 ```text
 Usuario N:1 Empresa
 Usuario 0..1:1 Funcionario
-Usuario 1:N PermissaoUsuario
+Usuario 0..1:1 UsuarioPerfil
+Usuario 1:N UsuarioPermissaoOverride
 Usuario 1:N ContaGoogleConectada
 Usuario 1:N LogAuditoria
 ```
@@ -280,7 +288,76 @@ Relacionamentos:
 
 ```text
 ModuloSistema 1:N LicencaModulo
-ModuloSistema 1:N PermissaoUsuario
+```
+
+---
+
+### PermissaoSistema
+
+Catálogo global de permissões (seed via código no startup).
+
+```text
+permissao_sistema
+- id
+- chave
+- descricao
+- categoria
+- modulo_codigo
+- ordem
+- chave_pai
+```
+
+Chaves seguem o padrão `{recurso}.{acao}` (ex.: `agendamento.editar`, `paciente.visualizar`).
+
+---
+
+### PerfilPermissao
+
+Perfis reutilizáveis por empresa (Recepcionista, Médico, etc.).
+
+```text
+perfil_permissao
+- id
+- empresa_id
+- nome
+- descricao
+- ativo
+```
+
+```text
+perfil_permissao_item
+- id
+- perfil_id
+- permission_key
+```
+
+`permission_key` pode ser chave exata ou wildcard (`agenda.*`).
+
+---
+
+### UsuarioPerfil e UsuarioPermissaoOverride
+
+```text
+usuario_perfil
+- id
+- usuario_id
+- perfil_id
+
+usuario_permissao
+- id
+- usuario_id
+- permission_key
+- effect   (Allow | Deny)
+```
+
+Regras:
+
+```text
+Para acessar um módulo, a empresa precisa ter LicencaModulo ativa.
+Permissões efetivas = perfil + overrides Allow, menos overrides Deny.
+Admin (tipo_usuario = Admin) bypassa verificação de permissão.
+permission_version incrementa quando permissões mudam (auditoria); cache invalidado via Remove.
+Permissões de usuário não substituem a licença da empresa.
 ```
 
 ---
@@ -323,39 +400,6 @@ Regras:
 Uma empresa só pode usar telas e recursos de módulos com licença ativa.
 Uma empresa pode contratar vários módulos.
 Um módulo pode estar contratado por várias empresas.
-```
-
----
-
-### PermissaoUsuario
-
-Define permissões do usuário dentro de cada módulo.
-
-```text
-permissao_usuario
-- id
-- usuario_id
-- modulo_id
-- pode_visualizar
-- pode_criar
-- pode_editar
-- pode_excluir
-```
-
-Relacionamentos:
-
-```text
-PermissaoUsuario N:1 Usuario
-PermissaoUsuario N:1 ModuloSistema
-Usuario N:N ModuloSistema via PermissaoUsuario
-```
-
-Regras:
-
-```text
-Para acessar um módulo, a empresa precisa ter LicencaModulo ativa.
-Para acessar uma tela, o usuário precisa ter permissão no módulo.
-Permissões de usuário não substituem a licença da empresa.
 ```
 
 ---
@@ -622,6 +666,7 @@ fornecedor
 - cnpj
 - telefone
 - email
+- observacao
 - ativo
 - criado_em
 - atualizado_em
@@ -683,6 +728,7 @@ PedidoFornecedor N:1 Empresa
 PedidoFornecedor N:1 Fornecedor
 PedidoFornecedor N:1 Unidade
 PedidoFornecedor 1:N ItemPedidoFornecedor
+PedidoFornecedor 1:N AnexoPedidoFornecedor
 PedidoFornecedor 0..1:N MovimentacaoEstoque
 ```
 
@@ -714,6 +760,40 @@ Relacionamentos:
 ```text
 ItemPedidoFornecedor N:1 PedidoFornecedor
 ItemPedidoFornecedor N:1 Produto
+```
+
+---
+
+### AnexoPedidoFornecedor
+
+Documentos anexados a um pedido de fornecedor (nota fiscal, ordem de compra, etc.).
+
+```text
+anexo_pedido_fornecedor
+- id
+- pedido_fornecedor_id
+- empresa_id
+- nome_arquivo
+- content_type
+- object_key
+- tamanho_bytes
+- criado_em
+- atualizado_em
+```
+
+Relacionamentos:
+
+```text
+AnexoPedidoFornecedor N:1 PedidoFornecedor
+```
+
+Regras:
+
+```text
+Arquivo físico armazenado em object storage (R2); object_key referencia o caminho no bucket.
+Exclusão do anexo remove registro e arquivo no storage.
+Anexos independem do status do pedido: podem ser adicionados, listados e removidos a qualquer momento (criação, pendente, enviado, recebido, cancelado ou recusado).
+Edição do cabeçalho/itens do pedido (PUT) continua bloqueada após recebido/cancelado/recusado; anexos não.
 ```
 
 ---
@@ -817,7 +897,7 @@ Regras:
 
 ```text
 AplicacaoPaciente só altera estoque quando realizado = true e cancelada = false.
-Aplicação realizada deve validar funcionário aplicador (flag_aplicador no vínculo).
+Aplicação realizada deve validar funcionário aplicador (cargo com flag_aplicador ativo no vínculo).
 Aplicação realizada deve validar estoque disponível na unidade.
 Aplicação realizada deve gerar MovimentacaoEstoque do tipo SAIDA.
 Cancelamento gera MovimentacaoEstoque do tipo ENTRADA (estorno).

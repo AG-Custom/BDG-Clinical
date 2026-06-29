@@ -52,7 +52,7 @@ public sealed class CreatePositionsService : ICreatePositionsService
             return Result<PositionDto>.Failure("Já existe um cargo com este nome.");
         }
 
-        var cargo = new Cargo(empresaId, nome);
+        var cargo = new Cargo(empresaId, nome, request.FlagAplicador);
 
         await _positionsRepository.AddAsync(cargo, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

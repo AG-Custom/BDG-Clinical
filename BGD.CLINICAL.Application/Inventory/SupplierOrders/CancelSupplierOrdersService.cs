@@ -1,3 +1,4 @@
+using BGD.CLINICAL.Application.Abstractions.Storage;
 using BGD.CLINICAL.Application.Abstractions.Persistence;
 using BGD.CLINICAL.Application.Abstractions.Security;
 using BGD.CLINICAL.Application.Common;
@@ -23,17 +24,20 @@ public sealed class CancelSupplierOrdersService : ICancelSupplierOrdersService
     private readonly ISupplierOrdersRepository _supplierOrdersRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IObjectStorageService _objectStorageService;
 
     public CancelSupplierOrdersService(
         ICurrentTenantContext tenantContext,
         ISupplierOrdersRepository supplierOrdersRepository,
         IAuditLogsService auditLogsService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IObjectStorageService objectStorageService)
     {
         _tenantContext = tenantContext;
         _supplierOrdersRepository = supplierOrdersRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
+        _objectStorageService = objectStorageService;
     }
 
     public async Task<Result<SupplierOrderDto>> ExecuteAsync(
@@ -66,7 +70,8 @@ public sealed class CancelSupplierOrdersService : ICancelSupplierOrdersService
                 dadosNovos: SupplierOrdersAuditSerializer.Serialize(pedido),
                 cancellationToken: cancellationToken);
 
-            return Result<SupplierOrderDto>.Success(SupplierOrdersMapper.Map(pedido));
+            return Result<SupplierOrderDto>.Success(
+                SupplierOrdersMapper.Map(pedido, _objectStorageService));
         }
         catch (DomainException exception)
         {

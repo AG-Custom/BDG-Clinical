@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Patients.Dtos;
 using BGD.CLINICAL.Application.Patients.Patients;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class PatientController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Patients)]
     public async Task<IActionResult> List(
         [FromQuery] Guid? unidadeId = null,
         [FromQuery] bool includeInactive = false,
@@ -46,6 +48,7 @@ public sealed class PatientController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Patients)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getPatientsService.ExecuteAsync(id, cancellationToken);
@@ -59,6 +62,7 @@ public sealed class PatientController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("paciente.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreatePatientRequest request,
         CancellationToken cancellationToken)
@@ -77,6 +81,7 @@ public sealed class PatientController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("paciente.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdatePatientRequest request,
@@ -97,6 +102,7 @@ public sealed class PatientController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("paciente.excluir")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivatePatientsService.ExecuteAsync(id, cancellationToken);
@@ -114,6 +120,7 @@ public sealed class PatientController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("paciente.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivatePatientsService.ExecuteAsync(id, cancellationToken);

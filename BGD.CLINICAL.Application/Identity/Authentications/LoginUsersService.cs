@@ -2,6 +2,7 @@ using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Core.Companies;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Identity.Dtos;
+using BGD.CLINICAL.Application.Modules.Abstractions;
 using BGD.CLINICAL.Domain.Entities;
 
 namespace BGD.CLINICAL.Application.Identity.Authentications;
@@ -12,17 +13,20 @@ public sealed class LoginUsersService : ILoginUsersService
     private readonly IPasswordHashGenerator _passwordHashGenerator;
     private readonly ITokenService _tokenService;
     private readonly IAuditLogsService _auditLogsService;
+    private readonly IPermissionChecker _permissionChecker;
 
     public LoginUsersService(
         IUsersRepository usersRepository,
         IPasswordHashGenerator passwordHashGenerator,
         ITokenService tokenService,
-        IAuditLogsService auditLogsService)
+        IAuditLogsService auditLogsService,
+        IPermissionChecker permissionChecker)
     {
         _usersRepository = usersRepository;
         _passwordHashGenerator = passwordHashGenerator;
         _tokenService = tokenService;
         _auditLogsService = auditLogsService;
+        _permissionChecker = permissionChecker;
     }
 
     public async Task<Result<LoginResponse>> ExecuteAsync(
@@ -81,10 +85,12 @@ public sealed class LoginUsersService : ILoginUsersService
         var token = _tokenService.GenerateToken(usuario);
         await _auditLogsService.RegisterLoginAsync(usuario.Id, usuario.EmpresaId, ip, cancellationToken);
 
+        var permissions = await _permissionChecker.GetEffectivePermissionsAsync(usuario.Id, cancellationToken);
+
         return Result<LoginResponse>.Success(new LoginResponse(
             RequiresCompanySelection: false,
             Token: token,
-            Usuario: AuthenticatedUsersMapper.Map(usuario),
+            Usuario: AuthenticatedUsersMapper.Map(usuario, permissions.OrderBy(key => key).ToList()),
             Companies: null));
     }
 

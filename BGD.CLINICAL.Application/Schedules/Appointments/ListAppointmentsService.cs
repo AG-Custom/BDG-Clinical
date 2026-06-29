@@ -1,5 +1,7 @@
 using BGD.CLINICAL.Application.Abstractions.Security;
 using BGD.CLINICAL.Application.Common;
+using BGD.CLINICAL.Application.Identity.Abstractions;
+using BGD.CLINICAL.Application.Modules.Abstractions;
 using BGD.CLINICAL.Application.Schedules.Abstractions;
 using BGD.CLINICAL.Application.Schedules.Dtos;
 using BGD.CLINICAL.Domain.Enums;
@@ -21,13 +23,19 @@ public interface IListAppointmentsService
 public sealed class ListAppointmentsService : IListAppointmentsService
 {
     private readonly ICurrentTenantContext _tenantContext;
+    private readonly IUsersRepository _usersRepository;
+    private readonly IPermissionChecker _permissionChecker;
     private readonly IAppointmentsRepository _appointmentsRepository;
 
     public ListAppointmentsService(
         ICurrentTenantContext tenantContext,
+        IUsersRepository usersRepository,
+        IPermissionChecker permissionChecker,
         IAppointmentsRepository appointmentsRepository)
     {
         _tenantContext = tenantContext;
+        _usersRepository = usersRepository;
+        _permissionChecker = permissionChecker;
         _appointmentsRepository = appointmentsRepository;
     }
 
@@ -40,6 +48,17 @@ public sealed class ListAppointmentsService : IListAppointmentsService
         DateTime? dataInicioTo,
         CancellationToken cancellationToken = default)
     {
+        var scopeFuncionarioId = await AppointmentScopeResolver.ResolveFuncionarioFilterAsync(
+            _tenantContext,
+            _usersRepository,
+            _permissionChecker,
+            cancellationToken);
+
+        if (scopeFuncionarioId == Guid.Empty)
+        {
+            return Result<IReadOnlyList<AppointmentDto>>.Failure("Usuário sem permissão para visualizar a agenda.");
+        }
+
         StatusAgendamento? statusFilter = null;
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -52,15 +71,24 @@ public sealed class ListAppointmentsService : IListAppointmentsService
             statusFilter = parsed;
         }
 
+        var effectiveFuncionarioId = scopeFuncionarioId ?? funcionarioId;
+
         var agendamentos = await _appointmentsRepository.ListByEmpresaIdAsync(
             _tenantContext.EmpresaId,
             unidadeId,
-            funcionarioId,
+            effectiveFuncionarioId,
             pacienteId,
             statusFilter,
             dataInicioFrom,
             dataInicioTo,
             cancellationToken);
+
+        if (scopeFuncionarioId.HasValue)
+        {
+            agendamentos = agendamentos
+                .Where(agendamento => agendamento.FuncionarioId == scopeFuncionarioId.Value)
+                .ToList();
+        }
 
         var dtos = agendamentos.Select(AppointmentsMapper.Map).ToList();
         return Result<IReadOnlyList<AppointmentDto>>.Success(dtos);

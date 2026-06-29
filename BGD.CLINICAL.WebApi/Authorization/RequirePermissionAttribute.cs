@@ -1,8 +1,5 @@
 using BGD.CLINICAL.Application.Abstractions.Security;
 using BGD.CLINICAL.Application.Modules.Abstractions;
-using BGD.CLINICAL.Domain.Enums;
-using BGD.CLINICAL.WebApi.Models.Common;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace BGD.CLINICAL.WebApi.Authorization;
@@ -10,41 +7,39 @@ namespace BGD.CLINICAL.WebApi.Authorization;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public sealed class RequirePermissionAttribute : Attribute, IAsyncAuthorizationFilter
 {
-    public RequirePermissionAttribute(string moduleCode)
+    public RequirePermissionAttribute(string permissionKey)
     {
-        ModuleCode = moduleCode;
+        PermissionKey = permissionKey;
     }
 
-    public string ModuleCode { get; }
+    public string PermissionKey { get; }
 
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        var permissions = context.HttpContext.RequestServices.GetRequiredService<IUserPermissionsRepository>();
         var tenant = context.HttpContext.RequestServices.GetRequiredService<ICurrentTenantContext>();
+        var permissionChecker = context.HttpContext.RequestServices.GetRequiredService<IPermissionChecker>();
+        var licenses = context.HttpContext.RequestServices.GetRequiredService<IModuleLicensesRepository>();
+        var usersRepository = context.HttpContext.RequestServices.GetRequiredService<Application.Identity.Abstractions.IUsersRepository>();
 
-        var action = ResolveActionFromHttpMethod(context.HttpContext.Request.Method);
+        if (await PermissionAuthorizationHelper.IsAdminAsync(
+                tenant,
+                usersRepository,
+                context.HttpContext.RequestAborted))
+        {
+            return;
+        }
 
-        var hasPermission = await permissions.HasPermissionAsync(
-            tenant.UsuarioId,
-            ModuleCode,
-            action,
+        var hasPermission = await PermissionAuthorizationHelper.HasLicensedPermissionAsync(
+            tenant,
+            permissionChecker,
+            licenses,
+            PermissionKey,
             context.HttpContext.RequestAborted);
 
         if (!hasPermission)
         {
-            context.Result = new ObjectResult(new ApiResponse<object?>(null!, false, "Usuário sem permissão para esta operação."))
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            };
+            context.Result = PermissionAuthorizationHelper.Forbidden(
+                "Usuário sem permissão para esta operação.");
         }
     }
-
-    private static ModulePermissionAction ResolveActionFromHttpMethod(string method) => method.ToUpperInvariant() switch
-    {
-        "GET" or "HEAD" => ModulePermissionAction.View,
-        "POST" => ModulePermissionAction.Create,
-        "PUT" or "PATCH" => ModulePermissionAction.Edit,
-        "DELETE" => ModulePermissionAction.Delete,
-        _ => ModulePermissionAction.View
-    };
 }

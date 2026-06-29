@@ -21,7 +21,75 @@ Interfaces em `Application/{Context}/Abstractions/I{Entity}Repository.cs`.
 - `CancellationToken` em todos os métodos async.
 - `AsNoTracking()` em listagens e leituras sem mutação.
 - `Include`/`ThenInclude` apenas quando necessário; evitar N+1.
-- `AddAsync` + `Update` com checagem de `EntityState.Detached` quando aplicável.
+- `AddAsync` + `Update` com normalização de change tracking quando o agregado tem **filhos em coleção** (ver `05-entity-framework.mdc` — seção *Change tracking — filhos em coleção*).
+
+## Update com filhos em coleção
+
+Quando o agregado possui filhos mutáveis (`Vinculos`, `Itens`, etc.), `Update` deve garantir estado correto **antes** do `SaveChangesAsync`:
+
+```csharp
+public void Update(PedidoFornecedor pedido)
+{
+    var entry = _context.Entry(pedido);
+
+    if (entry.State == EntityState.Detached)
+    {
+        _context.PedidosFornecedor.Attach(pedido);
+        entry.State = EntityState.Modified;
+    }
+
+    foreach (var item in pedido.Itens)
+    {
+        EnsureItemTrackedCorrectly(item);
+    }
+}
+
+private void EnsureItemTrackedCorrectly(ItemPedidoFornecedor item)
+{
+    var itemEntry = _context.Entry(item);
+
+    if (itemEntry.State is EntityState.Added or EntityState.Deleted)
+    {
+        return;
+    }
+
+    if (_context.ItensPedidoFornecedor.Local.Any(tracked => tracked.Id == item.Id))
+    {
+        if (itemEntry.State == EntityState.Modified && !ItemExistsInDatabase(item.Id))
+        {
+            _context.ItensPedidoFornecedor.Add(item);
+        }
+
+        return;
+    }
+
+    if (ItemExistsInDatabase(item.Id))
+    {
+        if (itemEntry.State == EntityState.Detached)
+        {
+            _context.ItensPedidoFornecedor.Attach(item);
+        }
+
+        itemEntry.State = EntityState.Modified;
+        return;
+    }
+
+    _context.ItensPedidoFornecedor.Add(item);
+}
+```
+
+Implementação de referência (produção): `EmployeesRepository` — bug corrigido ao trocar vínculo empresa → unidade do funcionário.
+
+### Anti-padrões
+
+```csharp
+// Incorreto — marca filhos novos como Modified (UPDATE em Id inexistente)
+_context.Funcionarios.Update(funcionario);
+
+// Incorreto — assume que Add na coleção do domínio basta
+funcionario.Vinculos.Add(novoVinculo);
+await _unitOfWork.SaveChangesAsync(); // pode falhar com DbUpdateConcurrencyException
+```
 
 ## Anti-padrão multi-tenant
 

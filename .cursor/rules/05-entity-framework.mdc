@@ -27,6 +27,39 @@ alwaysApply: true
 - Nunca expor `DbContext` fora do Infra.
 - Filtro por `empresa_id` explícito nos repositórios customizados (sem global query filter hoje).
 
+## Change tracking — filhos em coleção (obrigatório)
+
+Ao mutar agregados com **filhos em `ICollection<>`** (ex.: `Funcionario.Vinculos`, itens de pedido), o EF Core **não garante** que entidades novas fiquem em `Added`. Em transições do tipo *desativar filho existente + adicionar filho novo na mesma coleção*, o filho novo pode ser marcado como **`Modified`** ou **`Detached`**.
+
+### Sintoma
+
+`DbUpdateConcurrencyException`: *expected to affect 1 row(s), but actually affected 0 row(s)* — o EF tentou **UPDATE** em um `Id` que ainda não existe no banco (deveria ser **INSERT**).
+
+Caso real: editar funcionário de `linkToEmpresa: true` (vínculo empresa) para `linkToEmpresa: false` (vínculo unidade). Atualizar só o vínculo existente funciona; criar vínculo novo na mesma operação falha.
+
+### Causa
+
+1. Raiz carregada com tracking + `Include` dos filhos.
+2. Domínio altera filho existente (`Deactivate`, `UpdateAssignment`, etc.).
+3. Domínio adiciona filho novo via `collection.Add(...)` ou factory na entidade raiz.
+4. O change tracker infere estado errado no filho novo.
+
+### Regra ao implementar mutação com filhos
+
+- **Nunca** confiar que `collection.Add(novoFilho)` resultará em `EntityState.Added`.
+- **Nunca** usar `_dbSet.Update(raiz)` no agregado inteiro — marca **todos** os filhos como `Modified`, inclusive os novos.
+- No `Update` do repositório, **normalizar o estado de cada filho** antes do `SaveChangesAsync`:
+  - Filho **não existe no banco** → `_context.Set<TFilho>().Add(filho)` (mesmo que o tracker diga `Modified`).
+  - Filho **existe no banco** e foi alterado → `Modified` (ou tracking automático se raiz já tracked).
+  - Filho **Detached** e existe no banco → `Attach` + `Modified`.
+- Referência de implementação: `EmployeesRepository.EnsureVinculoTrackedCorrectly` em `Infra.Data/Repositories/Core/EmployeesRepository.cs`.
+
+### Checklist (nova feature com filhos mutáveis)
+
+- [ ] Repositório expõe `Update(raiz)` que percorre a coleção de filhos e corrige o estado.
+- [ ] Testar cenário *alterar existente + inserir novo* na mesma requisição (não só CRUD isolado).
+- [ ] Se `SaveChanges` lançar concorrência com 0 rows em INSERT implícito, inspecionar `ChangeTracker.Entries<TFilho>()` — filho novo provavelmente está `Modified`.
+
 ## Provider
 
 - SQL Server via `AddDbContext` em `Infra.Data/DependencyInjection.cs`.

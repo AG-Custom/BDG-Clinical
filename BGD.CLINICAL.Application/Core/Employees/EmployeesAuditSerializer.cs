@@ -23,7 +23,6 @@ internal static class EmployeesAuditSerializer
                     vinculo.EmpresaId,
                     vinculo.UnidadeId,
                     vinculo.CargoId,
-                    vinculo.FlagAplicador,
                     vinculo.Ativo
                 })
         };

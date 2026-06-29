@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Applications.Dtos;
 using BGD.CLINICAL.Application.Applications.PatientApplications;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +33,7 @@ public sealed class PatientApplicationController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("aplicacao.visualizar")]
     public async Task<IActionResult> List(
         [FromQuery] Guid? pacienteId = null,
         [FromQuery] Guid? unidadeId = null,
@@ -65,6 +67,7 @@ public sealed class PatientApplicationController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("aplicacao.visualizar")]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getPatientApplicationsService.ExecuteAsync(id, cancellationToken);
@@ -78,6 +81,7 @@ public sealed class PatientApplicationController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("aplicacao.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreatePatientApplicationRequest request,
         CancellationToken cancellationToken)
@@ -96,6 +100,7 @@ public sealed class PatientApplicationController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("aplicacao.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdatePatientApplicationRequest request,
@@ -112,6 +117,7 @@ public sealed class PatientApplicationController : ControllerBase
     }
 
     [HttpPost("{id:guid}/cancel")]
+    [RequirePermission("aplicacao.cancelar")]
     public async Task<IActionResult> Cancel(Guid id, CancellationToken cancellationToken)
     {
         var result = await _cancelPatientApplicationsService.ExecuteAsync(id, cancellationToken);

@@ -179,10 +179,11 @@ public sealed class Usuario : AggregateRoot
     public TipoUsuario TipoUsuario { get; private set; }
     public bool Ativo { get; private set; }
     public bool PendentePrimeiroAcesso { get; private set; }
+    public int PermissionVersion { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public Funcionario? Funcionario { get; private set; }
-    public ICollection<PermissaoUsuario> Permissoes { get; private set; } = [];
+    public ICollection<UsuarioPermissaoOverride> PermissoesOverride { get; private set; } = [];
 
     public void UpdateProfile(string nome)
     {
@@ -222,6 +223,12 @@ public sealed class Usuario : AggregateRoot
 
         SenhaHash = senhaHash;
         PendentePrimeiroAcesso = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void IncrementPermissionVersion()
+    {
+        PermissionVersion++;
         AtualizadoEm = DateTime.UtcNow;
     }
 }
@@ -271,17 +278,17 @@ public sealed class Funcionario : AggregateRoot
         AtualizadoEm = DateTime.UtcNow;
     }
 
-    public FuncionarioVinculo AddEmpresaVinculo(Guid empresaId, Guid? cargoId, bool flagAplicador)
+    public FuncionarioVinculo AddEmpresaVinculo(Guid empresaId, Guid? cargoId)
     {
-        var vinculo = FuncionarioVinculo.CreateForEmpresa(Id, empresaId, cargoId, flagAplicador);
+        var vinculo = FuncionarioVinculo.CreateForEmpresa(Id, empresaId, cargoId);
         Vinculos.Add(vinculo);
         AtualizadoEm = DateTime.UtcNow;
         return vinculo;
     }
 
-    public FuncionarioVinculo AddUnidadeVinculo(Guid unidadeId, Guid? cargoId, bool flagAplicador)
+    public FuncionarioVinculo AddUnidadeVinculo(Guid unidadeId, Guid? cargoId)
     {
-        var vinculo = FuncionarioVinculo.CreateForUnidade(Id, unidadeId, cargoId, flagAplicador);
+        var vinculo = FuncionarioVinculo.CreateForUnidade(Id, unidadeId, cargoId);
         Vinculos.Add(vinculo);
         AtualizadoEm = DateTime.UtcNow;
         return vinculo;
@@ -349,8 +356,7 @@ public sealed class FuncionarioVinculo : Entity
         Guid funcionarioId,
         Guid? empresaId,
         Guid? unidadeId,
-        Guid? cargoId,
-        bool flagAplicador)
+        Guid? cargoId)
         : base(Guid.NewGuid())
     {
         ValidateExclusiveLink(empresaId, unidadeId);
@@ -359,7 +365,6 @@ public sealed class FuncionarioVinculo : Entity
         EmpresaId = empresaId;
         UnidadeId = unidadeId;
         CargoId = cargoId;
-        FlagAplicador = flagAplicador;
         Ativo = true;
     }
 
@@ -367,7 +372,6 @@ public sealed class FuncionarioVinculo : Entity
     public Guid? EmpresaId { get; private set; }
     public Guid? UnidadeId { get; private set; }
     public Guid? CargoId { get; private set; }
-    public bool FlagAplicador { get; private set; }
     public bool Ativo { get; private set; }
 
     public Funcionario Funcionario { get; private set; } = null!;
@@ -378,29 +382,27 @@ public sealed class FuncionarioVinculo : Entity
     public static FuncionarioVinculo CreateForEmpresa(
         Guid funcionarioId,
         Guid empresaId,
-        Guid? cargoId,
-        bool flagAplicador)
+        Guid? cargoId)
     {
         if (empresaId == Guid.Empty)
         {
             throw new DomainException("Informe a empresa do vínculo.");
         }
 
-        return new FuncionarioVinculo(funcionarioId, empresaId, null, cargoId, flagAplicador);
+        return new FuncionarioVinculo(funcionarioId, empresaId, null, cargoId);
     }
 
     public static FuncionarioVinculo CreateForUnidade(
         Guid funcionarioId,
         Guid unidadeId,
-        Guid? cargoId,
-        bool flagAplicador)
+        Guid? cargoId)
     {
         if (unidadeId == Guid.Empty)
         {
             throw new DomainException("Informe a unidade do vínculo.");
         }
 
-        return new FuncionarioVinculo(funcionarioId, null, unidadeId, cargoId, flagAplicador);
+        return new FuncionarioVinculo(funcionarioId, null, unidadeId, cargoId);
     }
 
     public bool BelongsToEmpresa(Guid empresaId)
@@ -425,11 +427,15 @@ public sealed class FuncionarioVinculo : Entity
         AtualizadoEm = DateTime.UtcNow;
     }
 
-    public void UpdateAssignment(Guid? cargoId, bool flagAplicador)
+    public void UpdateAssignment(Guid? cargoId)
     {
         CargoId = cargoId;
-        FlagAplicador = flagAplicador;
         AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public bool CanApply()
+    {
+        return Ativo && Cargo is { Ativo: true, FlagAplicador: true };
     }
 
     private static void ValidateExclusiveLink(Guid? empresaId, Guid? unidadeId)
@@ -450,22 +456,25 @@ public sealed class Cargo : AggregateRoot
     {
     }
 
-    public Cargo(Guid empresaId, string nome)
+    public Cargo(Guid empresaId, string nome, bool flagAplicador = false)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
         Nome = nome;
+        FlagAplicador = flagAplicador;
         Ativo = true;
     }
 
     public Guid EmpresaId { get; private set; }
     public string Nome { get; private set; } = string.Empty;
+    public bool FlagAplicador { get; private set; }
     public bool Ativo { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
     public ICollection<FuncionarioVinculo> FuncionarioVinculos { get; private set; } = [];
+    public ICollection<CargoPermissaoItem> Permissoes { get; private set; } = [];
 
-    public void UpdateDetails(string nome)
+    public void UpdateDetails(string nome, bool flagAplicador)
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
@@ -473,6 +482,24 @@ public sealed class Cargo : AggregateRoot
         }
 
         Nome = nome.Trim();
+        FlagAplicador = flagAplicador;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void ReplacePermissionItems(IEnumerable<string> permissionKeys)
+    {
+        Permissoes.Clear();
+
+        foreach (var key in permissionKeys.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+
+            Permissoes.Add(new CargoPermissaoItem(Id, key.Trim()));
+        }
+
         AtualizadoEm = DateTime.UtcNow;
     }
 

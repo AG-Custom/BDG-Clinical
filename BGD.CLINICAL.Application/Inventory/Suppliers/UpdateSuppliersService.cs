@@ -61,6 +61,7 @@ public sealed class UpdateSuppliersService : IUpdateSuppliersService
             request.Cnpj,
             request.Telefone,
             request.Email,
+            request.Observacao,
             excludeSupplierId: id,
             _suppliersRepository,
             cancellationToken);
@@ -75,7 +76,7 @@ public sealed class UpdateSuppliersService : IUpdateSuppliersService
             var dadosAnteriores = SuppliersAuditSerializer.Serialize(fornecedor);
             var data = validation.Value!;
 
-            fornecedor.UpdateDetails(data.Nome, data.Cnpj, data.Telefone, data.Email);
+            fornecedor.UpdateDetails(data.Nome, data.Cnpj, data.Telefone, data.Email, data.Observacao);
             _suppliersRepository.Update(fornecedor);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

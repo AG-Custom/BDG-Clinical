@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Applications.Dtos;
 using BGD.CLINICAL.Application.Applications.Procedures;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class ProcedureController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Procedures)]
     public async Task<IActionResult> List(
         [FromQuery] bool includeInactive = false,
         [FromQuery] Guid? produtoAplicadoId = null,
@@ -58,6 +60,7 @@ public sealed class ProcedureController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.Procedures)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getProceduresService.ExecuteAsync(id, cancellationToken);
@@ -71,6 +74,7 @@ public sealed class ProcedureController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("procedimento.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateProcedureRequest request,
         CancellationToken cancellationToken)
@@ -89,6 +93,7 @@ public sealed class ProcedureController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("procedimento.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProcedureRequest request,
@@ -109,6 +114,7 @@ public sealed class ProcedureController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/deactivate")]
+    [RequirePermission("procedimento.editar")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateProceduresService.ExecuteAsync(id, cancellationToken);
@@ -126,6 +132,7 @@ public sealed class ProcedureController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("procedimento.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivateProceduresService.ExecuteAsync(id, cancellationToken);

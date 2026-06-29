@@ -47,7 +47,6 @@ internal static class EmployeesMapper
                 vinculo.EmpresaId,
                 vinculo.UnidadeId,
                 vinculo.CargoId,
-                vinculo.FlagAplicador,
                 vinculo.Ativo))
             .ToList();
     }

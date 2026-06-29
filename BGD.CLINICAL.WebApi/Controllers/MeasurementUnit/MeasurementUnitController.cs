@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Application.Inventory.MeasurementUnits;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public sealed class MeasurementUnitController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.MeasurementUnits)]
     public async Task<IActionResult> List(
         [FromQuery] bool includeInactive = false,
         [FromQuery] string? tipo = null,
@@ -58,6 +60,7 @@ public sealed class MeasurementUnitController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.MeasurementUnits)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getMeasurementUnitsService.ExecuteAsync(id, cancellationToken);
@@ -71,6 +74,7 @@ public sealed class MeasurementUnitController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("unidade_medida.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateMeasurementUnitRequest request,
         CancellationToken cancellationToken)
@@ -89,6 +93,7 @@ public sealed class MeasurementUnitController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("unidade_medida.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateMeasurementUnitRequest request,
@@ -109,6 +114,7 @@ public sealed class MeasurementUnitController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("unidade_medida.excluir")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateMeasurementUnitsService.ExecuteAsync(id, cancellationToken);
@@ -126,6 +132,7 @@ public sealed class MeasurementUnitController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reactivate")]
+    [RequirePermission("unidade_medida.editar")]
     public async Task<IActionResult> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _reactivateMeasurementUnitsService.ExecuteAsync(id, cancellationToken);

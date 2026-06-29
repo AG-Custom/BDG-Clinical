@@ -1,12 +1,14 @@
-using BGD.CLINICAL.Domain.Enums;
-
 namespace BGD.CLINICAL.Application.Modules.Abstractions;
 
 public interface IUserPermissionsRepository
 {
-    Task<bool> HasPermissionAsync(
+    Task ReplaceOverridesAsync(
         Guid usuarioId,
-        string moduleCode,
-        ModulePermissionAction action,
+        IReadOnlyList<string> allows,
+        IReadOnlyList<string> denies,
+        CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<string> Allows, IReadOnlyList<string> Denies)> GetOverridesAsync(
+        Guid usuarioId,
         CancellationToken cancellationToken = default);
 }

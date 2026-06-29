@@ -28,6 +28,7 @@ public sealed class SupplierOrdersRepository : ISupplierOrdersRepository
             .Include(pedido => pedido.Unidade)
             .Include(pedido => pedido.Itens)
                 .ThenInclude(item => item.Produto)
+            .Include(pedido => pedido.Anexos)
             .Where(pedido => pedido.EmpresaId == empresaId);
 
         if (status.HasValue)
@@ -61,6 +62,7 @@ public sealed class SupplierOrdersRepository : ISupplierOrdersRepository
             .Include(pedido => pedido.Unidade)
             .Include(pedido => pedido.Itens)
                 .ThenInclude(item => item.Produto)
+            .Include(pedido => pedido.Anexos)
             .FirstOrDefaultAsync(
                 pedido => pedido.Id == id && pedido.EmpresaId == empresaId,
                 cancellationToken);
@@ -77,6 +79,7 @@ public sealed class SupplierOrdersRepository : ISupplierOrdersRepository
             .Include(pedido => pedido.Unidade)
             .Include(pedido => pedido.Itens)
                 .ThenInclude(item => item.Produto)
+            .Include(pedido => pedido.Anexos)
             .FirstOrDefaultAsync(
                 pedido => pedido.Id == id && pedido.EmpresaId == empresaId,
                 cancellationToken);

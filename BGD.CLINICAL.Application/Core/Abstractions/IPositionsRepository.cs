@@ -14,6 +14,16 @@ public interface IPositionsRepository
         Guid empresaId,
         CancellationToken cancellationToken = default);
 
+    Task<Cargo?> GetByIdWithPermissoesAsync(
+        Guid id,
+        Guid empresaId,
+        CancellationToken cancellationToken = default);
+
+    Task<Cargo?> GetByNomeAndEmpresaIdAsync(
+        string nome,
+        Guid empresaId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsByNomeAsync(
         Guid empresaId,
         string nome,

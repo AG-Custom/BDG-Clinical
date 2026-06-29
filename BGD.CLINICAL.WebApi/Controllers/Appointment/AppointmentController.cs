@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Schedules.Appointments;
 using BGD.CLINICAL.Application.Schedules.Dtos;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,6 +42,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("agenda.visualizar")]
     public async Task<IActionResult> List(
         [FromQuery] Guid? unidadeId = null,
         [FromQuery] Guid? funcionarioId = null,
@@ -68,6 +70,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("agenda.visualizar")]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getAppointmentsService.ExecuteAsync(id, cancellationToken);
@@ -81,6 +84,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("agendamento.criar")]
     public async Task<IActionResult> Create(
         [FromBody] CreateAppointmentRequest request,
         CancellationToken cancellationToken)
@@ -99,6 +103,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("agendamento.editar")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateAppointmentRequest request,
@@ -119,6 +124,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/confirm")]
+    [RequirePermission("agendamento.confirmar")]
     public async Task<IActionResult> Confirm(Guid id, CancellationToken cancellationToken)
     {
         var result = await _confirmAppointmentsService.ExecuteAsync(id, cancellationToken);
@@ -136,6 +142,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/complete")]
+    [RequirePermission("agendamento.concluir")]
     public async Task<IActionResult> Complete(
         Guid id,
         [FromBody] CompleteAppointmentRequest? request,
@@ -159,6 +166,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/cancel")]
+    [RequirePermission("agendamento.cancelar")]
     public async Task<IActionResult> Cancel(
         Guid id,
         [FromBody] CancelAppointmentRequest request,
@@ -179,6 +187,7 @@ public sealed class AppointmentController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/no-show")]
+    [RequirePermission("agendamento.registrar_falta")]
     public async Task<IActionResult> MarkNoShow(Guid id, CancellationToken cancellationToken)
     {
         var result = await _markNoShowAppointmentsService.ExecuteAsync(id, cancellationToken);

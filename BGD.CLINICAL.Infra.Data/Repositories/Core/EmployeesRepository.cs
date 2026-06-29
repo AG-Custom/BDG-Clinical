@@ -26,6 +26,8 @@ public sealed class EmployeesRepository : IEmployeesRepository
             .AsNoTracking()
             .Include(funcionario => funcionario.Vinculos)
                 .ThenInclude(vinculo => vinculo.Unidade)
+            .Include(funcionario => funcionario.Vinculos)
+                .ThenInclude(vinculo => vinculo.Cargo)
             .Where(funcionario => funcionario.Vinculos.Any(vinculo =>
                 vinculo.EmpresaId == empresaId
                 || (vinculo.UnidadeId != null
@@ -62,6 +64,8 @@ public sealed class EmployeesRepository : IEmployeesRepository
         return _context.Funcionarios
             .Include(funcionario => funcionario.Vinculos)
                 .ThenInclude(vinculo => vinculo.Unidade)
+            .Include(funcionario => funcionario.Vinculos)
+                .ThenInclude(vinculo => vinculo.Cargo)
             .FirstOrDefaultAsync(
                 funcionario => funcionario.Id == id
                     && funcionario.Vinculos.Any(vinculo =>
@@ -98,6 +102,28 @@ public sealed class EmployeesRepository : IEmployeesRepository
         Guid empresaId,
         CancellationToken cancellationToken = default)
     {
+        return await GetUserAccessInfoAsync(funcionarioId, empresaId, cancellationToken);
+    }
+
+    public async Task<Guid?> GetUsuarioIdByFuncionarioAndEmpresaAsync(
+        Guid funcionarioId,
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
+        var usuario = await _context.Usuarios
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                user => user.FuncionarioId == funcionarioId && user.EmpresaId == empresaId,
+                cancellationToken);
+
+        return usuario?.Id;
+    }
+
+    private async Task<EmployeeUserAccessInfo?> GetUserAccessInfoAsync(
+        Guid funcionarioId,
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
         var usuario = await _context.Usuarios
             .AsNoTracking()
             .FirstOrDefaultAsync(
@@ -124,7 +150,53 @@ public sealed class EmployeesRepository : IEmployeesRepository
 
         if (entry.State == EntityState.Detached)
         {
-            _context.Funcionarios.Update(funcionario);
+            _context.Funcionarios.Attach(funcionario);
+            entry.State = EntityState.Modified;
         }
+
+        foreach (var vinculo in funcionario.Vinculos)
+        {
+            EnsureVinculoTrackedCorrectly(vinculo);
+        }
+    }
+
+    private void EnsureVinculoTrackedCorrectly(FuncionarioVinculo vinculo)
+    {
+        var vinculoEntry = _context.Entry(vinculo);
+
+        if (vinculoEntry.State is EntityState.Added or EntityState.Deleted)
+        {
+            return;
+        }
+
+        if (_context.FuncionarioVinculos.Local.Any(tracked => tracked.Id == vinculo.Id))
+        {
+            if (vinculoEntry.State == EntityState.Modified && !VinculoExistsInDatabase(vinculo.Id))
+            {
+                _context.FuncionarioVinculos.Add(vinculo);
+            }
+
+            return;
+        }
+
+        if (VinculoExistsInDatabase(vinculo.Id))
+        {
+            if (vinculoEntry.State == EntityState.Detached)
+            {
+                _context.FuncionarioVinculos.Attach(vinculo);
+            }
+
+            vinculoEntry.State = EntityState.Modified;
+            return;
+        }
+
+        _context.FuncionarioVinculos.Add(vinculo);
+    }
+
+    private bool VinculoExistsInDatabase(Guid vinculoId)
+    {
+        return _context.FuncionarioVinculos
+            .AsNoTracking()
+            .Any(vinculo => vinculo.Id == vinculoId);
     }
 }

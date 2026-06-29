@@ -7,14 +7,15 @@ namespace BGD.CLINICAL.Application.Identity;
 
 internal static class AuthenticatedUsersMapper
 {
-    public static AuthenticatedUserDto Map(Usuario usuario)
+    public static AuthenticatedUserDto Map(Usuario usuario, IReadOnlyList<string>? permissions = null)
     {
         return new AuthenticatedUserDto(
             usuario.Id,
             usuario.Nome,
             usuario.EmailLogin,
             usuario.TipoUsuario == TipoUsuario.Admin,
-            ResolveFlagAplicador(usuario));
+            ResolveFlagAplicador(usuario),
+            permissions ?? []);
     }
 
     private static bool ResolveFlagAplicador(Usuario usuario)
@@ -30,9 +31,8 @@ internal static class AuthenticatedUsersMapper
         }
 
         return usuario.Funcionario.Vinculos.Any(vinculo =>
-            vinculo.Ativo
-            && vinculo.FlagAplicador
-            && vinculo.BelongsToEmpresa(usuario.EmpresaId));
+            vinculo.BelongsToEmpresa(usuario.EmpresaId)
+            && vinculo.CanApply());
     }
 }
 

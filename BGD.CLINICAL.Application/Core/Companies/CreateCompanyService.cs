@@ -6,6 +6,8 @@ using BGD.CLINICAL.Application.Core.Dtos;
 using BGD.CLINICAL.Application.Identity;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Identity.Dtos;
+using BGD.CLINICAL.Application.Modules.Abstractions;
+using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -26,6 +28,8 @@ public sealed class CreateCompanyService : ICreateCompanyService
     private readonly ICompaniesRepository _companiesRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly ITokenService _tokenService;
+    private readonly ICompanyModuleLicensesProvisioner _moduleLicensesProvisioner;
+    private readonly ICompanyDefaultMeasurementUnitsProvisioner _defaultMeasurementUnitsProvisioner;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateCompanyService(
@@ -34,6 +38,8 @@ public sealed class CreateCompanyService : ICreateCompanyService
         ICompaniesRepository companiesRepository,
         IUsersRepository usersRepository,
         ITokenService tokenService,
+        ICompanyModuleLicensesProvisioner moduleLicensesProvisioner,
+        ICompanyDefaultMeasurementUnitsProvisioner defaultMeasurementUnitsProvisioner,
         IUnitOfWork unitOfWork)
     {
         _tenantContext = tenantContext;
@@ -41,6 +47,8 @@ public sealed class CreateCompanyService : ICreateCompanyService
         _companiesRepository = companiesRepository;
         _usersRepository = usersRepository;
         _tokenService = tokenService;
+        _moduleLicensesProvisioner = moduleLicensesProvisioner;
+        _defaultMeasurementUnitsProvisioner = defaultMeasurementUnitsProvisioner;
         _unitOfWork = unitOfWork;
     }
 
@@ -116,6 +124,9 @@ public sealed class CreateCompanyService : ICreateCompanyService
         await _empresaRepository.AddAsync(empresa, cancellationToken);
         await _usersRepository.AddAsync(novoUsuario, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _moduleLicensesProvisioner.ProvisionAllModulesAsync(empresa.Id, cancellationToken);
+        await _defaultMeasurementUnitsProvisioner.ProvisionDefaultMeasurementUnitsAsync(empresa.Id, cancellationToken);
 
         var token = _tokenService.GenerateToken(novoUsuario);
 

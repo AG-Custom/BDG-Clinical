@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Schedules.Dtos;
 using BGD.CLINICAL.Application.Schedules.UnitOperatingHours;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ public sealed class UnitOperatingHourActiveController : ControllerBase
     }
 
     [HttpPatch]
+    [RequirePermission("unidade.editar")]
     public async Task<IActionResult> SetActive(
         Guid id,
         [FromBody] SetUnitOperatingHourActiveRequest request,

@@ -1,3 +1,4 @@
+using BGD.CLINICAL.Application.Abstractions.Storage;
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
@@ -6,7 +7,9 @@ namespace BGD.CLINICAL.Application.Inventory.SupplierOrders;
 
 internal static class SupplierOrdersMapper
 {
-    public static SupplierOrderDto Map(PedidoFornecedor pedido)
+    public static SupplierOrderDto Map(
+        PedidoFornecedor pedido,
+        IObjectStorageService? objectStorage = null)
     {
         return new SupplierOrderDto(
             pedido.Id,
@@ -20,13 +23,16 @@ internal static class SupplierOrdersMapper
             pedido.ValorTotal,
             pedido.Observacao,
             MapItens(pedido.Itens),
+            MapAnexos(pedido.Anexos, objectStorage),
             pedido.CriadoEm,
             pedido.AtualizadoEm);
     }
 
-    public static IReadOnlyList<SupplierOrderDto> Map(IReadOnlyList<PedidoFornecedor> pedidos)
+    public static IReadOnlyList<SupplierOrderDto> Map(
+        IReadOnlyList<PedidoFornecedor> pedidos,
+        IObjectStorageService? objectStorage = null)
     {
-        return pedidos.Select(Map).ToList();
+        return pedidos.Select(pedido => Map(pedido, objectStorage)).ToList();
     }
 
     private static IReadOnlyList<SupplierOrderItemDto> MapItens(
@@ -41,5 +47,17 @@ internal static class SupplierOrdersMapper
                 item.ValorUnitario,
                 item.ValorTotal))
             .ToList();
+    }
+
+    private static IReadOnlyList<SupplierOrderAttachmentDto> MapAnexos(
+        IEnumerable<AnexoPedidoFornecedor> anexos,
+        IObjectStorageService? objectStorage)
+    {
+        if (objectStorage is null)
+        {
+            return [];
+        }
+
+        return SupplierOrderAttachmentsMapper.Map(anexos, objectStorage);
     }
 }

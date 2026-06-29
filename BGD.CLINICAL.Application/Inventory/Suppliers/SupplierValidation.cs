@@ -57,6 +57,26 @@ internal static class SupplierValidation
         return string.IsNullOrWhiteSpace(email) ? null : email.Trim();
     }
 
+    public static string? NormalizeObservacao(string? observacao)
+    {
+        return string.IsNullOrWhiteSpace(observacao) ? null : observacao.Trim();
+    }
+
+    public static string? ValidateObservacao(string? observacao)
+    {
+        if (string.IsNullOrWhiteSpace(observacao))
+        {
+            return null;
+        }
+
+        if (observacao.Trim().Length > 2000)
+        {
+            return "A observação deve ter no máximo 2000 caracteres.";
+        }
+
+        return null;
+    }
+
     public static Result<int> ValidateLimit(int? limit, int defaultLimit)
     {
         var effectiveLimit = limit ?? defaultLimit;

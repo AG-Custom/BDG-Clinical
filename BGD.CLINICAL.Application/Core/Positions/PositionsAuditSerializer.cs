@@ -17,6 +17,7 @@ internal static class PositionsAuditSerializer
             cargo.Id,
             cargo.EmpresaId,
             cargo.Nome,
+            cargo.FlagAplicador,
             cargo.Ativo,
         }, Options);
     }

@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Application.Inventory.StockBalances;
+using BGD.CLINICAL.WebApi.Authorization;
 using BGD.CLINICAL.WebApi.Models.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ public sealed class StockBalanceController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("estoque.visualizar")]
     public async Task<IActionResult> List(
         [FromQuery] Guid? unidadeId = null,
         [FromQuery] Guid? produtoId = null,

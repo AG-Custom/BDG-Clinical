@@ -294,8 +294,7 @@ internal static class PatientApplicationRequestValidator
     private static bool IsAplicadorForUnidade(Funcionario funcionario, Guid empresaId, Guid unidadeId)
     {
         return funcionario.Vinculos.Any(vinculo =>
-            vinculo.Ativo
-            && vinculo.FlagAplicador
+            vinculo.CanApply()
             && (
                 (vinculo.EmpresaId.HasValue && vinculo.EmpresaId.Value == empresaId)
                 || (vinculo.UnidadeId.HasValue && vinculo.UnidadeId.Value == unidadeId)));

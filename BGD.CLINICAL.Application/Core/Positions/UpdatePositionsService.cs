@@ -71,7 +71,7 @@ public sealed class UpdatePositionsService : IUpdatePositionsService
         {
             var dadosAnteriores = PositionsAuditSerializer.Serialize(cargo);
 
-            cargo.UpdateDetails(nome);
+            cargo.UpdateDetails(nome, request.FlagAplicador);
             _positionsRepository.Update(cargo);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

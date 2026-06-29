@@ -333,7 +333,8 @@ public sealed class Fornecedor : AggregateRoot
         string nome,
         string cnpj,
         string? telefone,
-        string? email)
+        string? email,
+        string? observacao)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -341,6 +342,7 @@ public sealed class Fornecedor : AggregateRoot
         Cnpj = cnpj;
         Telefone = telefone;
         Email = email;
+        Observacao = observacao;
         Ativo = true;
     }
 
@@ -349,6 +351,7 @@ public sealed class Fornecedor : AggregateRoot
     public string Cnpj { get; private set; } = string.Empty;
     public string? Telefone { get; private set; }
     public string? Email { get; private set; }
+    public string? Observacao { get; private set; }
     public bool Ativo { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
@@ -359,7 +362,8 @@ public sealed class Fornecedor : AggregateRoot
         string nome,
         string cnpj,
         string? telefone,
-        string? email)
+        string? email,
+        string? observacao = null)
     {
         if (empresaId == Guid.Empty)
         {
@@ -381,10 +385,16 @@ public sealed class Fornecedor : AggregateRoot
             nome.Trim(),
             cnpj.Trim(),
             string.IsNullOrWhiteSpace(telefone) ? null : telefone.Trim(),
-            string.IsNullOrWhiteSpace(email) ? null : email.Trim());
+            string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
+            NormalizeObservacao(observacao));
     }
 
-    public void UpdateDetails(string nome, string cnpj, string? telefone, string? email)
+    public void UpdateDetails(
+        string nome,
+        string cnpj,
+        string? telefone,
+        string? email,
+        string? observacao)
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
@@ -400,7 +410,13 @@ public sealed class Fornecedor : AggregateRoot
         Cnpj = cnpj.Trim();
         Telefone = string.IsNullOrWhiteSpace(telefone) ? null : telefone.Trim();
         Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+        Observacao = NormalizeObservacao(observacao);
         AtualizadoEm = DateTime.UtcNow;
+    }
+
+    private static string? NormalizeObservacao(string? observacao)
+    {
+        return string.IsNullOrWhiteSpace(observacao) ? null : observacao.Trim();
     }
 
     public void Deactivate()
@@ -459,6 +475,7 @@ public sealed class PedidoFornecedor : AggregateRoot
     public Fornecedor Fornecedor { get; private set; } = null!;
     public Unidade Unidade { get; private set; } = null!;
     public IReadOnlyCollection<ItemPedidoFornecedor> Itens => _itens;
+    public ICollection<AnexoPedidoFornecedor> Anexos { get; private set; } = [];
 
     public static PedidoFornecedor Create(
         Guid empresaId,
@@ -1103,5 +1120,85 @@ public sealed class MovimentacaoEstoque : AggregateRoot
         Origem = origem;
         FuncionarioId = funcionarioId;
         Observacao = observacao;
+    }
+}
+
+public sealed class AnexoPedidoFornecedor : Entity
+{
+    private AnexoPedidoFornecedor()
+    {
+    }
+
+    private AnexoPedidoFornecedor(
+        Guid pedidoFornecedorId,
+        Guid empresaId,
+        string nomeArquivo,
+        string contentType,
+        string objectKey,
+        long tamanhoBytes)
+        : base(Guid.NewGuid())
+    {
+        PedidoFornecedorId = pedidoFornecedorId;
+        EmpresaId = empresaId;
+        NomeArquivo = nomeArquivo;
+        ContentType = contentType;
+        ObjectKey = objectKey;
+        TamanhoBytes = tamanhoBytes;
+    }
+
+    public Guid PedidoFornecedorId { get; private set; }
+    public Guid EmpresaId { get; private set; }
+    public string NomeArquivo { get; private set; } = string.Empty;
+    public string ContentType { get; private set; } = string.Empty;
+    public string ObjectKey { get; private set; } = string.Empty;
+    public long TamanhoBytes { get; private set; }
+
+    public PedidoFornecedor PedidoFornecedor { get; private set; } = null!;
+
+    public static AnexoPedidoFornecedor Create(
+        Guid pedidoFornecedorId,
+        Guid empresaId,
+        string nomeArquivo,
+        string contentType,
+        string objectKey,
+        long tamanhoBytes)
+    {
+        if (pedidoFornecedorId == Guid.Empty)
+        {
+            throw new DomainException("Informe o pedido do anexo.");
+        }
+
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa do anexo.");
+        }
+
+        if (string.IsNullOrWhiteSpace(nomeArquivo))
+        {
+            throw new DomainException("Informe o nome do arquivo.");
+        }
+
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new DomainException("Informe o tipo do arquivo.");
+        }
+
+        if (string.IsNullOrWhiteSpace(objectKey))
+        {
+            throw new DomainException("Informe a chave do arquivo.");
+        }
+
+        if (tamanhoBytes <= 0)
+        {
+            throw new DomainException("O arquivo deve ter tamanho maior que zero.");
+        }
+
+        return new AnexoPedidoFornecedor(
+            pedidoFornecedorId,
+            empresaId,
+            nomeArquivo.Trim(),
+            contentType.Trim(),
+            objectKey.Trim(),
+            tamanhoBytes);
     }
 }

@@ -16,6 +16,7 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(entity => entity.EmailLogin).HasMaxLength(200).IsRequired();
         builder.Property(entity => entity.SenhaHash).HasMaxLength(500);
         builder.Property(entity => entity.PendentePrimeiroAcesso).HasDefaultValue(false);
+        builder.Property(entity => entity.PermissionVersion).HasDefaultValue(0);
         builder.Property(entity => entity.AuthProvider).HasMaxLength(60).IsRequired();
         builder.Property(entity => entity.GoogleId).HasMaxLength(200);
         builder.Property(entity => entity.TipoUsuario)

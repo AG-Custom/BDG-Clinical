@@ -108,6 +108,9 @@ public sealed class UsersRepository : IUsersRepository
             .Include(usuario => usuario.Empresa)
             .Include(usuario => usuario.Funcionario)
                 .ThenInclude(funcionario => funcionario!.Vinculos)
-                    .ThenInclude(vinculo => vinculo.Unidade);
+                    .ThenInclude(vinculo => vinculo.Unidade)
+            .Include(usuario => usuario.Funcionario)
+                .ThenInclude(funcionario => funcionario!.Vinculos)
+                    .ThenInclude(vinculo => vinculo.Cargo);
     }
 }

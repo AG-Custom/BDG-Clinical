@@ -258,6 +258,60 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.ToTable("agendamento_google_sync", (string)null);
                 });
 
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AnexoPedidoFornecedor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("criado_em");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("empresa_id");
+
+                    b.Property<string>("NomeArquivo")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)")
+                        .HasColumnName("nome_arquivo");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("object_key");
+
+                    b.Property<Guid>("PedidoFornecedorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("pedido_fornecedor_id");
+
+                    b.Property<long>("TamanhoBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("tamanho_bytes");
+
+                    b.HasKey("Id")
+                        .HasName("pk_anexo_pedido_fornecedor");
+
+                    b.HasIndex("PedidoFornecedorId", "EmpresaId")
+                        .HasDatabaseName("ix_anexo_pedido_fornecedor_pedido_fornecedor_id_empresa_id");
+
+                    b.ToTable("anexo_pedido_fornecedor", (string)null);
+                });
+
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AplicacaoPaciente", b =>
                 {
                     b.Property<Guid>("Id")
@@ -489,6 +543,10 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("empresa_id");
 
+                    b.Property<bool>("FlagAplicador")
+                        .HasColumnType("bit")
+                        .HasColumnName("flag_aplicador");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -503,6 +561,41 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasDatabaseName("ix_cargo_empresa_id_nome");
 
                     b.ToTable("cargo", (string)null);
+                });
+
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CargoPermissaoItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<Guid>("CargoId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("cargo_id");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("criado_em");
+
+                    b.Property<string>("PermissionKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("permission_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cargo_permissao_item");
+
+                    b.HasIndex("CargoId", "PermissionKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_cargo_permissao_item_cargo_id_permission_key");
+
+                    b.ToTable("cargo_permissao_item", (string)null);
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CompraPaciente", b =>
@@ -967,6 +1060,11 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("nvarchar(180)")
                         .HasColumnName("nome");
 
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("observacao");
+
                     b.Property<string>("Telefone")
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)")
@@ -1053,10 +1151,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Property<Guid?>("EmpresaId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("empresa_id");
-
-                    b.Property<bool>("FlagAplicador")
-                        .HasColumnType("bit")
-                        .HasColumnName("flag_aplicador");
 
                     b.Property<Guid>("FuncionarioId")
                         .HasColumnType("uniqueidentifier")
@@ -1882,7 +1976,7 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.ToTable("pedido_fornecedor", (string)null);
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PermissaoUsuario", b =>
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PermissaoSistema", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1893,45 +1987,51 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("atualizado_em");
 
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("categoria");
+
+                    b.Property<string>("Chave")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("chave");
+
+                    b.Property<string>("ChavePai")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("chave_pai");
+
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2")
                         .HasColumnName("criado_em");
 
-                    b.Property<Guid>("ModuloId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("modulo_id");
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(240)
+                        .HasColumnType("nvarchar(240)")
+                        .HasColumnName("descricao");
 
-                    b.Property<bool>("PodeCriar")
-                        .HasColumnType("bit")
-                        .HasColumnName("pode_criar");
+                    b.Property<string>("ModuloCodigo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("modulo_codigo");
 
-                    b.Property<bool>("PodeEditar")
-                        .HasColumnType("bit")
-                        .HasColumnName("pode_editar");
-
-                    b.Property<bool>("PodeExcluir")
-                        .HasColumnType("bit")
-                        .HasColumnName("pode_excluir");
-
-                    b.Property<bool>("PodeVisualizar")
-                        .HasColumnType("bit")
-                        .HasColumnName("pode_visualizar");
-
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("usuario_id");
+                    b.Property<int>("Ordem")
+                        .HasColumnType("int")
+                        .HasColumnName("ordem");
 
                     b.HasKey("Id")
-                        .HasName("pk_permissao_usuario");
+                        .HasName("pk_permissao_sistema");
 
-                    b.HasIndex("ModuloId")
-                        .HasDatabaseName("ix_permissao_usuario_modulo_id");
-
-                    b.HasIndex("UsuarioId", "ModuloId")
+                    b.HasIndex("Chave")
                         .IsUnique()
-                        .HasDatabaseName("ix_permissao_usuario_usuario_id_modulo_id");
+                        .HasDatabaseName("ix_permissao_sistema_chave");
 
-                    b.ToTable("permissao_usuario", (string)null);
+                    b.ToTable("permissao_sistema", (string)null);
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Procedimento", b =>
@@ -2306,6 +2406,12 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("pendente_primeiro_acesso");
 
+                    b.Property<int>("PermissionVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0)
+                        .HasColumnName("permission_version");
+
                     b.Property<string>("SenhaHash")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
@@ -2328,6 +2434,47 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasDatabaseName("ix_usuario_empresa_id_email_login");
 
                     b.ToTable("usuario", (string)null);
+                });
+
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.UsuarioPermissaoOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("criado_em");
+
+                    b.Property<string>("Effect")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("effect");
+
+                    b.Property<string>("PermissionKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("permission_key");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_usuario_permissao");
+
+                    b.HasIndex("UsuarioId", "PermissionKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_usuario_permissao_usuario_id_permission_key");
+
+                    b.ToTable("usuario_permissao", (string)null);
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AgendaGoogle", b =>
@@ -2451,6 +2598,18 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Agendamento");
 
                     b.Navigation("Empresa");
+                });
+
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AnexoPedidoFornecedor", b =>
+                {
+                    b.HasOne("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", "PedidoFornecedor")
+                        .WithMany("Anexos")
+                        .HasForeignKey("PedidoFornecedorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_anexo_pedido_fornecedor_pedido_fornecedor_pedido_fornecedor_id");
+
+                    b.Navigation("PedidoFornecedor");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AplicacaoPaciente", b =>
@@ -2594,6 +2753,18 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasConstraintName("fk_cargo_empresa_empresa_id");
 
                     b.Navigation("Empresa");
+                });
+
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CargoPermissaoItem", b =>
+                {
+                    b.HasOne("BGD.CLINICAL.Domain.Entities.Cargo", "Cargo")
+                        .WithMany("Permissoes")
+                        .HasForeignKey("CargoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_cargo_permissao_item_cargo_cargo_id");
+
+                    b.Navigation("Cargo");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CompraPaciente", b =>
@@ -3078,27 +3249,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Unidade");
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PermissaoUsuario", b =>
-                {
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.ModuloSistema", "Modulo")
-                        .WithMany("PermissoesUsuario")
-                        .HasForeignKey("ModuloId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_permissao_usuario_modulo_sistema_modulo_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Usuario", "Usuario")
-                        .WithMany("Permissoes")
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_permissao_usuario_usuario_usuario_id");
-
-                    b.Navigation("Modulo");
-
-                    b.Navigation("Usuario");
-                });
-
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Procedimento", b =>
                 {
                     b.HasOne("BGD.CLINICAL.Domain.Entities.Empresa", "Empresa")
@@ -3217,6 +3367,18 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Funcionario");
                 });
 
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.UsuarioPermissaoOverride", b =>
+                {
+                    b.HasOne("BGD.CLINICAL.Domain.Entities.Usuario", "Usuario")
+                        .WithMany("PermissoesOverride")
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_usuario_permissao_usuario_usuario_id");
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AgendaGoogle", b =>
                 {
                     b.Navigation("Sincronizacoes");
@@ -3239,6 +3401,8 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Cargo", b =>
                 {
                     b.Navigation("FuncionarioVinculos");
+
+                    b.Navigation("Permissoes");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CompraPaciente", b =>
@@ -3284,8 +3448,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ModuloSistema", b =>
                 {
                     b.Navigation("Licencas");
-
-                    b.Navigation("PermissoesUsuario");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Paciente", b =>
@@ -3304,6 +3466,8 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", b =>
                 {
+                    b.Navigation("Anexos");
+
                     b.Navigation("Itens");
                 });
 
@@ -3329,7 +3493,7 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Usuario", b =>
                 {
-                    b.Navigation("Permissoes");
+                    b.Navigation("PermissoesOverride");
                 });
 #pragma warning restore 612, 618
         }

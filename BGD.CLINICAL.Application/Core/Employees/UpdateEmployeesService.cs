@@ -4,6 +4,7 @@ using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Core.Abstractions;
 using BGD.CLINICAL.Application.Core.Dtos;
 using BGD.CLINICAL.Application.Identity.Abstractions;
+using BGD.CLINICAL.Application.Modules.Permissions;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -24,6 +25,7 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
     private readonly IEmployeesRepository _employeesRepository;
     private readonly IPositionsRepository _positionsRepository;
     private readonly IUsersRepository _usersRepository;
+    private readonly IUsersPermissionMutationService _mutationService;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -32,6 +34,7 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
         IEmployeesRepository employeesRepository,
         IPositionsRepository positionsRepository,
         IUsersRepository usersRepository,
+        IUsersPermissionMutationService mutationService,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
@@ -39,6 +42,7 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
         _employeesRepository = employeesRepository;
         _positionsRepository = positionsRepository;
         _usersRepository = usersRepository;
+        _mutationService = mutationService;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -77,6 +81,11 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
             return Result<EmployeeDto>.Failure("Cargo não encontrado.");
         }
 
+        var previousCargoId = funcionario.Vinculos
+            .Where(vinculo => vinculo.Ativo && vinculo.BelongsToEmpresa(empresaId))
+            .Select(vinculo => vinculo.CargoId)
+            .FirstOrDefault();
+
         var userAccessInfo = await _employeesRepository.GetUserAccessInfoByFuncionarioAndEmpresaAsync(
             funcionario.Id,
             empresaId,
@@ -104,7 +113,6 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
                 request.LinkToEmpresa,
                 request.UnidadeIds,
                 request.CargoId,
-                request.FlagAplicador,
                 _employeesRepository,
                 cancellationToken);
 
@@ -122,6 +130,11 @@ public sealed class UpdateEmployeesService : IUpdateEmployeesService
 
             _employeesRepository.Update(funcionario);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            if (usuario is not null && previousCargoId != request.CargoId)
+            {
+                await _mutationService.InvalidateUsuarioAsync(usuario.Id, cancellationToken);
+            }
 
             userAccessInfo = await _employeesRepository.GetUserAccessInfoByFuncionarioAndEmpresaAsync(
                 funcionario.Id,

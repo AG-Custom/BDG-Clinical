@@ -13,6 +13,7 @@ internal static class SuppliersMapper
             fornecedor.Cnpj,
             fornecedor.Telefone,
             fornecedor.Email,
+            fornecedor.Observacao,
             fornecedor.Ativo,
             fornecedor.CriadoEm,
             fornecedor.AtualizadoEm);

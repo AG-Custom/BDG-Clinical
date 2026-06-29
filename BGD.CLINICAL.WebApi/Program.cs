@@ -1,5 +1,9 @@
 using BGD.CLINICAL.Application;
+using BGD.CLINICAL.Application.Abstractions.Persistence;
+using BGD.CLINICAL.Application.Inventory.Abstractions;
+using BGD.CLINICAL.Application.Modules.Abstractions;
 using BGD.CLINICAL.Infra.Data;
+using BGD.CLINICAL.Infra.Data.Services.Permissions;
 using BGD.CLINICAL.Infra.ExternalApis;
 using BGD.CLINICAL.WebApi.Extensions;
 using BGD.CLINICAL.WebApi.Extensions.Auth;
@@ -24,6 +28,19 @@ builder.Services.AddOpenApi();
 builder.Services.AddApiSwagger();
 
 var app = builder.Build();
+
+await app.MigrateDatabaseAsync();
+
+using (var scope = app.Services.CreateScope())
+{
+    var catalogRepository = scope.ServiceProvider.GetRequiredService<IPermissionCatalogRepository>();
+    var systemModulesRepository = scope.ServiceProvider.GetRequiredService<ISystemModulesRepository>();
+    var moduleLicensesProvisioner = scope.ServiceProvider.GetRequiredService<ICompanyModuleLicensesProvisioner>();
+    var measurementUnitsProvisioner = scope.ServiceProvider.GetRequiredService<ICompanyDefaultMeasurementUnitsProvisioner>();
+    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+    await PermissionSeeder.SeedAsync(catalogRepository, unitOfWork);
+    await ModuleSeeder.SeedAsync(systemModulesRepository, moduleLicensesProvisioner, measurementUnitsProvisioner, unitOfWork);
+}
 
 app.MapOpenApi();
 app.UseSwagger();
