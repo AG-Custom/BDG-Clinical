@@ -10,7 +10,6 @@ namespace BGD.CLINICAL.Application.Applications.PatientApplications;
 
 internal sealed record ValidatedCreatePatientApplicationData(
     Guid PacienteId,
-    Guid? CompraPacienteId,
     Guid? ProdutoId,
     Guid? ProcedimentoId,
     Guid AplicadorId,
@@ -153,32 +152,6 @@ internal static class PatientApplicationRequestValidator
                 "Quantidade utilizada não se aplica a procedimentos sem produto aplicado.");
         }
 
-        if (request.CompraPacienteId.HasValue)
-        {
-            if (!produtoIdResolvido.HasValue)
-            {
-                return Result<ValidatedCreatePatientApplicationData>.Failure(
-                    "Compra do paciente só pode ser vinculada quando há produto aplicado.");
-            }
-
-            if (request.CompraPacienteId.Value == Guid.Empty)
-            {
-                return Result<ValidatedCreatePatientApplicationData>.Failure("Compra do paciente inválida.");
-            }
-
-            var compraValida = await patientApplicationsRepository.ExistsCompraPacienteForPacienteAsync(
-                request.CompraPacienteId.Value,
-                request.PacienteId,
-                empresaId,
-                cancellationToken);
-
-            if (!compraValida)
-            {
-                return Result<ValidatedCreatePatientApplicationData>.Failure(
-                    "Compra do paciente não encontrada para este paciente.");
-            }
-        }
-
         var productIds = new HashSet<Guid>();
         if (produtoIdResolvido.HasValue)
         {
@@ -224,7 +197,6 @@ internal static class PatientApplicationRequestValidator
 
         return Result<ValidatedCreatePatientApplicationData>.Success(new ValidatedCreatePatientApplicationData(
             request.PacienteId,
-            request.CompraPacienteId,
             produtoIdResolvido,
             procedimentoIdResolvido,
             request.AplicadorId,

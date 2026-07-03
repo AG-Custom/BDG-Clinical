@@ -93,7 +93,6 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
             var aplicacao = AplicacaoPaciente.CreateRealizada(
                 empresaId,
                 data.PacienteId,
-                data.CompraPacienteId,
                 data.ProdutoId,
                 data.ProcedimentoId,
                 data.AplicadorId,

@@ -14,7 +14,6 @@ internal static class AppointmentsMapper
             agendamento.Paciente?.Nome ?? string.Empty,
             agendamento.FuncionarioId,
             agendamento.Funcionario?.Nome ?? string.Empty,
-            agendamento.CompraPacienteId,
             agendamento.ProcedimentoId,
             agendamento.Procedimento?.Nome,
             agendamento.Tipo.ToString(),

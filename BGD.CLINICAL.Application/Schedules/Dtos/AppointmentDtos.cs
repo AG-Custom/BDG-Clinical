@@ -8,7 +8,6 @@ public sealed record AppointmentDto(
     string PacienteNome,
     Guid FuncionarioId,
     string FuncionarioNome,
-    Guid? CompraPacienteId,
     Guid? ProcedimentoId,
     string? ProcedimentoNome,
     string Tipo,
@@ -33,7 +32,6 @@ public sealed record CreateAppointmentRequest(
     DateTime DataInicio,
     DateTime DataFim,
     Guid? ProcedimentoId = null,
-    Guid? CompraPacienteId = null,
     string? Observacao = null,
     int ExcecaoHorario = 0);
 
@@ -45,7 +43,6 @@ public sealed record UpdateAppointmentRequest(
     DateTime DataInicio,
     DateTime DataFim,
     Guid? ProcedimentoId = null,
-    Guid? CompraPacienteId = null,
     string? Observacao = null,
     int ExcecaoHorario = 0);
 

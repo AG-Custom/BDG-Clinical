@@ -14,7 +14,6 @@ public sealed record PatientApplicationDto(
     Guid Id,
     Guid PacienteId,
     string PacienteNome,
-    Guid? CompraPacienteId,
     Guid? ProdutoId,
     string? ProdutoNome,
     Guid? ProcedimentoId,
@@ -43,8 +42,7 @@ public sealed record CreatePatientApplicationRequest(
     decimal? QuantidadeUtilizada = null,
     decimal? Peso = null,
     string? Observacao = null,
-    IReadOnlyList<Guid>? SintomaIds = null,
-    Guid? CompraPacienteId = null);
+    IReadOnlyList<Guid>? SintomaIds = null);
 
 public sealed record UpdatePatientApplicationRequest(
     DateTime DataAplicacao,

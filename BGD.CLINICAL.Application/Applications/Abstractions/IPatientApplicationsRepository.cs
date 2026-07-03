@@ -22,12 +22,6 @@ public interface IPatientApplicationsRepository
         int limit,
         CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsCompraPacienteForPacienteAsync(
-        Guid compraPacienteId,
-        Guid pacienteId,
-        Guid empresaId,
-        CancellationToken cancellationToken = default);
-
     Task AddAsync(AplicacaoPaciente aplicacao, CancellationToken cancellationToken = default);
 
     void Update(AplicacaoPaciente aplicacao);

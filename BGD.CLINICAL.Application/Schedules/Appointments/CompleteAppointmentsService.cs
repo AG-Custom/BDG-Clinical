@@ -203,7 +203,6 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         var aplicacao = AplicacaoPaciente.CreateRealizada(
             empresaId,
             agendamento.PacienteId,
-            agendamento.CompraPacienteId,
             procedimento.ProdutoAplicadoId,
             procedimento.Id,
             agendamento.FuncionarioId,

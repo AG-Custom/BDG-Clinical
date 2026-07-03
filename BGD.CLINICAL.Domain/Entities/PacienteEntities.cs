@@ -43,7 +43,6 @@ public sealed class Paciente : AggregateRoot
 
     public Empresa Empresa { get; private set; } = null!;
     public Unidade Unidade { get; private set; } = null!;
-    public ICollection<CompraPaciente> Compras { get; private set; } = [];
     public ICollection<AplicacaoPaciente> Aplicacoes { get; private set; } = [];
 
     public static Paciente Create(

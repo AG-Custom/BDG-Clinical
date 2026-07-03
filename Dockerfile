@@ -21,6 +21,6 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
-EXPOSE 10000
+EXPOSE 8080
 
-CMD ASPNETCORE_URLS=http://+:${PORT:-10000} dotnet BGD.CLINICAL.WebApi.dll
+ENTRYPOINT ["dotnet", "BGD.CLINICAL.WebApi.dll"]

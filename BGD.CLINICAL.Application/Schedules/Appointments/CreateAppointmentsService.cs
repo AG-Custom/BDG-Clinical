@@ -90,7 +90,6 @@ public sealed class CreateAppointmentsService : ICreateAppointmentsService
                 data.UnidadeId,
                 data.PacienteId,
                 data.FuncionarioId,
-                data.CompraPacienteId,
                 data.ProcedimentoId,
                 data.Tipo,
                 data.DataInicio,

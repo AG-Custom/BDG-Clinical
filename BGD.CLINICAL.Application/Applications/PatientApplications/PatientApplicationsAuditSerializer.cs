@@ -17,7 +17,6 @@ internal static class PatientApplicationsAuditSerializer
             aplicacao.Id,
             aplicacao.EmpresaId,
             aplicacao.PacienteId,
-            aplicacao.CompraPacienteId,
             aplicacao.ProdutoId,
             aplicacao.FuncionarioId,
             aplicacao.UnidadeId,

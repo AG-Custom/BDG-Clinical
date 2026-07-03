@@ -98,7 +98,6 @@ public sealed class UpdateAppointmentsService : IUpdateAppointmentsService
                 data.UnidadeId,
                 data.PacienteId,
                 data.FuncionarioId,
-                data.CompraPacienteId,
                 data.ProcedimentoId,
                 data.Tipo,
                 data.DataInicio,

@@ -14,7 +14,6 @@ public sealed class Agendamento : AggregateRoot
     public Guid UnidadeId { get; private set; }
     public Guid PacienteId { get; private set; }
     public Guid FuncionarioId { get; private set; }
-    public Guid? CompraPacienteId { get; private set; }
     public Guid? ProcedimentoId { get; private set; }
     public TipoAgendamento Tipo { get; private set; }
     public StatusAgendamento Status { get; private set; }
@@ -30,19 +29,16 @@ public sealed class Agendamento : AggregateRoot
     public Unidade Unidade { get; private set; } = null!;
     public Paciente Paciente { get; private set; } = null!;
     public Funcionario Funcionario { get; private set; } = null!;
-    public CompraPaciente? CompraPaciente { get; private set; }
     public Procedimento? Procedimento { get; private set; }
     public Usuario CriadoPor { get; private set; } = null!;
     public Usuario? CanceladoPor { get; private set; }
     public AplicacaoPaciente? AplicacaoPaciente { get; private set; }
-    public AgendamentoGoogleSync? GoogleSync { get; private set; }
 
     public static Agendamento Create(
         Guid empresaId,
         Guid unidadeId,
         Guid pacienteId,
         Guid funcionarioId,
-        Guid? compraPacienteId,
         Guid? procedimentoId,
         TipoAgendamento tipo,
         DateTime dataInicio,
@@ -70,7 +66,6 @@ public sealed class Agendamento : AggregateRoot
             UnidadeId = unidadeId,
             PacienteId = pacienteId,
             FuncionarioId = funcionarioId,
-            CompraPacienteId = compraPacienteId,
             ProcedimentoId = procedimentoId,
             Tipo = tipo,
             Status = StatusAgendamento.Agendado,
@@ -86,7 +81,6 @@ public sealed class Agendamento : AggregateRoot
         Guid unidadeId,
         Guid pacienteId,
         Guid funcionarioId,
-        Guid? compraPacienteId,
         Guid? procedimentoId,
         TipoAgendamento tipo,
         DateTime dataInicio,
@@ -110,7 +104,6 @@ public sealed class Agendamento : AggregateRoot
         UnidadeId = unidadeId;
         PacienteId = pacienteId;
         FuncionarioId = funcionarioId;
-        CompraPacienteId = compraPacienteId;
         ProcedimentoId = procedimentoId;
         Tipo = tipo;
         DataInicio = dataInicio;

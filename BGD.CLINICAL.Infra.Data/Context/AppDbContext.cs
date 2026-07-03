@@ -25,9 +25,6 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<ConvitePrimeiroAcesso> ConvitesPrimeiroAcesso => Set<ConvitePrimeiroAcesso>();
     public DbSet<Paciente> Pacientes => Set<Paciente>();
     public DbSet<Sintoma> Sintomas => Set<Sintoma>();
-    public DbSet<Pacote> Pacotes => Set<Pacote>();
-    public DbSet<ItemPacote> ItensPacote => Set<ItemPacote>();
-    public DbSet<CompraPaciente> ComprasPaciente => Set<CompraPaciente>();
     public DbSet<Produto> Produtos => Set<Produto>();
     public DbSet<UnidadeMedida> UnidadesMedida => Set<UnidadeMedida>();
     public DbSet<TipoProduto> TiposProduto => Set<TipoProduto>();
@@ -44,17 +41,21 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<HorarioFuncionamentoUnidade> HorariosFuncionamentoUnidade => Set<HorarioFuncionamentoUnidade>();
     public DbSet<DisponibilidadeFuncionario> DisponibilidadesFuncionario => Set<DisponibilidadeFuncionario>();
     public DbSet<BloqueioAgenda> BloqueiosAgenda => Set<BloqueioAgenda>();
-    public DbSet<ContaGoogleConectada> ContasGoogleConectadas => Set<ContaGoogleConectada>();
-    public DbSet<AgendaGoogle> AgendasGoogle => Set<AgendaGoogle>();
-    public DbSet<AgendamentoGoogleSync> AgendamentosGoogleSync => Set<AgendamentoGoogleSync>();
-    public DbSet<FormaPagamento> FormasPagamento => Set<FormaPagamento>();
-    public DbSet<ContaReceber> ContasReceber => Set<ContaReceber>();
-    public DbSet<PagamentoPaciente> PagamentosPaciente => Set<PagamentoPaciente>();
     public DbSet<LogAuditoria> LogsAuditoria => Set<LogAuditoria>();
     public DbSet<OutputMessageEmail> OutputMessagesEmail => Set<OutputMessageEmail>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Ignore<Pacote>();
+        modelBuilder.Ignore<ItemPacote>();
+        modelBuilder.Ignore<CompraPaciente>();
+        modelBuilder.Ignore<FormaPagamento>();
+        modelBuilder.Ignore<ContaReceber>();
+        modelBuilder.Ignore<PagamentoPaciente>();
+        modelBuilder.Ignore<ContaGoogleConectada>();
+        modelBuilder.Ignore<AgendaGoogle>();
+        modelBuilder.Ignore<AgendamentoGoogleSync>();
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         ApplySnakeCaseNaming(modelBuilder);
 

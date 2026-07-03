@@ -105,19 +105,6 @@ public sealed class PatientApplicationsRepository : IPatientApplicationsReposito
             .ToListAsync(cancellationToken);
     }
 
-    public Task<bool> ExistsCompraPacienteForPacienteAsync(
-        Guid compraPacienteId,
-        Guid pacienteId,
-        Guid empresaId,
-        CancellationToken cancellationToken = default)
-    {
-        return _context.ComprasPaciente.AnyAsync(
-            compra => compra.Id == compraPacienteId
-                && compra.PacienteId == pacienteId
-                && compra.EmpresaId == empresaId,
-            cancellationToken);
-    }
-
     public async Task AddAsync(AplicacaoPaciente aplicacao, CancellationToken cancellationToken = default)
     {
         await _context.AplicacoesPaciente.AddAsync(aplicacao, cancellationToken);

@@ -12,7 +12,6 @@ public sealed class AplicacaoPaciente : AggregateRoot
     private AplicacaoPaciente(
         Guid empresaId,
         Guid pacienteId,
-        Guid? compraPacienteId,
         Guid? produtoId,
         Guid? procedimentoId,
         Guid funcionarioId,
@@ -26,7 +25,6 @@ public sealed class AplicacaoPaciente : AggregateRoot
     {
         EmpresaId = empresaId;
         PacienteId = pacienteId;
-        CompraPacienteId = compraPacienteId;
         ProdutoId = produtoId;
         ProcedimentoId = procedimentoId;
         FuncionarioId = funcionarioId;
@@ -42,7 +40,6 @@ public sealed class AplicacaoPaciente : AggregateRoot
 
     public Guid EmpresaId { get; private set; }
     public Guid PacienteId { get; private set; }
-    public Guid? CompraPacienteId { get; private set; }
     public Guid? ProdutoId { get; private set; }
     public Guid? ProcedimentoId { get; private set; }
     public Guid FuncionarioId { get; private set; }
@@ -57,7 +54,6 @@ public sealed class AplicacaoPaciente : AggregateRoot
 
     public Empresa Empresa { get; private set; } = null!;
     public Paciente Paciente { get; private set; } = null!;
-    public CompraPaciente? CompraPaciente { get; private set; }
     public Produto? Produto { get; private set; }
     public Procedimento? Procedimento { get; private set; }
     public Funcionario Funcionario { get; private set; } = null!;
@@ -69,7 +65,6 @@ public sealed class AplicacaoPaciente : AggregateRoot
     public static AplicacaoPaciente CreateRealizada(
         Guid empresaId,
         Guid pacienteId,
-        Guid? compraPacienteId,
         Guid? produtoId,
         Guid? procedimentoId,
         Guid funcionarioId,
@@ -128,7 +123,6 @@ public sealed class AplicacaoPaciente : AggregateRoot
         return new AplicacaoPaciente(
             empresaId,
             pacienteId,
-            compraPacienteId,
             produtoId,
             procedimentoId,
             funcionarioId,

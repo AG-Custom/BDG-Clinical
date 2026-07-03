@@ -32,6 +32,23 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "funcionario",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    nome = table.Column<string>(type: "nvarchar(160)", maxLength: 160, nullable: false),
+                    telefone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ativo = table.Column<bool>(type: "bit", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_funcionario", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "modulo_sistema",
                 columns: table => new
                 {
@@ -49,12 +66,55 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "output_message_email",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    tipo = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
+                    destinatario_email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: false),
+                    destinatario_nome = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    payload_json = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    tentativas = table.Column<int>(type: "int", nullable: false),
+                    erro = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    processado_em = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_output_message_email", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "permissao_sistema",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    chave = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    descricao = table.Column<string>(type: "nvarchar(240)", maxLength: 240, nullable: false),
+                    categoria = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
+                    modulo_codigo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    ordem = table.Column<int>(type: "int", nullable: false),
+                    chave_pai = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: true),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_permissao_sistema", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "cargo",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     nome = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    flag_aplicador = table.Column<bool>(type: "bit", nullable: false),
                     ativo = table.Column<bool>(type: "bit", nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -71,38 +131,16 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "forma_pagamento",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    nome = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
-                    tipo = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: true),
-                    ativo = table.Column<bool>(type: "bit", nullable: false),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_forma_pagamento", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_forma_pagamento_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "fornecedor",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     nome = table.Column<string>(type: "nvarchar(180)", maxLength: 180, nullable: false),
+                    cnpj = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     telefone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
                     email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    cnpj = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    observacao = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     ativo = table.Column<bool>(type: "bit", nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -112,56 +150,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     table.PrimaryKey("pk_fornecedor", x => x.id);
                     table.ForeignKey(
                         name: "fk_fornecedor_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "pacote",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    nome = table.Column<string>(type: "nvarchar(160)", maxLength: 160, nullable: false),
-                    descricao = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    quantidade_aplicacoes = table.Column<int>(type: "int", nullable: false),
-                    valor = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    ativo = table.Column<bool>(type: "bit", nullable: false),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_pacote", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_pacote_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "produto",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    nome = table.Column<string>(type: "nvarchar(160)", maxLength: 160, nullable: false),
-                    tipo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    unidade_medida = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    estoque_minimo = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
-                    ativo = table.Column<bool>(type: "bit", nullable: false),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_produto", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_produto_empresa_empresa_id",
                         column: x => x.empresa_id,
                         principalTable: "empresa",
                         principalColumn: "id",
@@ -191,6 +179,28 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "tipo_produto",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    nome = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    ativo = table.Column<bool>(type: "bit", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_tipo_produto", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_tipo_produto_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "unidade",
                 columns: table => new
                 {
@@ -209,6 +219,66 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         name: "fk_unidade_empresa_empresa_id",
                         column: x => x.empresa_id,
                         principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "unidade_medida",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    nome = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    sigla = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    tipo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    ativo = table.Column<bool>(type: "bit", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_unidade_medida", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_unidade_medida_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "usuario",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    nome = table.Column<string>(type: "nvarchar(160)", maxLength: 160, nullable: false),
+                    email_login = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    senha_hash = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    auth_provider = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
+                    google_id = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    tipo_usuario = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    ativo = table.Column<bool>(type: "bit", nullable: false),
+                    pendente_primeiro_acesso = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    permission_version = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_usuario", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_usuario_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_usuario_funcionario_funcionario_id",
+                        column: x => x.funcionario_id,
+                        principalTable: "funcionario",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -245,67 +315,132 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "item_pacote",
+                name: "cargo_permissao_item",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    pacote_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    quantidade_total = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
-                    unidade_medida = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    cargo_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    permission_key = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_item_pacote", x => x.id);
+                    table.PrimaryKey("pk_cargo_permissao_item", x => x.id);
                     table.ForeignKey(
-                        name: "fk_item_pacote_pacote_pacote_id",
-                        column: x => x.pacote_id,
-                        principalTable: "pacote",
+                        name: "fk_cargo_permissao_item_cargo_cargo_id",
+                        column: x => x.cargo_id,
+                        principalTable: "cargo",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_item_pacote_produto_produto_id",
-                        column: x => x.produto_id,
-                        principalTable: "produto",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "funcionario",
+                name: "disponibilidade_funcionario",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    nome = table.Column<string>(type: "nvarchar(160)", maxLength: 160, nullable: false),
-                    telefone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    cargo_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    flag_aplicador = table.Column<bool>(type: "bit", nullable: false),
+                    dia_semana = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    hora_inicio = table.Column<TimeOnly>(type: "time", nullable: false),
+                    hora_fim = table.Column<TimeOnly>(type: "time", nullable: false),
                     ativo = table.Column<bool>(type: "bit", nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_funcionario", x => x.id);
+                    table.PrimaryKey("pk_disponibilidade_funcionario", x => x.id);
                     table.ForeignKey(
-                        name: "fk_funcionario_cargo_cargo_id",
-                        column: x => x.cargo_id,
-                        principalTable: "cargo",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_funcionario_empresa_empresa_id",
+                        name: "fk_disponibilidade_funcionario_empresa_empresa_id",
                         column: x => x.empresa_id,
                         principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_funcionario_unidade_unidade_id",
+                        name: "fk_disponibilidade_funcionario_funcionario_funcionario_id",
+                        column: x => x.funcionario_id,
+                        principalTable: "funcionario",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_disponibilidade_funcionario_unidade_unidade_id",
+                        column: x => x.unidade_id,
+                        principalTable: "unidade",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "funcionario_vinculo",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    cargo_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ativo = table.Column<bool>(type: "bit", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_funcionario_vinculo", x => x.id);
+                    table.CheckConstraint("ck_funcionario_vinculo_empresa_xor_unidade", "([empresa_id] IS NOT NULL AND [unidade_id] IS NULL) OR ([empresa_id] IS NULL AND [unidade_id] IS NOT NULL)");
+                    table.ForeignKey(
+                        name: "fk_funcionario_vinculo_cargo_cargo_id",
+                        column: x => x.cargo_id,
+                        principalTable: "cargo",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_funcionario_vinculo_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_funcionario_vinculo_funcionario_funcionario_id",
+                        column: x => x.funcionario_id,
+                        principalTable: "funcionario",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_funcionario_vinculo_unidade_unidade_id",
+                        column: x => x.unidade_id,
+                        principalTable: "unidade",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "horario_funcionamento_unidade",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    dia_semana = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    hora_inicio = table.Column<TimeOnly>(type: "time", nullable: false),
+                    hora_fim = table.Column<TimeOnly>(type: "time", nullable: false),
+                    ativo = table.Column<bool>(type: "bit", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_horario_funcionamento_unidade", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_horario_funcionamento_unidade_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_horario_funcionamento_unidade_unidade_unidade_id",
                         column: x => x.unidade_id,
                         principalTable: "unidade",
                         principalColumn: "id",
@@ -386,148 +521,42 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "disponibilidade_funcionario",
+                name: "produto",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    dia_semana = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    hora_inicio = table.Column<TimeOnly>(type: "time", nullable: false),
-                    hora_fim = table.Column<TimeOnly>(type: "time", nullable: false),
-                    ativo = table.Column<bool>(type: "bit", nullable: false),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_disponibilidade_funcionario", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_disponibilidade_funcionario_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_disponibilidade_funcionario_funcionario_funcionario_id",
-                        column: x => x.funcionario_id,
-                        principalTable: "funcionario",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_disponibilidade_funcionario_unidade_unidade_id",
-                        column: x => x.unidade_id,
-                        principalTable: "unidade",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "usuario",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    tipo_produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    unidade_medida_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     nome = table.Column<string>(type: "nvarchar(160)", maxLength: 160, nullable: false),
-                    email_login = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    senha_hash = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    auth_provider = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
-                    google_id = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    tipo_usuario = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    sku = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    codigo_interno = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    codigo_barras = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    estoque_minimo = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    controla_estoque = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     ativo = table.Column<bool>(type: "bit", nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_usuario", x => x.id);
+                    table.PrimaryKey("pk_produto", x => x.id);
                     table.ForeignKey(
-                        name: "fk_usuario_empresa_empresa_id",
+                        name: "fk_produto_empresa_empresa_id",
                         column: x => x.empresa_id,
                         principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_usuario_funcionario_funcionario_id",
-                        column: x => x.funcionario_id,
-                        principalTable: "funcionario",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "compra_paciente",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    pacote_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    data_compra = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    quantidade_aplicacoes = table.Column<int>(type: "int", nullable: false),
-                    status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    observacao = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_compra_paciente", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_compra_paciente_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
+                        name: "fk_produto_tipo_produto_tipo_produto_id",
+                        column: x => x.tipo_produto_id,
+                        principalTable: "tipo_produto",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_compra_paciente_paciente_paciente_id",
-                        column: x => x.paciente_id,
-                        principalTable: "paciente",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_compra_paciente_pacote_pacote_id",
-                        column: x => x.pacote_id,
-                        principalTable: "pacote",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_compra_paciente_unidade_unidade_id",
-                        column: x => x.unidade_id,
-                        principalTable: "unidade",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "item_pedido_fornecedor",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    pedido_fornecedor_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    quantidade = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
-                    valor_unitario = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    valor_total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_item_pedido_fornecedor", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_item_pedido_fornecedor_pedido_fornecedor_pedido_fornecedor_id",
-                        column: x => x.pedido_fornecedor_id,
-                        principalTable: "pedido_fornecedor",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_item_pedido_fornecedor_produto_produto_id",
-                        column: x => x.produto_id,
-                        principalTable: "produto",
+                        name: "fk_produto_unidade_medida_unidade_medida_id",
+                        column: x => x.unidade_medida_id,
+                        principalTable: "unidade_medida",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -577,40 +606,22 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "conta_google_conectada",
+                name: "convite_primeiro_acesso",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     usuario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    google_email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    google_account_id = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    access_token = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
-                    refresh_token = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
-                    escopos_autorizados = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    ativo = table.Column<bool>(type: "bit", nullable: false),
-                    conectado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    token_hash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    expira_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    utilizado_em = table.Column<DateTime>(type: "datetime2", nullable: true),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_conta_google_conectada", x => x.id);
+                    table.PrimaryKey("pk_convite_primeiro_acesso", x => x.id);
                     table.ForeignKey(
-                        name: "fk_conta_google_conectada_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_conta_google_conectada_funcionario_funcionario_id",
-                        column: x => x.funcionario_id,
-                        principalTable: "funcionario",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_conta_google_conectada_usuario_usuario_id",
+                        name: "fk_convite_primeiro_acesso_usuario_usuario_id",
                         column: x => x.usuario_id,
                         principalTable: "usuario",
                         principalColumn: "id",
@@ -627,8 +638,8 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     entidade = table.Column<string>(type: "nvarchar(160)", maxLength: 160, nullable: false),
                     registro_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     acao = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
-                    dados_anteriores = table.Column<string>(type: "jsonb", nullable: true),
-                    dados_novos = table.Column<string>(type: "jsonb", nullable: true),
+                    dados_anteriores = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    dados_novos = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     data = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ip = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: true),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -652,32 +663,108 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "permissao_usuario",
+                name: "usuario_permissao",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     usuario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    modulo_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    pode_visualizar = table.Column<bool>(type: "bit", nullable: false),
-                    pode_criar = table.Column<bool>(type: "bit", nullable: false),
-                    pode_editar = table.Column<bool>(type: "bit", nullable: false),
-                    pode_excluir = table.Column<bool>(type: "bit", nullable: false),
+                    permission_key = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    effect = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_permissao_usuario", x => x.id);
+                    table.PrimaryKey("pk_usuario_permissao", x => x.id);
                     table.ForeignKey(
-                        name: "fk_permissao_usuario_modulo_sistema_modulo_id",
-                        column: x => x.modulo_id,
-                        principalTable: "modulo_sistema",
+                        name: "fk_usuario_permissao_usuario_usuario_id",
+                        column: x => x.usuario_id,
+                        principalTable: "usuario",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "anexo_pedido_fornecedor",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    pedido_fornecedor_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    nome_arquivo = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: false),
+                    content_type = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    object_key = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    tamanho_bytes = table.Column<long>(type: "bigint", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_anexo_pedido_fornecedor", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_anexo_pedido_fornecedor_pedido_fornecedor_pedido_fornecedor_id",
+                        column: x => x.pedido_fornecedor_id,
+                        principalTable: "pedido_fornecedor",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "item_pedido_fornecedor",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    pedido_fornecedor_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    quantidade = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    valor_unitario = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    valor_total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_item_pedido_fornecedor", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_item_pedido_fornecedor_pedido_fornecedor_pedido_fornecedor_id",
+                        column: x => x.pedido_fornecedor_id,
+                        principalTable: "pedido_fornecedor",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_item_pedido_fornecedor_produto_produto_id",
+                        column: x => x.produto_id,
+                        principalTable: "produto",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "procedimento",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    nome = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    produto_aplicado_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    observacoes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    ativo = table.Column<bool>(type: "bit", nullable: false),
+                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_procedimento", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_procedimento_empresa_empresa_id",
+                        column: x => x.empresa_id,
+                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_permissao_usuario_usuario_usuario_id",
-                        column: x => x.usuario_id,
-                        principalTable: "usuario",
+                        name: "fk_procedimento_produto_produto_aplicado_id",
+                        column: x => x.produto_aplicado_id,
+                        principalTable: "produto",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -691,13 +778,13 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    compra_paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    procedimento_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     tipo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
                     status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
                     data_inicio = table.Column<DateTime>(type: "datetime2", nullable: false),
                     data_fim = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    titulo = table.Column<string>(type: "nvarchar(180)", maxLength: 180, nullable: false),
                     observacao = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    excecao_horario = table.Column<bool>(type: "bit", nullable: false),
                     criado_por_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     cancelado_por_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     motivo_cancelamento = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
@@ -707,12 +794,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_agendamento", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_agendamento_compra_paciente_compra_paciente_id",
-                        column: x => x.compra_paciente_id,
-                        principalTable: "compra_paciente",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "fk_agendamento_empresa_empresa_id",
                         column: x => x.empresa_id,
@@ -729,6 +810,12 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         name: "fk_agendamento_paciente_paciente_id",
                         column: x => x.paciente_id,
                         principalTable: "paciente",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_agendamento_procedimento_procedimento_id",
+                        column: x => x.procedimento_id,
+                        principalTable: "procedimento",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -752,70 +839,29 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "conta_receber",
+                name: "item_procedimento",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    compra_paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    data_vencimento = table.Column<DateOnly>(type: "date", nullable: false),
-                    valor_total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    observacao = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    procedimento_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    quantidade = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_conta_receber", x => x.id);
+                    table.PrimaryKey("pk_item_procedimento", x => x.id);
                     table.ForeignKey(
-                        name: "fk_conta_receber_compra_paciente_compra_paciente_id",
-                        column: x => x.compra_paciente_id,
-                        principalTable: "compra_paciente",
+                        name: "fk_item_procedimento_procedimento_procedimento_id",
+                        column: x => x.procedimento_id,
+                        principalTable: "procedimento",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "fk_conta_receber_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_conta_receber_paciente_paciente_id",
-                        column: x => x.paciente_id,
-                        principalTable: "paciente",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "agenda_google",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    conta_google_conectada_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    google_calendar_id = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
-                    nome = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    principal = table.Column<bool>(type: "bit", nullable: false),
-                    ativo = table.Column<bool>(type: "bit", nullable: false),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_agenda_google", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_agenda_google_conta_google_conectada_conta_google_conectada_id",
-                        column: x => x.conta_google_conectada_id,
-                        principalTable: "conta_google_conectada",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_agenda_google_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
+                        name: "fk_item_procedimento_produto_produto_id",
+                        column: x => x.produto_id,
+                        principalTable: "produto",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -827,16 +873,17 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    compra_paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    procedimento_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     funcionario_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     agendamento_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     data_aplicacao = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    quantidade_utilizada = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    quantidade_utilizada = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
                     peso = table.Column<decimal>(type: "decimal(10,3)", precision: 10, scale: 3, nullable: true),
                     observacao = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     realizado = table.Column<bool>(type: "bit", nullable: false),
+                    cancelada = table.Column<bool>(type: "bit", nullable: false),
                     criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
                     atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -847,12 +894,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         name: "fk_aplicacao_paciente_agendamento_agendamento_id",
                         column: x => x.agendamento_id,
                         principalTable: "agendamento",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_aplicacao_paciente_compra_paciente_compra_paciente_id",
-                        column: x => x.compra_paciente_id,
-                        principalTable: "compra_paciente",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -874,6 +915,12 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "fk_aplicacao_paciente_procedimento_procedimento_id",
+                        column: x => x.procedimento_id,
+                        principalTable: "procedimento",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "fk_aplicacao_paciente_produto_produto_id",
                         column: x => x.produto_id,
                         principalTable: "produto",
@@ -883,88 +930,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         name: "fk_aplicacao_paciente_unidade_unidade_id",
                         column: x => x.unidade_id,
                         principalTable: "unidade",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "pagamento_paciente",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    paciente_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    conta_receber_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    forma_pagamento_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    data_pagamento = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    valor_pago = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    observacao = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_pagamento_paciente", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_pagamento_paciente_conta_receber_conta_receber_id",
-                        column: x => x.conta_receber_id,
-                        principalTable: "conta_receber",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_pagamento_paciente_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_pagamento_paciente_forma_pagamento_forma_pagamento_id",
-                        column: x => x.forma_pagamento_id,
-                        principalTable: "forma_pagamento",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_pagamento_paciente_paciente_paciente_id",
-                        column: x => x.paciente_id,
-                        principalTable: "paciente",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "agendamento_google_sync",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    empresa_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    agendamento_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    agenda_google_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    google_event_id = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
-                    status_sync = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    ultima_sincronizacao = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    erro_sync = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    criado_em = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    atualizado_em = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_agendamento_google_sync", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_agendamento_google_sync_agenda_google_agenda_google_id",
-                        column: x => x.agenda_google_id,
-                        principalTable: "agenda_google",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_agendamento_google_sync_agendamento_agendamento_id",
-                        column: x => x.agendamento_id,
-                        principalTable: "agendamento",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_agendamento_google_sync_empresa_empresa_id",
-                        column: x => x.empresa_id,
-                        principalTable: "empresa",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1005,6 +970,7 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     unidade_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     produto_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     tipo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    motivo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
                     quantidade = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     data = table.Column<DateTime>(type: "datetime2", nullable: false),
                     origem = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
@@ -1057,25 +1023,9 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_agenda_google_conta_google_conectada_id",
-                table: "agenda_google",
-                column: "conta_google_conectada_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agenda_google_empresa_id_conta_google_conectada_id_google_calendar_id",
-                table: "agenda_google",
-                columns: new[] { "empresa_id", "conta_google_conectada_id", "google_calendar_id" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "ix_agendamento_cancelado_por_id",
                 table: "agendamento",
                 column: "cancelado_por_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamento_compra_paciente_id",
-                table: "agendamento",
-                column: "compra_paciente_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_agendamento_criado_por_id",
@@ -1108,25 +1058,19 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 column: "paciente_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_agendamento_procedimento_id",
+                table: "agendamento",
+                column: "procedimento_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_agendamento_unidade_id",
                 table: "agendamento",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_agendamento_google_sync_agenda_google_id",
-                table: "agendamento_google_sync",
-                column: "agenda_google_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamento_google_sync_agendamento_id",
-                table: "agendamento_google_sync",
-                column: "agendamento_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_agendamento_google_sync_empresa_id_status_sync",
-                table: "agendamento_google_sync",
-                columns: new[] { "empresa_id", "status_sync" });
+                name: "ix_anexo_pedido_fornecedor_pedido_fornecedor_id_empresa_id",
+                table: "anexo_pedido_fornecedor",
+                columns: new[] { "pedido_fornecedor_id", "empresa_id" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_aplicacao_paciente_agendamento_id",
@@ -1136,9 +1080,9 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 filter: "[agendamento_id] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "ix_aplicacao_paciente_compra_paciente_id",
+                name: "ix_aplicacao_paciente_empresa_id_cancelada",
                 table: "aplicacao_paciente",
-                column: "compra_paciente_id");
+                columns: new[] { "empresa_id", "cancelada" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_aplicacao_paciente_empresa_id_paciente_id_data_aplicacao",
@@ -1154,6 +1098,11 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 name: "ix_aplicacao_paciente_paciente_id",
                 table: "aplicacao_paciente",
                 column: "paciente_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_aplicacao_paciente_procedimento_id",
+                table: "aplicacao_paciente",
+                column: "procedimento_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_aplicacao_paciente_produto_id",
@@ -1203,59 +1152,21 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_compra_paciente_empresa_id_paciente_id_status",
-                table: "compra_paciente",
-                columns: new[] { "empresa_id", "paciente_id", "status" });
+                name: "ix_cargo_permissao_item_cargo_id_permission_key",
+                table: "cargo_permissao_item",
+                columns: new[] { "cargo_id", "permission_key" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_compra_paciente_paciente_id",
-                table: "compra_paciente",
-                column: "paciente_id");
+                name: "ix_convite_primeiro_acesso_token_hash",
+                table: "convite_primeiro_acesso",
+                column: "token_hash",
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_compra_paciente_pacote_id",
-                table: "compra_paciente",
-                column: "pacote_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_compra_paciente_unidade_id",
-                table: "compra_paciente",
-                column: "unidade_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_conta_google_conectada_empresa_id_funcionario_id_ativo",
-                table: "conta_google_conectada",
-                columns: new[] { "empresa_id", "funcionario_id", "ativo" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_conta_google_conectada_empresa_id_google_account_id",
-                table: "conta_google_conectada",
-                columns: new[] { "empresa_id", "google_account_id" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_conta_google_conectada_funcionario_id",
-                table: "conta_google_conectada",
-                column: "funcionario_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_conta_google_conectada_usuario_id",
-                table: "conta_google_conectada",
-                column: "usuario_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_conta_receber_compra_paciente_id",
-                table: "conta_receber",
-                column: "compra_paciente_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_conta_receber_empresa_id_paciente_id_status",
-                table: "conta_receber",
-                columns: new[] { "empresa_id", "paciente_id", "status" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_conta_receber_paciente_id",
-                table: "conta_receber",
-                column: "paciente_id");
+                name: "ix_convite_primeiro_acesso_usuario_id_utilizado_em",
+                table: "convite_primeiro_acesso",
+                columns: new[] { "usuario_id", "utilizado_em" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_disponibilidade_funcionario_empresa_id_funcionario_id_unidade_id_dia_semana",
@@ -1278,41 +1189,55 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 column: "cnpj");
 
             migrationBuilder.CreateIndex(
-                name: "ix_forma_pagamento_empresa_id_nome",
-                table: "forma_pagamento",
+                name: "ix_fornecedor_empresa_id_cnpj",
+                table: "fornecedor",
+                columns: new[] { "empresa_id", "cnpj" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_fornecedor_empresa_id_nome",
+                table: "fornecedor",
                 columns: new[] { "empresa_id", "nome" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_fornecedor_empresa_id_cnpj",
-                table: "fornecedor",
-                columns: new[] { "empresa_id", "cnpj" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_funcionario_cargo_id",
-                table: "funcionario",
+                name: "ix_funcionario_vinculo_cargo_id",
+                table: "funcionario_vinculo",
                 column: "cargo_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_funcionario_empresa_id_nome",
-                table: "funcionario",
-                columns: new[] { "empresa_id", "nome" });
+                name: "ix_funcionario_vinculo_empresa_id",
+                table: "funcionario_vinculo",
+                column: "empresa_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_funcionario_unidade_id",
-                table: "funcionario",
+                name: "ix_funcionario_vinculo_funcionario_id_empresa_id",
+                table: "funcionario_vinculo",
+                columns: new[] { "funcionario_id", "empresa_id" },
+                unique: true,
+                filter: "[empresa_id] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_funcionario_vinculo_funcionario_id_unidade_id",
+                table: "funcionario_vinculo",
+                columns: new[] { "funcionario_id", "unidade_id" },
+                unique: true,
+                filter: "[unidade_id] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_funcionario_vinculo_unidade_id",
+                table: "funcionario_vinculo",
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_item_pacote_pacote_id_produto_id",
-                table: "item_pacote",
-                columns: new[] { "pacote_id", "produto_id" },
-                unique: true);
+                name: "ix_horario_funcionamento_unidade_empresa_id_unidade_id_dia_semana",
+                table: "horario_funcionamento_unidade",
+                columns: new[] { "empresa_id", "unidade_id", "dia_semana" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_item_pacote_produto_id",
-                table: "item_pacote",
-                column: "produto_id");
+                name: "ix_horario_funcionamento_unidade_unidade_id",
+                table: "horario_funcionamento_unidade",
+                column: "unidade_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_item_pedido_fornecedor_pedido_fornecedor_id",
@@ -1322,6 +1247,17 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_item_pedido_fornecedor_produto_id",
                 table: "item_pedido_fornecedor",
+                column: "produto_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_item_procedimento_procedimento_id_produto_id",
+                table: "item_procedimento",
+                columns: new[] { "procedimento_id", "produto_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_item_procedimento_produto_id",
+                table: "item_procedimento",
                 column: "produto_id");
 
             migrationBuilder.CreateIndex(
@@ -1387,39 +1323,26 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_output_message_email_empresa_id",
+                table: "output_message_email",
+                column: "empresa_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_output_message_email_status_criado_em",
+                table: "output_message_email",
+                columns: new[] { "status", "criado_em" });
+
+            migrationBuilder.CreateIndex(
                 name: "ix_paciente_empresa_id_cpf",
                 table: "paciente",
-                columns: new[] { "empresa_id", "cpf" });
+                columns: new[] { "empresa_id", "cpf" },
+                unique: true,
+                filter: "[cpf] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "ix_paciente_unidade_id",
                 table: "paciente",
                 column: "unidade_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_pacote_empresa_id_nome",
-                table: "pacote",
-                columns: new[] { "empresa_id", "nome" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_pagamento_paciente_conta_receber_id",
-                table: "pagamento_paciente",
-                column: "conta_receber_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_pagamento_paciente_empresa_id_paciente_id_data_pagamento",
-                table: "pagamento_paciente",
-                columns: new[] { "empresa_id", "paciente_id", "data_pagamento" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_pagamento_paciente_forma_pagamento_id",
-                table: "pagamento_paciente",
-                column: "forma_pagamento_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_pagamento_paciente_paciente_id",
-                table: "pagamento_paciente",
-                column: "paciente_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_pedido_fornecedor_empresa_id_status",
@@ -1437,20 +1360,51 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 column: "unidade_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_permissao_usuario_modulo_id",
-                table: "permissao_usuario",
-                column: "modulo_id");
+                name: "ix_permissao_sistema_chave",
+                table: "permissao_sistema",
+                column: "chave",
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_permissao_usuario_usuario_id_modulo_id",
-                table: "permissao_usuario",
-                columns: new[] { "usuario_id", "modulo_id" },
+                name: "ix_procedimento_empresa_id_nome",
+                table: "procedimento",
+                columns: new[] { "empresa_id", "nome" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_procedimento_produto_aplicado_id",
+                table: "procedimento",
+                column: "produto_aplicado_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_produto_empresa_id_codigo_interno",
+                table: "produto",
+                columns: new[] { "empresa_id", "codigo_interno" },
+                unique: true,
+                filter: "[codigo_interno] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "ix_produto_empresa_id_nome",
                 table: "produto",
-                columns: new[] { "empresa_id", "nome" });
+                columns: new[] { "empresa_id", "nome" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_produto_empresa_id_sku",
+                table: "produto",
+                columns: new[] { "empresa_id", "sku" },
+                unique: true,
+                filter: "[sku] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_produto_tipo_produto_id",
+                table: "produto",
+                column: "tipo_produto_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_produto_unidade_medida_id",
+                table: "produto",
+                column: "unidade_medida_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_sintoma_empresa_id_nome",
@@ -1459,9 +1413,27 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "ix_tipo_produto_empresa_id_nome",
+                table: "tipo_produto",
+                columns: new[] { "empresa_id", "nome" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_unidade_empresa_id_nome",
                 table: "unidade",
                 columns: new[] { "empresa_id", "nome" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_unidade_medida_empresa_id_nome",
+                table: "unidade_medida",
+                columns: new[] { "empresa_id", "nome" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_unidade_medida_empresa_id_sigla",
+                table: "unidade_medida",
+                columns: new[] { "empresa_id", "sigla" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_usuario_empresa_id_email_login",
@@ -1473,13 +1445,19 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 name: "ix_usuario_funcionario_id",
                 table: "usuario",
                 column: "funcionario_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_usuario_permissao_usuario_id_permission_key",
+                table: "usuario_permissao",
+                columns: new[] { "usuario_id", "permission_key" },
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "agendamento_google_sync");
+                name: "anexo_pedido_fornecedor");
 
             migrationBuilder.DropTable(
                 name: "aplicacao_sintoma");
@@ -1488,13 +1466,25 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 name: "bloqueio_agenda");
 
             migrationBuilder.DropTable(
+                name: "cargo_permissao_item");
+
+            migrationBuilder.DropTable(
+                name: "convite_primeiro_acesso");
+
+            migrationBuilder.DropTable(
                 name: "disponibilidade_funcionario");
 
             migrationBuilder.DropTable(
-                name: "item_pacote");
+                name: "funcionario_vinculo");
+
+            migrationBuilder.DropTable(
+                name: "horario_funcionamento_unidade");
 
             migrationBuilder.DropTable(
                 name: "item_pedido_fornecedor");
+
+            migrationBuilder.DropTable(
+                name: "item_procedimento");
 
             migrationBuilder.DropTable(
                 name: "licenca_modulo");
@@ -1506,16 +1496,22 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 name: "movimentacao_estoque");
 
             migrationBuilder.DropTable(
-                name: "pagamento_paciente");
+                name: "output_message_email");
 
             migrationBuilder.DropTable(
-                name: "permissao_usuario");
+                name: "permissao_sistema");
 
             migrationBuilder.DropTable(
-                name: "agenda_google");
+                name: "usuario_permissao");
 
             migrationBuilder.DropTable(
                 name: "sintoma");
+
+            migrationBuilder.DropTable(
+                name: "cargo");
+
+            migrationBuilder.DropTable(
+                name: "modulo_sistema");
 
             migrationBuilder.DropTable(
                 name: "aplicacao_paciente");
@@ -1524,46 +1520,34 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                 name: "pedido_fornecedor");
 
             migrationBuilder.DropTable(
-                name: "conta_receber");
-
-            migrationBuilder.DropTable(
-                name: "forma_pagamento");
-
-            migrationBuilder.DropTable(
-                name: "modulo_sistema");
-
-            migrationBuilder.DropTable(
-                name: "conta_google_conectada");
-
-            migrationBuilder.DropTable(
                 name: "agendamento");
-
-            migrationBuilder.DropTable(
-                name: "produto");
 
             migrationBuilder.DropTable(
                 name: "fornecedor");
 
             migrationBuilder.DropTable(
-                name: "compra_paciente");
+                name: "paciente");
+
+            migrationBuilder.DropTable(
+                name: "procedimento");
 
             migrationBuilder.DropTable(
                 name: "usuario");
 
             migrationBuilder.DropTable(
-                name: "paciente");
+                name: "unidade");
 
             migrationBuilder.DropTable(
-                name: "pacote");
+                name: "produto");
 
             migrationBuilder.DropTable(
                 name: "funcionario");
 
             migrationBuilder.DropTable(
-                name: "cargo");
+                name: "tipo_produto");
 
             migrationBuilder.DropTable(
-                name: "unidade");
+                name: "unidade_medida");
 
             migrationBuilder.DropTable(
                 name: "empresa");
