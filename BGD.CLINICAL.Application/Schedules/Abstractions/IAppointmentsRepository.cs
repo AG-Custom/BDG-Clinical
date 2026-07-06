@@ -25,15 +25,6 @@ public interface IAppointmentsRepository
         Guid empresaId,
         CancellationToken cancellationToken = default);
 
-    Task<bool> HasOverlappingAppointmentAsync(
-        Guid empresaId,
-        Guid funcionarioId,
-        Guid unidadeId,
-        DateTime dataInicio,
-        DateTime dataFim,
-        Guid? excludeAppointmentId,
-        CancellationToken cancellationToken = default);
-
     Task<bool> HasScheduleBlockAsync(
         Guid empresaId,
         Guid funcionarioId,

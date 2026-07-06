@@ -26,9 +26,24 @@ internal static class AppointmentConfirmationEmailTemplate
             ? null
             : Encode(agendamento.Unidade!.Endereco!);
         var profissionalNome = Encode(agendamento.Funcionario?.Nome ?? "—");
-        var procedimento = string.IsNullOrWhiteSpace(agendamento.Procedimento?.Nome)
-            ? null
-            : Encode(agendamento.Procedimento!.Nome);
+        var procedimentoNomes = agendamento.ProcedimentosVinculados
+            .OrderBy(item => item.CriadoEm)
+            .Select(item => item.Procedimento?.Nome)
+            .Where(nome => !string.IsNullOrWhiteSpace(nome))
+            .Select(nome => Encode(nome!))
+            .ToList();
+
+        if (procedimentoNomes.Count == 0 && !string.IsNullOrWhiteSpace(agendamento.Procedimento?.Nome))
+        {
+            procedimentoNomes.Add(Encode(agendamento.Procedimento!.Nome));
+        }
+
+        var procedimento = procedimentoNomes.Count switch
+        {
+            0 => null,
+            1 => procedimentoNomes[0],
+            _ => string.Join(", ", procedimentoNomes)
+        };
 
         var dataLabel = Encode(FormatDateLabel(agendamento.DataInicio));
         var horarioLabel = Encode(FormatTimeRange(agendamento.DataInicio, agendamento.DataFim));

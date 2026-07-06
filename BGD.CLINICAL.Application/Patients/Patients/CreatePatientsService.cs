@@ -45,6 +45,7 @@ public sealed class CreatePatientsService : ICreatePatientsService
         var validation = await PatientRequestValidator.ValidateAsync(
             empresaId,
             request.UnidadeId,
+            request.UnidadeIds,
             request.Nome,
             request.Cpf,
             request.Telefone,
@@ -64,7 +65,7 @@ public sealed class CreatePatientsService : ICreatePatientsService
             var data = validation.Value!;
             var paciente = Paciente.Create(
                 empresaId,
-                data.UnidadeId,
+                data.UnidadeIds,
                 data.Nome,
                 data.Cpf,
                 data.Telefone,
@@ -75,16 +76,21 @@ public sealed class CreatePatientsService : ICreatePatientsService
             await _patientsRepository.AddAsync(paciente, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var persisted = await _patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                paciente.Id,
+                empresaId,
+                cancellationToken);
+
             await _auditLogsService.RegisterEntityChangeAsync(
                 empresaId,
                 _tenantContext.UsuarioId,
                 nameof(Paciente),
                 paciente.Id,
                 AcaoAuditoria.Criar,
-                dadosNovos: PatientsAuditSerializer.Serialize(paciente),
+                dadosNovos: PatientsAuditSerializer.Serialize(persisted ?? paciente),
                 cancellationToken: cancellationToken);
 
-            return Result<PatientDto>.Success(PatientsMapper.Map(paciente));
+            return Result<PatientDto>.Success(PatientsMapper.Map(persisted ?? paciente));
         }
         catch (DomainException exception)
         {

@@ -69,7 +69,7 @@ internal static class PatientApplicationRequestValidator
             return Result<ValidatedCreatePatientApplicationData>.Failure("A observação deve ter no máximo 2000 caracteres.");
         }
 
-        var paciente = await patientsRepository.GetByIdAndEmpresaIdAsync(request.PacienteId, empresaId, cancellationToken);
+        var paciente = await patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(request.PacienteId, empresaId, cancellationToken);
         if (paciente is null)
         {
             return Result<ValidatedCreatePatientApplicationData>.Failure("Paciente não encontrado.");
@@ -78,6 +78,12 @@ internal static class PatientApplicationRequestValidator
         if (!paciente.Ativo)
         {
             return Result<ValidatedCreatePatientApplicationData>.Failure("O paciente está inativo.");
+        }
+
+        if (!paciente.IsLinkedToUnidade(request.UnidadeId))
+        {
+            return Result<ValidatedCreatePatientApplicationData>.Failure(
+                "O paciente não pertence à unidade informada.");
         }
 
         var unidade = await unitsRepository.GetByIdAndEmpresaIdAsync(request.UnidadeId, empresaId, cancellationToken);

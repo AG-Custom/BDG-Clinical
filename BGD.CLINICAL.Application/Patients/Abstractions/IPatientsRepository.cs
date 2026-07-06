@@ -15,6 +15,11 @@ public interface IPatientsRepository
         Guid empresaId,
         CancellationToken cancellationToken = default);
 
+    Task<Paciente?> GetByIdAndEmpresaIdWithDetailsAsync(
+        Guid id,
+        Guid empresaId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsByCpfAsync(
         Guid empresaId,
         string cpf,
@@ -24,6 +29,11 @@ public interface IPatientsRepository
     Task<bool> ExistsActiveUnidadeInEmpresaAsync(
         Guid unidadeId,
         Guid empresaId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> AllActiveUnitsExistInEmpresaAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> unidadeIds,
         CancellationToken cancellationToken = default);
 
     Task AddAsync(Paciente paciente, CancellationToken cancellationToken = default);

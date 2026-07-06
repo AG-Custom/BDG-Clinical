@@ -8,13 +8,6 @@ namespace BGD.CLINICAL.Infra.Data.Repositories.Schedules;
 
 public sealed class AppointmentsRepository : IAppointmentsRepository
 {
-    private static readonly StatusAgendamento[] BlockingStatuses =
-    [
-        StatusAgendamento.Agendado,
-        StatusAgendamento.Confirmado,
-        StatusAgendamento.Concluido
-    ];
-
     private readonly AppDbContext _context;
 
     public AppointmentsRepository(AppDbContext context)
@@ -38,8 +31,10 @@ public sealed class AppointmentsRepository : IAppointmentsRepository
             .Include(a => a.Paciente)
             .Include(a => a.Funcionario)
             .Include(a => a.Procedimento)
+            .Include(a => a.ProcedimentosVinculados)
+                .ThenInclude(item => item.Procedimento)
             .Include(a => a.CriadoPor)
-            .Include(a => a.AplicacaoPaciente)
+            .Include(a => a.AplicacoesPaciente)
             .Where(a => a.EmpresaId == empresaId);
 
         if (unidadeId.HasValue)
@@ -97,30 +92,12 @@ public sealed class AppointmentsRepository : IAppointmentsRepository
             .Include(a => a.Paciente)
             .Include(a => a.Funcionario)
             .Include(a => a.Procedimento)
+            .Include(a => a.ProcedimentosVinculados)
+                .ThenInclude(item => item.Procedimento)
             .Include(a => a.CriadoPor)
             .Include(a => a.CanceladoPor)
-            .Include(a => a.AplicacaoPaciente)
+            .Include(a => a.AplicacoesPaciente)
             .FirstOrDefaultAsync(a => a.Id == id && a.EmpresaId == empresaId, cancellationToken);
-    }
-
-    public Task<bool> HasOverlappingAppointmentAsync(
-        Guid empresaId,
-        Guid funcionarioId,
-        Guid unidadeId,
-        DateTime dataInicio,
-        DateTime dataFim,
-        Guid? excludeAppointmentId,
-        CancellationToken cancellationToken = default)
-    {
-        return _context.Agendamentos.AnyAsync(
-            a => a.EmpresaId == empresaId
-                && a.FuncionarioId == funcionarioId
-                && a.UnidadeId == unidadeId
-                && BlockingStatuses.Contains(a.Status)
-                && (!excludeAppointmentId.HasValue || a.Id != excludeAppointmentId.Value)
-                && a.DataInicio < dataFim
-                && a.DataFim > dataInicio,
-            cancellationToken);
     }
 
     public Task<bool> HasScheduleBlockAsync(
@@ -184,9 +161,53 @@ public sealed class AppointmentsRepository : IAppointmentsRepository
 
     public void Update(Agendamento agendamento)
     {
-        if (_context.Entry(agendamento).State == EntityState.Detached)
+        var entry = _context.Entry(agendamento);
+
+        if (entry.State == EntityState.Detached)
         {
-            _context.Agendamentos.Update(agendamento);
+            _context.Agendamentos.Attach(agendamento);
+            entry.State = EntityState.Modified;
+        }
+
+        foreach (var procedimentoVinculado in agendamento.ProcedimentosVinculados)
+        {
+            EnsureProcedimentoVinculadoTrackedCorrectly(procedimentoVinculado);
         }
     }
+
+    private void EnsureProcedimentoVinculadoTrackedCorrectly(AgendamentoProcedimento procedimentoVinculado)
+    {
+        var itemEntry = _context.Entry(procedimentoVinculado);
+
+        if (itemEntry.State is EntityState.Added or EntityState.Deleted)
+        {
+            return;
+        }
+
+        if (_context.AgendamentosProcedimento.Local.Any(tracked => tracked.Id == procedimentoVinculado.Id))
+        {
+            if (itemEntry.State == EntityState.Modified && !ProcedimentoVinculadoExistsInDatabase(procedimentoVinculado.Id))
+            {
+                _context.AgendamentosProcedimento.Add(procedimentoVinculado);
+            }
+
+            return;
+        }
+
+        if (ProcedimentoVinculadoExistsInDatabase(procedimentoVinculado.Id))
+        {
+            if (itemEntry.State == EntityState.Detached)
+            {
+                _context.AgendamentosProcedimento.Attach(procedimentoVinculado);
+            }
+
+            itemEntry.State = EntityState.Modified;
+            return;
+        }
+
+        _context.AgendamentosProcedimento.Add(procedimentoVinculado);
+    }
+
+    private bool ProcedimentoVinculadoExistsInDatabase(Guid id) =>
+        _context.AgendamentosProcedimento.Any(item => item.Id == id);
 }

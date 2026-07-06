@@ -12,7 +12,7 @@ internal sealed record ValidatedAppointmentData(
     Guid UnidadeId,
     Guid PacienteId,
     Guid FuncionarioId,
-    Guid? ProcedimentoId,
+    IReadOnlyList<Guid> ProcedimentoIds,
     TipoAgendamento Tipo,
     DateTime DataInicio,
     DateTime DataFim,
@@ -33,6 +33,12 @@ internal static class AppointmentRequestValidator
         IUnitOperatingHoursRepository operatingHoursRepository,
         CancellationToken cancellationToken)
     {
+        var procedimentoIdsResult = ResolveProcedimentoIds(request.ProcedimentoId, request.ProcedimentoIds);
+        if (procedimentoIdsResult.IsFailure)
+        {
+            return Result<ValidatedAppointmentData>.Failure(procedimentoIdsResult.Error!);
+        }
+
         return await ValidateCoreAsync(
             empresaId,
             request.UnidadeId,
@@ -41,7 +47,7 @@ internal static class AppointmentRequestValidator
             request.Tipo,
             request.DataInicio,
             request.DataFim,
-            request.ProcedimentoId,
+            procedimentoIdsResult.Value!,
             request.Observacao,
             request.ExcecaoHorario != 0,
             excludeAppointmentId,
@@ -66,6 +72,12 @@ internal static class AppointmentRequestValidator
         IUnitOperatingHoursRepository operatingHoursRepository,
         CancellationToken cancellationToken)
     {
+        var procedimentoIdsResult = ResolveProcedimentoIds(request.ProcedimentoId, request.ProcedimentoIds);
+        if (procedimentoIdsResult.IsFailure)
+        {
+            return Task.FromResult(Result<ValidatedAppointmentData>.Failure(procedimentoIdsResult.Error!));
+        }
+
         return ValidateCoreAsync(
             empresaId,
             request.UnidadeId,
@@ -74,7 +86,7 @@ internal static class AppointmentRequestValidator
             request.Tipo,
             request.DataInicio,
             request.DataFim,
-            request.ProcedimentoId,
+            procedimentoIdsResult.Value!,
             request.Observacao,
             request.ExcecaoHorario != 0,
             appointmentId,
@@ -87,6 +99,36 @@ internal static class AppointmentRequestValidator
             cancellationToken);
     }
 
+    internal static Result<IReadOnlyList<Guid>> ResolveProcedimentoIds(
+        Guid? procedimentoId,
+        IReadOnlyList<Guid>? procedimentoIds)
+    {
+        IReadOnlyList<Guid> resolved;
+
+        if (procedimentoIds is { Count: > 0 })
+        {
+            resolved = procedimentoIds
+                .Where(id => id != Guid.Empty)
+                .ToList();
+        }
+        else if (procedimentoId.HasValue && procedimentoId.Value != Guid.Empty)
+        {
+            resolved = [procedimentoId.Value];
+        }
+        else
+        {
+            resolved = [];
+        }
+
+        if (resolved.Count != resolved.Distinct().Count())
+        {
+            return Result<IReadOnlyList<Guid>>.Failure(
+                "Não é permitido repetir o mesmo procedimento no agendamento.");
+        }
+
+        return Result<IReadOnlyList<Guid>>.Success(resolved.Distinct().ToList());
+    }
+
     private static async Task<Result<ValidatedAppointmentData>> ValidateCoreAsync(
         Guid empresaId,
         Guid unidadeId,
@@ -95,7 +137,7 @@ internal static class AppointmentRequestValidator
         string tipo,
         DateTime dataInicio,
         DateTime dataFim,
-        Guid? procedimentoId,
+        IReadOnlyList<Guid> procedimentoIds,
         string? observacao,
         bool excecaoHorario,
         Guid? excludeAppointmentId,
@@ -132,12 +174,12 @@ internal static class AppointmentRequestValidator
             return Result<ValidatedAppointmentData>.Failure("A data de término deve ser posterior à data de início.");
         }
 
-        if (tipoAgendamento == TipoAgendamento.Aplicacao && (!procedimentoId.HasValue || procedimentoId.Value == Guid.Empty))
+        if (tipoAgendamento == TipoAgendamento.Aplicacao && procedimentoIds.Count == 0)
         {
-            return Result<ValidatedAppointmentData>.Failure("Informe o procedimento para agendamentos do tipo aplicação.");
+            return Result<ValidatedAppointmentData>.Failure("Informe ao menos um procedimento para agendamentos do tipo aplicação.");
         }
 
-        if (tipoAgendamento != TipoAgendamento.Aplicacao && procedimentoId.HasValue && procedimentoId.Value != Guid.Empty)
+        if (tipoAgendamento != TipoAgendamento.Aplicacao && procedimentoIds.Count > 0)
         {
             return Result<ValidatedAppointmentData>.Failure("Procedimento só pode ser informado em agendamentos do tipo aplicação.");
         }
@@ -148,13 +190,13 @@ internal static class AppointmentRequestValidator
             return Result<ValidatedAppointmentData>.Failure("Unidade não encontrada ou inativa.");
         }
 
-        var paciente = await patientsRepository.GetByIdAndEmpresaIdAsync(pacienteId, empresaId, cancellationToken);
+        var paciente = await patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(pacienteId, empresaId, cancellationToken);
         if (paciente is null || !paciente.Ativo)
         {
             return Result<ValidatedAppointmentData>.Failure("Paciente não encontrado ou inativo.");
         }
 
-        if (paciente.UnidadeId != unidadeId)
+        if (!paciente.IsLinkedToUnidade(unidadeId))
         {
             return Result<ValidatedAppointmentData>.Failure("O paciente não pertence à unidade informada.");
         }
@@ -165,24 +207,12 @@ internal static class AppointmentRequestValidator
             return Result<ValidatedAppointmentData>.Failure("Funcionário não encontrado ou inativo.");
         }
 
-        if (procedimentoId.HasValue && procedimentoId.Value != Guid.Empty)
+        foreach (var procedimentoId in procedimentoIds)
         {
-            if (!await proceduresRepository.ExistsActiveByIdAndEmpresaIdAsync(procedimentoId.Value, empresaId, cancellationToken))
+            if (!await proceduresRepository.ExistsActiveByIdAndEmpresaIdAsync(procedimentoId, empresaId, cancellationToken))
             {
                 return Result<ValidatedAppointmentData>.Failure("Procedimento não encontrado ou inativo.");
             }
-        }
-
-        if (await appointmentsRepository.HasOverlappingAppointmentAsync(
-                empresaId,
-                funcionarioId,
-                unidadeId,
-                dataInicio,
-                dataFim,
-                excludeAppointmentId,
-                cancellationToken))
-        {
-            return Result<ValidatedAppointmentData>.Failure("Já existe agendamento para este funcionário no horário informado.");
         }
 
         if (await appointmentsRepository.HasScheduleBlockAsync(
@@ -237,7 +267,7 @@ internal static class AppointmentRequestValidator
             unidadeId,
             pacienteId,
             funcionarioId,
-            procedimentoId == Guid.Empty ? null : procedimentoId,
+            procedimentoIds,
             tipoAgendamento,
             dataInicio,
             dataFim,

@@ -132,6 +132,42 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.ToTable("agendamento", (string)null);
                 });
 
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AgendamentoProcedimento", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AgendamentoId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("agendamento_id");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("criado_em");
+
+                    b.Property<Guid>("ProcedimentoId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("procedimento_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_agendamento_procedimento");
+
+                    b.HasIndex("ProcedimentoId")
+                        .HasDatabaseName("ix_agendamento_procedimento_procedimento_id");
+
+                    b.HasIndex("AgendamentoId", "ProcedimentoId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_agendamento_procedimento_agendamento_id_procedimento_id");
+
+                    b.ToTable("agendamento_procedimento", (string)null);
+                });
+
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AnexoPedidoFornecedor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -260,9 +296,7 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasName("pk_aplicacao_paciente");
 
                     b.HasIndex("AgendamentoId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_aplicacao_paciente_agendamento_id")
-                        .HasFilter("[agendamento_id] IS NOT NULL");
+                        .HasDatabaseName("ix_aplicacao_paciente_agendamento_id");
 
                     b.HasIndex("FuncionarioId")
                         .HasDatabaseName("ix_aplicacao_paciente_funcionario_id");
@@ -1356,6 +1390,42 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.ToTable("paciente", (string)null);
                 });
 
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PacienteUnidade", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("criado_em");
+
+                    b.Property<Guid>("PacienteId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("paciente_id");
+
+                    b.Property<Guid>("UnidadeId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("unidade_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_paciente_unidade");
+
+                    b.HasIndex("UnidadeId")
+                        .HasDatabaseName("ix_paciente_unidade_unidade_id");
+
+                    b.HasIndex("PacienteId", "UnidadeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_paciente_unidade_paciente_id_unidade_id");
+
+                    b.ToTable("paciente_unidade", (string)null);
+                });
+
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1989,6 +2059,27 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Unidade");
                 });
 
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AgendamentoProcedimento", b =>
+                {
+                    b.HasOne("BGD.CLINICAL.Domain.Entities.Agendamento", "Agendamento")
+                        .WithMany("ProcedimentosVinculados")
+                        .HasForeignKey("AgendamentoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_agendamento_procedimento_agendamento_agendamento_id");
+
+                    b.HasOne("BGD.CLINICAL.Domain.Entities.Procedimento", "Procedimento")
+                        .WithMany()
+                        .HasForeignKey("ProcedimentoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_agendamento_procedimento_procedimento_procedimento_id");
+
+                    b.Navigation("Agendamento");
+
+                    b.Navigation("Procedimento");
+                });
+
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AnexoPedidoFornecedor", b =>
                 {
                     b.HasOne("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", "PedidoFornecedor")
@@ -2004,8 +2095,8 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AplicacaoPaciente", b =>
                 {
                     b.HasOne("BGD.CLINICAL.Domain.Entities.Agendamento", "Agendamento")
-                        .WithOne("AplicacaoPaciente")
-                        .HasForeignKey("BGD.CLINICAL.Domain.Entities.AplicacaoPaciente", "AgendamentoId")
+                        .WithMany("AplicacoesPaciente")
+                        .HasForeignKey("AgendamentoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_aplicacao_paciente_agendamento_agendamento_id");
 
@@ -2418,6 +2509,27 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Unidade");
                 });
 
+            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PacienteUnidade", b =>
+                {
+                    b.HasOne("BGD.CLINICAL.Domain.Entities.Paciente", "Paciente")
+                        .WithMany("UnidadesVinculadas")
+                        .HasForeignKey("PacienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_paciente_unidade_paciente_paciente_id");
+
+                    b.HasOne("BGD.CLINICAL.Domain.Entities.Unidade", "Unidade")
+                        .WithMany()
+                        .HasForeignKey("UnidadeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_paciente_unidade_unidade_unidade_id");
+
+                    b.Navigation("Paciente");
+
+                    b.Navigation("Unidade");
+                });
+
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", b =>
                 {
                     b.HasOne("BGD.CLINICAL.Domain.Entities.Empresa", "Empresa")
@@ -2580,7 +2692,9 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Agendamento", b =>
                 {
-                    b.Navigation("AplicacaoPaciente");
+                    b.Navigation("AplicacoesPaciente");
+
+                    b.Navigation("ProcedimentosVinculados");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.AplicacaoPaciente", b =>
@@ -2628,6 +2742,8 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Paciente", b =>
                 {
                     b.Navigation("Aplicacoes");
+
+                    b.Navigation("UnidadesVinculadas");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", b =>

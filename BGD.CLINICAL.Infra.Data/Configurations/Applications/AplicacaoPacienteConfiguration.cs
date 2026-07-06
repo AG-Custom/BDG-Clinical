@@ -22,8 +22,8 @@ internal sealed class AplicacaoPacienteConfiguration : IEntityTypeConfiguration<
         builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Agendamento)
-            .WithOne(entity => entity.AplicacaoPaciente)
-            .HasForeignKey<AplicacaoPaciente>(entity => entity.AgendamentoId)
+            .WithMany(entity => entity.AplicacoesPaciente)
+            .HasForeignKey(entity => entity.AgendamentoId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(entity => new { entity.EmpresaId, entity.PacienteId, entity.DataAplicacao });
     }

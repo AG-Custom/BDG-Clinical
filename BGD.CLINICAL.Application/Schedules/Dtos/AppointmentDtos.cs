@@ -1,5 +1,7 @@
 namespace BGD.CLINICAL.Application.Schedules.Dtos;
 
+public sealed record AppointmentProcedureDto(Guid Id, string Nome);
+
 public sealed record AppointmentDto(
     Guid Id,
     Guid UnidadeId,
@@ -10,6 +12,7 @@ public sealed record AppointmentDto(
     string FuncionarioNome,
     Guid? ProcedimentoId,
     string? ProcedimentoNome,
+    IReadOnlyList<AppointmentProcedureDto> Procedimentos,
     string Tipo,
     string Status,
     DateTime DataInicio,
@@ -21,6 +24,7 @@ public sealed record AppointmentDto(
     string? MotivoCancelamento,
     bool ExcecaoHorario,
     Guid? AplicacaoPacienteId,
+    IReadOnlyList<Guid> AplicacaoPacienteIds,
     DateTime CriadoEm,
     DateTime? AtualizadoEm);
 
@@ -32,6 +36,7 @@ public sealed record CreateAppointmentRequest(
     DateTime DataInicio,
     DateTime DataFim,
     Guid? ProcedimentoId = null,
+    IReadOnlyList<Guid>? ProcedimentoIds = null,
     string? Observacao = null,
     int ExcecaoHorario = 0);
 
@@ -43,11 +48,18 @@ public sealed record UpdateAppointmentRequest(
     DateTime DataInicio,
     DateTime DataFim,
     Guid? ProcedimentoId = null,
+    IReadOnlyList<Guid>? ProcedimentoIds = null,
     string? Observacao = null,
     int ExcecaoHorario = 0);
 
 public sealed record CancelAppointmentRequest(string Motivo);
 
-public sealed record CompleteAppointmentRequest(
+public sealed record CompleteAppointmentProcedureRequest(
+    Guid ProcedimentoId,
     decimal? QuantidadeUtilizada = null,
     decimal? Peso = null);
+
+public sealed record CompleteAppointmentRequest(
+    decimal? QuantidadeUtilizada = null,
+    decimal? Peso = null,
+    IReadOnlyList<CompleteAppointmentProcedureRequest>? Procedimentos = null);

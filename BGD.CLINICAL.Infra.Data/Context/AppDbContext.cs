@@ -24,6 +24,7 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<UsuarioPermissaoOverride> UsuarioPermissoesOverride => Set<UsuarioPermissaoOverride>();
     public DbSet<ConvitePrimeiroAcesso> ConvitesPrimeiroAcesso => Set<ConvitePrimeiroAcesso>();
     public DbSet<Paciente> Pacientes => Set<Paciente>();
+    public DbSet<PacienteUnidade> PacientesUnidade => Set<PacienteUnidade>();
     public DbSet<Sintoma> Sintomas => Set<Sintoma>();
     public DbSet<Produto> Produtos => Set<Produto>();
     public DbSet<UnidadeMedida> UnidadesMedida => Set<UnidadeMedida>();
@@ -38,6 +39,7 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<AplicacaoPaciente> AplicacoesPaciente => Set<AplicacaoPaciente>();
     public DbSet<AplicacaoSintoma> AplicacoesSintomas => Set<AplicacaoSintoma>();
     public DbSet<Agendamento> Agendamentos => Set<Agendamento>();
+    public DbSet<AgendamentoProcedimento> AgendamentosProcedimento => Set<AgendamentoProcedimento>();
     public DbSet<HorarioFuncionamentoUnidade> HorariosFuncionamentoUnidade => Set<HorarioFuncionamentoUnidade>();
     public DbSet<DisponibilidadeFuncionario> DisponibilidadesFuncionario => Set<DisponibilidadeFuncionario>();
     public DbSet<BloqueioAgenda> BloqueiosAgenda => Set<BloqueioAgenda>();

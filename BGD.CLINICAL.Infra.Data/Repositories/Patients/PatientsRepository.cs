@@ -22,11 +22,15 @@ public sealed class PatientsRepository : IPatientsRepository
     {
         var query = _context.Pacientes
             .AsNoTracking()
+            .Include(paciente => paciente.UnidadesVinculadas)
+                .ThenInclude(vinculo => vinculo.Unidade)
             .Where(paciente => paciente.EmpresaId == empresaId);
 
         if (unidadeId.HasValue)
         {
-            query = query.Where(paciente => paciente.UnidadeId == unidadeId.Value);
+            query = query.Where(paciente =>
+                paciente.UnidadeId == unidadeId.Value
+                || paciente.UnidadesVinculadas.Any(vinculo => vinculo.UnidadeId == unidadeId.Value));
         }
 
         if (!includeInactive)
@@ -45,6 +49,19 @@ public sealed class PatientsRepository : IPatientsRepository
         CancellationToken cancellationToken = default)
     {
         return _context.Pacientes
+            .FirstOrDefaultAsync(
+                paciente => paciente.Id == id && paciente.EmpresaId == empresaId,
+                cancellationToken);
+    }
+
+    public Task<Paciente?> GetByIdAndEmpresaIdWithDetailsAsync(
+        Guid id,
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Pacientes
+            .Include(paciente => paciente.UnidadesVinculadas)
+                .ThenInclude(vinculo => vinculo.Unidade)
             .FirstOrDefaultAsync(
                 paciente => paciente.Id == id && paciente.EmpresaId == empresaId,
                 cancellationToken);
@@ -75,6 +92,25 @@ public sealed class PatientsRepository : IPatientsRepository
             cancellationToken);
     }
 
+    public async Task<bool> AllActiveUnitsExistInEmpresaAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> unidadeIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (unidadeIds.Count == 0)
+        {
+            return false;
+        }
+
+        var activeCount = await _context.Unidades.CountAsync(
+            unidade => unidade.EmpresaId == empresaId
+                && unidade.Ativo
+                && unidadeIds.Contains(unidade.Id),
+            cancellationToken);
+
+        return activeCount == unidadeIds.Count;
+    }
+
     public async Task AddAsync(Paciente paciente, CancellationToken cancellationToken = default)
     {
         await _context.Pacientes.AddAsync(paciente, cancellationToken);
@@ -86,7 +122,49 @@ public sealed class PatientsRepository : IPatientsRepository
 
         if (entry.State == EntityState.Detached)
         {
-            _context.Pacientes.Update(paciente);
+            _context.Pacientes.Attach(paciente);
+            entry.State = EntityState.Modified;
+        }
+
+        foreach (var unidadeVinculada in paciente.UnidadesVinculadas)
+        {
+            EnsureUnidadeVinculadaTrackedCorrectly(unidadeVinculada);
         }
     }
+
+    private void EnsureUnidadeVinculadaTrackedCorrectly(PacienteUnidade unidadeVinculada)
+    {
+        var itemEntry = _context.Entry(unidadeVinculada);
+
+        if (itemEntry.State is EntityState.Added or EntityState.Deleted)
+        {
+            return;
+        }
+
+        if (_context.PacientesUnidade.Local.Any(tracked => tracked.Id == unidadeVinculada.Id))
+        {
+            if (itemEntry.State == EntityState.Modified && !UnidadeVinculadaExistsInDatabase(unidadeVinculada.Id))
+            {
+                _context.PacientesUnidade.Add(unidadeVinculada);
+            }
+
+            return;
+        }
+
+        if (UnidadeVinculadaExistsInDatabase(unidadeVinculada.Id))
+        {
+            if (itemEntry.State == EntityState.Detached)
+            {
+                _context.PacientesUnidade.Attach(unidadeVinculada);
+            }
+
+            itemEntry.State = EntityState.Modified;
+            return;
+        }
+
+        _context.PacientesUnidade.Add(unidadeVinculada);
+    }
+
+    private bool UnidadeVinculadaExistsInDatabase(Guid id) =>
+        _context.PacientesUnidade.Any(item => item.Id == id);
 }

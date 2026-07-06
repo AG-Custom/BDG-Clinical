@@ -7,9 +7,28 @@ internal static class PatientsMapper
 {
     public static PatientDto Map(Paciente paciente)
     {
+        var unidades = paciente.UnidadesVinculadas
+            .OrderBy(item => item.CriadoEm)
+            .Select(item => new PatientUnitDto(
+                item.UnidadeId,
+                item.Unidade?.Nome ?? string.Empty))
+            .ToList();
+
+        if (unidades.Count == 0 && paciente.UnidadeId != Guid.Empty)
+        {
+            unidades.Add(new PatientUnitDto(
+                paciente.UnidadeId,
+                paciente.Unidade?.Nome ?? string.Empty));
+        }
+
+        var unidadeIds = unidades.Select(unidade => unidade.Id).ToList();
+        var primeiraUnidade = unidades.FirstOrDefault();
+
         return new PatientDto(
             paciente.Id,
-            paciente.UnidadeId,
+            primeiraUnidade?.Id ?? paciente.UnidadeId,
+            unidades,
+            unidadeIds,
             paciente.Nome,
             paciente.Cpf,
             paciente.Telefone,

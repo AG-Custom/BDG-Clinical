@@ -14,6 +14,7 @@ internal static class AppointmentsAuditSerializer
             agendamento.PacienteId,
             agendamento.FuncionarioId,
             agendamento.ProcedimentoId,
+            ProcedimentoIds = agendamento.GetProcedimentoIds(),
             Tipo = agendamento.Tipo.ToString(),
             Status = agendamento.Status.ToString(),
             agendamento.DataInicio,

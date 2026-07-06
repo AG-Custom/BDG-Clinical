@@ -43,7 +43,7 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
         CancellationToken cancellationToken = default)
     {
         var empresaId = _tenantContext.EmpresaId;
-        var paciente = await _patientsRepository.GetByIdAndEmpresaIdAsync(id, empresaId, cancellationToken);
+        var paciente = await _patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(id, empresaId, cancellationToken);
 
         if (paciente is null)
         {
@@ -58,6 +58,7 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
         var validation = await PatientRequestValidator.ValidateAsync(
             empresaId,
             request.UnidadeId,
+            request.UnidadeIds,
             request.Nome,
             request.Cpf,
             request.Telefone,
@@ -78,7 +79,7 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
             var data = validation.Value!;
 
             paciente.UpdateDetails(
-                data.UnidadeId,
+                data.UnidadeIds,
                 data.Nome,
                 data.Cpf,
                 data.Telefone,
@@ -89,6 +90,11 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
             _patientsRepository.Update(paciente);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var persisted = await _patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                id,
+                empresaId,
+                cancellationToken);
+
             await _auditLogsService.RegisterEntityChangeAsync(
                 empresaId,
                 _tenantContext.UsuarioId,
@@ -96,10 +102,10 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
                 paciente.Id,
                 AcaoAuditoria.Editar,
                 dadosAnteriores: dadosAnteriores,
-                dadosNovos: PatientsAuditSerializer.Serialize(paciente),
+                dadosNovos: PatientsAuditSerializer.Serialize(persisted ?? paciente),
                 cancellationToken: cancellationToken);
 
-            return Result<PatientDto>.Success(PatientsMapper.Map(paciente));
+            return Result<PatientDto>.Success(PatientsMapper.Map(persisted ?? paciente));
         }
         catch (DomainException exception)
         {

@@ -32,14 +32,15 @@ public sealed class Agendamento : AggregateRoot
     public Procedimento? Procedimento { get; private set; }
     public Usuario CriadoPor { get; private set; } = null!;
     public Usuario? CanceladoPor { get; private set; }
-    public AplicacaoPaciente? AplicacaoPaciente { get; private set; }
+    public ICollection<AplicacaoPaciente> AplicacoesPaciente { get; private set; } = [];
+    public ICollection<AgendamentoProcedimento> ProcedimentosVinculados { get; private set; } = [];
 
     public static Agendamento Create(
         Guid empresaId,
         Guid unidadeId,
         Guid pacienteId,
         Guid funcionarioId,
-        Guid? procedimentoId,
+        IReadOnlyList<Guid> procedimentoIds,
         TipoAgendamento tipo,
         DateTime dataInicio,
         DateTime dataFim,
@@ -53,12 +54,12 @@ public sealed class Agendamento : AggregateRoot
             pacienteId,
             funcionarioId,
             tipo,
-            procedimentoId,
+            procedimentoIds,
             dataInicio,
             dataFim,
             criadoPorId);
 
-        return new Agendamento
+        var agendamento = new Agendamento
         {
             Id = Guid.NewGuid(),
             CriadoEm = DateTime.UtcNow,
@@ -66,7 +67,7 @@ public sealed class Agendamento : AggregateRoot
             UnidadeId = unidadeId,
             PacienteId = pacienteId,
             FuncionarioId = funcionarioId,
-            ProcedimentoId = procedimentoId,
+            ProcedimentoId = procedimentoIds.Count > 0 ? procedimentoIds[0] : null,
             Tipo = tipo,
             Status = StatusAgendamento.Agendado,
             DataInicio = dataInicio,
@@ -75,13 +76,16 @@ public sealed class Agendamento : AggregateRoot
             ExcecaoHorario = excecaoHorario,
             CriadoPorId = criadoPorId
         };
+
+        agendamento.SetProcedimentos(procedimentoIds);
+        return agendamento;
     }
 
     public void UpdateDetails(
         Guid unidadeId,
         Guid pacienteId,
         Guid funcionarioId,
-        Guid? procedimentoId,
+        IReadOnlyList<Guid> procedimentoIds,
         TipoAgendamento tipo,
         DateTime dataInicio,
         DateTime dataFim,
@@ -96,7 +100,7 @@ public sealed class Agendamento : AggregateRoot
             pacienteId,
             funcionarioId,
             tipo,
-            procedimentoId,
+            procedimentoIds,
             dataInicio,
             dataFim,
             CriadoPorId);
@@ -104,13 +108,39 @@ public sealed class Agendamento : AggregateRoot
         UnidadeId = unidadeId;
         PacienteId = pacienteId;
         FuncionarioId = funcionarioId;
-        ProcedimentoId = procedimentoId;
+        ProcedimentoId = procedimentoIds.Count > 0 ? procedimentoIds[0] : null;
         Tipo = tipo;
         DataInicio = dataInicio;
         DataFim = dataFim;
         Observacao = string.IsNullOrWhiteSpace(observacao) ? null : observacao.Trim();
         ExcecaoHorario = excecaoHorario;
+        SetProcedimentos(procedimentoIds);
         AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public IReadOnlyList<Guid> GetProcedimentoIds()
+    {
+        if (ProcedimentosVinculados.Count > 0)
+        {
+            return ProcedimentosVinculados
+                .OrderBy(item => item.CriadoEm)
+                .Select(item => item.ProcedimentoId)
+                .ToList();
+        }
+
+        return ProcedimentoId.HasValue && ProcedimentoId.Value != Guid.Empty
+            ? [ProcedimentoId.Value]
+            : [];
+    }
+
+    private void SetProcedimentos(IReadOnlyList<Guid> procedimentoIds)
+    {
+        ProcedimentosVinculados.Clear();
+
+        foreach (var procedimentoId in procedimentoIds)
+        {
+            ProcedimentosVinculados.Add(new AgendamentoProcedimento(Id, procedimentoId));
+        }
     }
 
     public void Confirm()
@@ -198,7 +228,7 @@ public sealed class Agendamento : AggregateRoot
         Guid pacienteId,
         Guid funcionarioId,
         TipoAgendamento tipo,
-        Guid? procedimentoId,
+        IReadOnlyList<Guid> procedimentoIds,
         DateTime dataInicio,
         DateTime dataFim,
         Guid criadoPorId)
@@ -233,16 +263,56 @@ public sealed class Agendamento : AggregateRoot
             throw new DomainException("A data de término deve ser posterior à data de início.");
         }
 
-        if (tipo == TipoAgendamento.Aplicacao && (!procedimentoId.HasValue || procedimentoId.Value == Guid.Empty))
+        var normalizedProcedimentoIds = procedimentoIds
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (tipo == TipoAgendamento.Aplicacao && normalizedProcedimentoIds.Count == 0)
         {
-            throw new DomainException("Informe o procedimento para agendamentos do tipo aplicação.");
+            throw new DomainException("Informe ao menos um procedimento para agendamentos do tipo aplicação.");
         }
 
-        if (tipo != TipoAgendamento.Aplicacao && procedimentoId.HasValue && procedimentoId.Value != Guid.Empty)
+        if (tipo != TipoAgendamento.Aplicacao && normalizedProcedimentoIds.Count > 0)
         {
             throw new DomainException("Procedimento só pode ser informado em agendamentos do tipo aplicação.");
         }
+
+        if (normalizedProcedimentoIds.Count != procedimentoIds.Count(id => id != Guid.Empty))
+        {
+            throw new DomainException("Não é permitido repetir o mesmo procedimento no agendamento.");
+        }
     }
+}
+
+public sealed class AgendamentoProcedimento : AggregateRoot
+{
+    private AgendamentoProcedimento()
+    {
+    }
+
+    public AgendamentoProcedimento(Guid agendamentoId, Guid procedimentoId)
+        : base(Guid.NewGuid())
+    {
+        if (agendamentoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o agendamento do procedimento.");
+        }
+
+        if (procedimentoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o procedimento do agendamento.");
+        }
+
+        AgendamentoId = agendamentoId;
+        ProcedimentoId = procedimentoId;
+    }
+
+    public Guid AgendamentoId { get; private set; }
+    public Guid ProcedimentoId { get; private set; }
+
+    public Agendamento Agendamento { get; private set; } = null!;
+    public Procedimento Procedimento { get; private set; } = null!;
 }
 
 public sealed class HorarioFuncionamentoUnidade : AggregateRoot

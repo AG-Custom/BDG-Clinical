@@ -29,7 +29,7 @@ public sealed class GetPatientsService : IGetPatientsService
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var paciente = await _patientsRepository.GetByIdAndEmpresaIdAsync(
+        var paciente = await _patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
             id,
             _tenantContext.EmpresaId,
             cancellationToken);

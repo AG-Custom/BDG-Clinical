@@ -9,7 +9,8 @@ internal static class PatientRequestValidator
 {
     public static async Task<Result<ValidatedPatientData>> ValidateAsync(
         Guid empresaId,
-        Guid unidadeId,
+        Guid? unidadeId,
+        IReadOnlyList<Guid>? unidadeIds,
         string nome,
         string? cpf,
         string? telefone,
@@ -19,10 +20,13 @@ internal static class PatientRequestValidator
         IPatientsRepository patientsRepository,
         CancellationToken cancellationToken)
     {
-        if (unidadeId == Guid.Empty)
+        var resolvedUnidadeIdsResult = ResolveUnidadeIds(unidadeId, unidadeIds);
+        if (resolvedUnidadeIdsResult.IsFailure)
         {
-            return Result<ValidatedPatientData>.Failure("Informe a unidade do paciente.");
+            return Result<ValidatedPatientData>.Failure(resolvedUnidadeIdsResult.Error!);
         }
+
+        var resolvedUnidadeIds = resolvedUnidadeIdsResult.Value!;
 
         if (string.IsNullOrWhiteSpace(nome))
         {
@@ -43,9 +47,12 @@ internal static class PatientRequestValidator
             return Result<ValidatedPatientData>.Failure("Informe um e-mail válido.");
         }
 
-        if (!await patientsRepository.ExistsActiveUnidadeInEmpresaAsync(unidadeId, empresaId, cancellationToken))
+        if (!await patientsRepository.AllActiveUnitsExistInEmpresaAsync(
+                empresaId,
+                resolvedUnidadeIds,
+                cancellationToken))
         {
-            return Result<ValidatedPatientData>.Failure("Unidade não encontrada ou inativa.");
+            return Result<ValidatedPatientData>.Failure("Uma ou mais unidades não foram encontradas ou estão inativas.");
         }
 
         if (normalizedCpf is not null
@@ -55,17 +62,52 @@ internal static class PatientRequestValidator
         }
 
         return Result<ValidatedPatientData>.Success(new ValidatedPatientData(
-            unidadeId,
+            resolvedUnidadeIds,
             nome.Trim(),
             normalizedCpf,
             PatientValidation.NormalizeTelefone(telefone),
             normalizedEmail,
             PatientValidation.NormalizeObservacao(observacao)));
     }
+
+    internal static Result<IReadOnlyList<Guid>> ResolveUnidadeIds(
+        Guid? unidadeId,
+        IReadOnlyList<Guid>? unidadeIds)
+    {
+        IReadOnlyList<Guid> resolved;
+
+        if (unidadeIds is { Count: > 0 })
+        {
+            resolved = unidadeIds
+                .Where(id => id != Guid.Empty)
+                .ToList();
+        }
+        else if (unidadeId.HasValue && unidadeId.Value != Guid.Empty)
+        {
+            resolved = [unidadeId.Value];
+        }
+        else
+        {
+            resolved = [];
+        }
+
+        if (resolved.Count == 0)
+        {
+            return Result<IReadOnlyList<Guid>>.Failure("Informe ao menos uma unidade do paciente.");
+        }
+
+        if (resolved.Count != resolved.Distinct().Count())
+        {
+            return Result<IReadOnlyList<Guid>>.Failure(
+                "Não é permitido repetir a mesma unidade no paciente.");
+        }
+
+        return Result<IReadOnlyList<Guid>>.Success(resolved.Distinct().ToList());
+    }
 }
 
 internal sealed record ValidatedPatientData(
-    Guid UnidadeId,
+    IReadOnlyList<Guid> UnidadeIds,
     string Nome,
     string? Cpf,
     string? Telefone,

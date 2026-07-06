@@ -17,6 +17,7 @@ internal static class PatientsAuditSerializer
             paciente.Id,
             paciente.EmpresaId,
             paciente.UnidadeId,
+            UnidadeIds = paciente.GetUnidadeIds(),
             paciente.Nome,
             paciente.Cpf,
             paciente.Telefone,

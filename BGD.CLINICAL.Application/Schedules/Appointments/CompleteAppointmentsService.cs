@@ -71,7 +71,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             return Result<AppointmentDto>.Failure("Agendamento não encontrado.");
         }
 
-        if (agendamento.AplicacaoPaciente is not null)
+        if (agendamento.AplicacoesPaciente.Any(aplicacao => !aplicacao.Cancelada))
         {
             return Result<AppointmentDto>.Failure("Este agendamento já possui aplicação vinculada.");
         }
@@ -82,7 +82,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         {
             if (agendamento.Tipo == TipoAgendamento.Aplicacao)
             {
-                var applicationError = await CreateApplicationFromAppointmentAsync(
+                var applicationError = await CreateApplicationsFromAppointmentAsync(
                     agendamento,
                     request,
                     empresaId,
@@ -121,19 +121,98 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         }
     }
 
-    private async Task<string?> CreateApplicationFromAppointmentAsync(
+    private async Task<string?> CreateApplicationsFromAppointmentAsync(
         Agendamento agendamento,
         CompleteAppointmentRequest request,
         Guid empresaId,
         CancellationToken cancellationToken)
     {
-        if (!agendamento.ProcedimentoId.HasValue)
+        var procedimentoIds = agendamento.GetProcedimentoIds();
+        if (procedimentoIds.Count == 0)
         {
             return "Agendamento de aplicação sem procedimento vinculado.";
         }
 
+        var completeItems = ResolveCompleteItems(procedimentoIds, request);
+        if (completeItems.IsFailure)
+        {
+            return completeItems.Error;
+        }
+
+        foreach (var item in completeItems.Value!)
+        {
+            var error = await CreateApplicationForProcedureAsync(
+                agendamento,
+                item.ProcedimentoId,
+                item.QuantidadeUtilizada,
+                item.Peso,
+                empresaId,
+                cancellationToken);
+
+            if (error is not null)
+            {
+                return error;
+            }
+        }
+
+        return null;
+    }
+
+    private static Result<IReadOnlyList<CompleteAppointmentProcedureRequest>> ResolveCompleteItems(
+        IReadOnlyList<Guid> procedimentoIds,
+        CompleteAppointmentRequest request)
+    {
+        if (procedimentoIds.Count == 1)
+        {
+            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Success(
+            [
+                new CompleteAppointmentProcedureRequest(
+                    procedimentoIds[0],
+                    request.QuantidadeUtilizada,
+                    request.Peso)
+            ]);
+        }
+
+        if (request.Procedimentos is null || request.Procedimentos.Count == 0)
+        {
+            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
+                "Informe os dados de conclusão de cada procedimento em procedimentos.");
+        }
+
+        if (request.Procedimentos.Count != procedimentoIds.Count)
+        {
+            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
+                "Informe os dados de conclusão para todos os procedimentos do agendamento.");
+        }
+
+        var expectedIds = procedimentoIds.ToHashSet();
+        var informedIds = request.Procedimentos.Select(item => item.ProcedimentoId).ToList();
+
+        if (informedIds.Any(id => id == Guid.Empty) || informedIds.Distinct().Count() != informedIds.Count)
+        {
+            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
+                "Informe procedimentos distintos e válidos na conclusão.");
+        }
+
+        if (!expectedIds.SetEquals(informedIds))
+        {
+            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
+                "Os procedimentos informados na conclusão devem corresponder aos do agendamento.");
+        }
+
+        return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Success(request.Procedimentos);
+    }
+
+    private async Task<string?> CreateApplicationForProcedureAsync(
+        Agendamento agendamento,
+        Guid procedimentoId,
+        decimal? quantidadeUtilizada,
+        decimal? peso,
+        Guid empresaId,
+        CancellationToken cancellationToken)
+    {
         var procedimento = await _proceduresRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-            agendamento.ProcedimentoId.Value,
+            procedimentoId,
             empresaId,
             cancellationToken);
 
@@ -144,17 +223,17 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
 
         if (procedimento.ProdutoAplicadoId.HasValue)
         {
-            if (!request.QuantidadeUtilizada.HasValue || request.QuantidadeUtilizada.Value <= 0)
+            if (!quantidadeUtilizada.HasValue || quantidadeUtilizada.Value <= 0)
             {
                 return "A quantidade utilizada deve ser maior que zero.";
             }
         }
-        else if (request.QuantidadeUtilizada.HasValue)
+        else if (quantidadeUtilizada.HasValue)
         {
             return "Quantidade utilizada não se aplica a procedimentos sem produto aplicado.";
         }
 
-        if (request.Peso.HasValue && request.Peso.Value <= 0)
+        if (peso.HasValue && peso.Value <= 0)
         {
             return "O peso deve ser maior que zero quando informado.";
         }
@@ -182,7 +261,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
 
         var productsById = produtos.ToDictionary(produto => produto.Id);
         var stockLines = PatientApplicationStockPlanner.BuildLines(
-            request.QuantidadeUtilizada,
+            quantidadeUtilizada,
             procedimento,
             productsById);
 
@@ -208,8 +287,8 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             agendamento.FuncionarioId,
             agendamento.UnidadeId,
             agendamento.DataInicio,
-            request.QuantidadeUtilizada,
-            request.Peso,
+            quantidadeUtilizada,
+            peso,
             agendamento.Observacao,
             agendamento.Id);
 

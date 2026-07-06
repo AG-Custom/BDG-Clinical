@@ -40,7 +40,7 @@ public sealed class ReactivatePatientsService : IReactivatePatientsService
         CancellationToken cancellationToken = default)
     {
         var empresaId = _tenantContext.EmpresaId;
-        var paciente = await _patientsRepository.GetByIdAndEmpresaIdAsync(id, empresaId, cancellationToken);
+        var paciente = await _patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(id, empresaId, cancellationToken);
 
         if (paciente is null)
         {
@@ -52,9 +52,12 @@ public sealed class ReactivatePatientsService : IReactivatePatientsService
             return Result<PatientDto>.Failure("Paciente já está ativo.");
         }
 
-        if (!await _patientsRepository.ExistsActiveUnidadeInEmpresaAsync(paciente.UnidadeId, empresaId, cancellationToken))
+        if (!await _patientsRepository.AllActiveUnitsExistInEmpresaAsync(
+                empresaId,
+                paciente.GetUnidadeIds(),
+                cancellationToken))
         {
-            return Result<PatientDto>.Failure("A unidade vinculada ao paciente está inativa.");
+            return Result<PatientDto>.Failure("Uma ou mais unidades vinculadas ao paciente estão inativas.");
         }
 
         if (paciente.Cpf is not null
