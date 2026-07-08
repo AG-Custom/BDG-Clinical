@@ -8,4 +8,6 @@ public sealed record StockBalanceDto(
     string UnidadeMedidaSigla,
     decimal EstoqueMinimo,
     decimal SaldoAtual,
+    decimal? ValorUnitario,
+    decimal ValorEstoque,
     bool AbaixoDoMinimo);

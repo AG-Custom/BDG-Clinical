@@ -78,7 +78,17 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 ProdutoNome = produto.Nome,
                 UnidadeMedidaSigla = unidadeMedida.Sigla,
                 produto.EstoqueMinimo,
-                balance.SaldoAtual
+                balance.SaldoAtual,
+                ValorUnitario = _context.ItensPedidoFornecedor
+                    .AsNoTracking()
+                    .Where(item =>
+                        item.ProdutoId == balance.ProdutoId
+                        && item.PedidoFornecedor.EmpresaId == empresaId
+                        && item.PedidoFornecedor.Status == StatusPedidoFornecedor.RecebidoPelaUnidade)
+                    .OrderByDescending(item => item.PedidoFornecedor.DataPedido)
+                    .ThenByDescending(item => item.PedidoFornecedor.AtualizadoEm)
+                    .Select(item => (decimal?)item.ValorUnitario)
+                    .FirstOrDefault()
             };
 
         if (abaixoDoMinimo == true)
@@ -102,7 +112,8 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 row.ProdutoNome,
                 row.UnidadeMedidaSigla,
                 row.EstoqueMinimo,
-                row.SaldoAtual))
+                row.SaldoAtual,
+                row.ValorUnitario))
             .ToList();
     }
 
