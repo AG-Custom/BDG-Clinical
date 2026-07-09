@@ -1,0 +1,25 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY ["BGD.CLINICAL.Jobs.Web/BGD.CLINICAL.Jobs.Web.csproj", "BGD.CLINICAL.Jobs.Web/"]
+COPY ["BGD.CLINICAL.Application/BGD.CLINICAL.Application.csproj", "BGD.CLINICAL.Application/"]
+COPY ["BGD.CLINICAL.Domain/BGD.CLINICAL.Domain.csproj", "BGD.CLINICAL.Domain/"]
+COPY ["BGD.CLINICAL.Infra.Data/BGD.CLINICAL.Infra.Data.csproj", "BGD.CLINICAL.Infra.Data/"]
+COPY ["BGD.CLINICAL.Infra.ExternalApis/BGD.CLINICAL.Infra.ExternalApis.csproj", "BGD.CLINICAL.Infra.ExternalApis/"]
+
+RUN dotnet restore "BGD.CLINICAL.Jobs.Web/BGD.CLINICAL.Jobs.Web.csproj"
+
+COPY . .
+
+RUN dotnet publish "BGD.CLINICAL.Jobs.Web/BGD.CLINICAL.Jobs.Web.csproj" \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+ENTRYPOINT ["dotnet", "BGD.CLINICAL.Jobs.Web.dll"]
