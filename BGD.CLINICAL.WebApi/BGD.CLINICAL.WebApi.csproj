@@ -23,6 +23,4 @@
     <ProjectReference Include="..\BGD.CLINICAL.Infra.ExternalApis\BGD.CLINICAL.Infra.ExternalApis.csproj" />
   </ItemGroup>
 
-  <ProjectExtensions><VisualStudio><UserProperties appsettings_1development_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
-
 </Project>
