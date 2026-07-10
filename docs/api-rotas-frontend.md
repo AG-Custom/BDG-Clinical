@@ -1185,6 +1185,15 @@ Lista pacientes da empresa logada.
       "telefone": "(11) 99999-0000",
       "email": "maria@email.com",
       "dataNascimento": "1990-05-15",
+      "endereco": {
+        "cep": "01310100",
+        "logradouro": "Av. Paulista",
+        "numero": "1000",
+        "complemento": "Sala 10",
+        "bairro": "Bela Vista",
+        "cidade": "São Paulo",
+        "uf": "SP"
+      },
       "observacao": null,
       "ativo": true,
       "criadoEm": "2026-06-25T12:00:00Z",
@@ -1226,6 +1235,15 @@ Lista pacientes da empresa logada.
   "telefone": "(11) 99999-0000",
   "email": "maria@email.com",
   "dataNascimento": "1990-05-15",
+  "endereco": {
+    "cep": "01310-100",
+    "logradouro": "Av. Paulista",
+    "numero": "1000",
+    "complemento": "Sala 10",
+    "bairro": "Bela Vista",
+    "cidade": "São Paulo",
+    "uf": "SP"
+  },
   "observacao": null
 }
 ```
@@ -1238,6 +1256,7 @@ Lista pacientes da empresa logada.
 | `telefone` | Não | |
 | `email` | Não | Formato válido se informado |
 | `dataNascimento` | Não | Formato `YYYY-MM-DD` |
+| `endereco` | Não | Objeto com campos opcionais: `cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `uf` |
 | `observacao` | Não | |
 
 `empresaId` **não** vai no body — vem do JWT.
@@ -2424,6 +2443,15 @@ interface Patient {
   telefone: string | null;
   email: string | null;
   dataNascimento: string | null;
+  endereco: {
+    cep: string | null;
+    logradouro: string | null;
+    numero: string | null;
+    complemento: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    uf: string | null;
+  } | null;
   observacao: string | null;
   ativo: boolean;
   criadoEm: string;

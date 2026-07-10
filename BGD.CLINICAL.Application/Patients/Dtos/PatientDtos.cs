@@ -2,6 +2,24 @@ namespace BGD.CLINICAL.Application.Patients.Dtos;
 
 public sealed record PatientUnitDto(Guid Id, string Nome);
 
+public sealed record PatientAddressDto(
+    string? Cep,
+    string? Logradouro,
+    string? Numero,
+    string? Complemento,
+    string? Bairro,
+    string? Cidade,
+    string? Uf);
+
+public sealed record PatientAddressRequest(
+    string? Cep = null,
+    string? Logradouro = null,
+    string? Numero = null,
+    string? Complemento = null,
+    string? Bairro = null,
+    string? Cidade = null,
+    string? Uf = null);
+
 public sealed record PatientDto(
     Guid Id,
     Guid UnidadeId,
@@ -12,6 +30,7 @@ public sealed record PatientDto(
     string? Telefone,
     string? Email,
     DateOnly? DataNascimento,
+    PatientAddressDto? Endereco,
     string? Observacao,
     bool Ativo,
     DateTime CriadoEm,
@@ -25,6 +44,7 @@ public sealed record CreatePatientRequest(
     string? Telefone = null,
     string? Email = null,
     DateOnly? DataNascimento = null,
+    PatientAddressRequest? Endereco = null,
     string? Observacao = null);
 
 public sealed record UpdatePatientRequest(
@@ -35,4 +55,5 @@ public sealed record UpdatePatientRequest(
     string? Telefone = null,
     string? Email = null,
     DateOnly? DataNascimento = null,
+    PatientAddressRequest? Endereco = null,
     string? Observacao = null);

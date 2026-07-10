@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Domain.Common;
 using BGD.CLINICAL.Domain.Exceptions;
+using BGD.CLINICAL.Domain.ValueObjects;
 
 namespace BGD.CLINICAL.Domain.Entities;
 
@@ -17,6 +18,7 @@ public sealed class Paciente : AggregateRoot
         string? telefone,
         string? email,
         DateOnly? dataNascimento,
+        Address? endereco,
         string? observacao)
         : base(Guid.NewGuid())
     {
@@ -27,6 +29,7 @@ public sealed class Paciente : AggregateRoot
         Telefone = telefone;
         Email = email;
         DataNascimento = dataNascimento;
+        Endereco = endereco;
         Observacao = observacao;
         Ativo = true;
     }
@@ -38,6 +41,7 @@ public sealed class Paciente : AggregateRoot
     public string? Telefone { get; private set; }
     public string? Email { get; private set; }
     public DateOnly? DataNascimento { get; private set; }
+    public Address? Endereco { get; private set; }
     public string? Observacao { get; private set; }
     public bool Ativo { get; private set; }
 
@@ -54,6 +58,7 @@ public sealed class Paciente : AggregateRoot
         string? telefone,
         string? email,
         DateOnly? dataNascimento,
+        Address? endereco,
         string? observacao)
     {
         if (empresaId == Guid.Empty)
@@ -76,6 +81,7 @@ public sealed class Paciente : AggregateRoot
             telefone,
             email,
             dataNascimento,
+            endereco,
             observacao);
 
         paciente.SetUnidades(unidadeIds);
@@ -89,6 +95,7 @@ public sealed class Paciente : AggregateRoot
         string? telefone,
         string? email,
         DateOnly? dataNascimento,
+        Address? endereco,
         string? observacao)
     {
         ValidateUnidadeIds(unidadeIds);
@@ -104,6 +111,7 @@ public sealed class Paciente : AggregateRoot
         Telefone = telefone;
         Email = email;
         DataNascimento = dataNascimento;
+        Endereco = endereco;
         Observacao = observacao;
         SetUnidades(unidadeIds);
         AtualizadoEm = DateTime.UtcNow;

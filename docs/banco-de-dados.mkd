@@ -420,6 +420,13 @@ paciente
 - telefone
 - email
 - data_nascimento
+- cep
+- logradouro
+- numero
+- complemento
+- bairro
+- cidade
+- uf
 - observacao
 - ativo
 - criado_em

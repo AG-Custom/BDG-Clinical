@@ -63,6 +63,7 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
             request.Cpf,
             request.Telefone,
             request.Email,
+            request.Endereco,
             request.Observacao,
             excludePatientId: id,
             _patientsRepository,
@@ -85,6 +86,7 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
                 data.Telefone,
                 data.Email,
                 request.DataNascimento,
+                data.Endereco,
                 data.Observacao);
 
             _patientsRepository.Update(paciente);

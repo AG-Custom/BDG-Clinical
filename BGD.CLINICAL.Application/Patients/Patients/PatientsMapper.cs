@@ -1,5 +1,6 @@
 using BGD.CLINICAL.Application.Patients.Dtos;
 using BGD.CLINICAL.Domain.Entities;
+using BGD.CLINICAL.Domain.ValueObjects;
 
 namespace BGD.CLINICAL.Application.Patients.Patients;
 
@@ -34,6 +35,7 @@ internal static class PatientsMapper
             paciente.Telefone,
             paciente.Email,
             paciente.DataNascimento,
+            MapEndereco(paciente.Endereco),
             paciente.Observacao,
             paciente.Ativo,
             paciente.CriadoEm,
@@ -43,5 +45,22 @@ internal static class PatientsMapper
     public static IReadOnlyList<PatientDto> Map(IReadOnlyList<Paciente> pacientes)
     {
         return pacientes.Select(Map).ToList();
+    }
+
+    private static PatientAddressDto? MapEndereco(Address? endereco)
+    {
+        if (endereco is null)
+        {
+            return null;
+        }
+
+        return new PatientAddressDto(
+            endereco.Cep,
+            endereco.Logradouro,
+            endereco.Numero,
+            endereco.Complemento,
+            endereco.Bairro,
+            endereco.Cidade,
+            endereco.Uf);
     }
 }

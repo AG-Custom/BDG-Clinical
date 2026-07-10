@@ -2,6 +2,7 @@ using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Identity;
 using BGD.CLINICAL.Application.Patients.Abstractions;
 using BGD.CLINICAL.Application.Patients.Dtos;
+using BGD.CLINICAL.Domain.ValueObjects;
 
 namespace BGD.CLINICAL.Application.Patients.Patients;
 
@@ -15,6 +16,7 @@ internal static class PatientRequestValidator
         string? cpf,
         string? telefone,
         string? email,
+        PatientAddressRequest? endereco,
         string? observacao,
         Guid? excludePatientId,
         IPatientsRepository patientsRepository,
@@ -47,6 +49,12 @@ internal static class PatientRequestValidator
             return Result<ValidatedPatientData>.Failure("Informe um e-mail válido.");
         }
 
+        var normalizedEndereco = PatientValidation.TryCreateEndereco(endereco, out var enderecoError);
+        if (enderecoError is not null)
+        {
+            return Result<ValidatedPatientData>.Failure(enderecoError);
+        }
+
         if (!await patientsRepository.AllActiveUnitsExistInEmpresaAsync(
                 empresaId,
                 resolvedUnidadeIds,
@@ -67,6 +75,7 @@ internal static class PatientRequestValidator
             normalizedCpf,
             PatientValidation.NormalizeTelefone(telefone),
             normalizedEmail,
+            normalizedEndereco,
             PatientValidation.NormalizeObservacao(observacao)));
     }
 
@@ -112,4 +121,5 @@ internal sealed record ValidatedPatientData(
     string? Cpf,
     string? Telefone,
     string? Email,
+    Address? Endereco,
     string? Observacao);

@@ -23,6 +23,18 @@ internal static class PatientsAuditSerializer
             paciente.Telefone,
             paciente.Email,
             paciente.DataNascimento,
+            Endereco = paciente.Endereco is null
+                ? null
+                : new
+                {
+                    paciente.Endereco.Cep,
+                    paciente.Endereco.Logradouro,
+                    paciente.Endereco.Numero,
+                    paciente.Endereco.Complemento,
+                    paciente.Endereco.Bairro,
+                    paciente.Endereco.Cidade,
+                    paciente.Endereco.Uf,
+                },
             paciente.Observacao,
             paciente.Ativo,
         }, Options);

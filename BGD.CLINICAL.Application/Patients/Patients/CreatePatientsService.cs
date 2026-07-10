@@ -50,6 +50,7 @@ public sealed class CreatePatientsService : ICreatePatientsService
             request.Cpf,
             request.Telefone,
             request.Email,
+            request.Endereco,
             request.Observacao,
             excludePatientId: null,
             _patientsRepository,
@@ -71,6 +72,7 @@ public sealed class CreatePatientsService : ICreatePatientsService
                 data.Telefone,
                 data.Email,
                 request.DataNascimento,
+                data.Endereco,
                 data.Observacao);
 
             await _patientsRepository.AddAsync(paciente, cancellationToken);
