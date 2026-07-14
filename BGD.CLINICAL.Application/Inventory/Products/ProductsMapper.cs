@@ -19,6 +19,7 @@ internal static class ProductsMapper
             produto.CodigoInterno,
             produto.CodigoBarras,
             produto.EstoqueMinimo,
+            produto.Valor,
             produto.ControlaEstoque,
             produto.Ativo,
             produto.CriadoEm,

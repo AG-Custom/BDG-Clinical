@@ -89,4 +89,32 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
                 movimentacao => movimentacao.Id == id && movimentacao.EmpresaId == empresaId,
                 cancellationToken);
     }
+
+    public async Task<IReadOnlyDictionary<(Guid PedidoId, Guid ProdutoId), decimal>> GetValoresUnitariosPorPedidosAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> pedidoIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (pedidoIds.Count == 0)
+        {
+            return new Dictionary<(Guid PedidoId, Guid ProdutoId), decimal>();
+        }
+
+        var itens = await _context.ItensPedidoFornecedor
+            .AsNoTracking()
+            .Where(item =>
+                pedidoIds.Contains(item.PedidoFornecedorId)
+                && item.PedidoFornecedor.EmpresaId == empresaId)
+            .Select(item => new
+            {
+                item.PedidoFornecedorId,
+                item.ProdutoId,
+                item.ValorUnitario
+            })
+            .ToListAsync(cancellationToken);
+
+        return itens.ToDictionary(
+            item => (item.PedidoFornecedorId, item.ProdutoId),
+            item => item.ValorUnitario);
+    }
 }

@@ -5,8 +5,16 @@ namespace BGD.CLINICAL.Application.Inventory.StockMovements;
 
 internal static class StockMovementsMapper
 {
-    public static StockMovementDto Map(MovimentacaoEstoque movimentacao)
+    public static StockMovementDto Map(
+        MovimentacaoEstoque movimentacao,
+        IReadOnlyDictionary<(Guid PedidoId, Guid ProdutoId), decimal>? valoresPedido = null)
     {
+        var valorUnitario = ResolverValorUnitario(movimentacao, valoresPedido);
+        var valorTotal = Math.Round(
+            movimentacao.Quantidade * valorUnitario,
+            2,
+            MidpointRounding.AwayFromZero);
+
         return new StockMovementDto(
             movimentacao.Id,
             movimentacao.UnidadeId,
@@ -16,6 +24,8 @@ internal static class StockMovementsMapper
             movimentacao.Tipo.ToString(),
             movimentacao.Motivo.ToString(),
             movimentacao.Quantidade,
+            valorUnitario,
+            valorTotal,
             movimentacao.Data,
             movimentacao.Origem,
             movimentacao.PedidoFornecedorId,
@@ -24,10 +34,27 @@ internal static class StockMovementsMapper
             movimentacao.CriadoEm);
     }
 
-    public static IReadOnlyList<StockMovementDto> Map(IReadOnlyList<MovimentacaoEstoque> movimentacoes)
+    public static IReadOnlyList<StockMovementDto> Map(
+        IReadOnlyList<MovimentacaoEstoque> movimentacoes,
+        IReadOnlyDictionary<(Guid PedidoId, Guid ProdutoId), decimal>? valoresPedido = null)
     {
         return movimentacoes
-            .Select(Map)
+            .Select(movimentacao => Map(movimentacao, valoresPedido))
             .ToList();
+    }
+
+    private static decimal ResolverValorUnitario(
+        MovimentacaoEstoque movimentacao,
+        IReadOnlyDictionary<(Guid PedidoId, Guid ProdutoId), decimal>? valoresPedido)
+    {
+        if (
+            movimentacao.PedidoFornecedorId is Guid pedidoId
+            && valoresPedido is not null
+            && valoresPedido.TryGetValue((pedidoId, movimentacao.ProdutoId), out var valorPedido))
+        {
+            return valorPedido;
+        }
+
+        return movimentacao.Produto?.Valor ?? 0m;
     }
 }

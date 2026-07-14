@@ -160,6 +160,7 @@ public sealed class Produto : AggregateRoot
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku,
         string? codigoInterno,
         string? codigoBarras,
@@ -171,6 +172,7 @@ public sealed class Produto : AggregateRoot
         UnidadeMedidaId = unidadeMedidaId;
         Nome = nome;
         EstoqueMinimo = estoqueMinimo;
+        Valor = valor;
         Sku = sku;
         CodigoInterno = codigoInterno;
         CodigoBarras = codigoBarras;
@@ -186,6 +188,7 @@ public sealed class Produto : AggregateRoot
     public string? CodigoInterno { get; private set; }
     public string? CodigoBarras { get; private set; }
     public decimal EstoqueMinimo { get; private set; }
+    public decimal Valor { get; private set; }
     public bool ControlaEstoque { get; private set; }
     public bool Ativo { get; private set; }
 
@@ -199,6 +202,7 @@ public sealed class Produto : AggregateRoot
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku = null,
         string? codigoInterno = null,
         string? codigoBarras = null,
@@ -229,6 +233,11 @@ public sealed class Produto : AggregateRoot
             throw new DomainException("O estoque mínimo não pode ser negativo.");
         }
 
+        if (valor < 0)
+        {
+            throw new DomainException("O valor do produto não pode ser negativo.");
+        }
+
         ValidateOptionalCodes(sku, codigoInterno, codigoBarras);
 
         return new Produto(
@@ -237,6 +246,7 @@ public sealed class Produto : AggregateRoot
             unidadeMedidaId,
             nome.Trim(),
             estoqueMinimo,
+            valor,
             NormalizeOptionalCode(sku),
             NormalizeOptionalCode(codigoInterno),
             NormalizeOptionalCode(codigoBarras),
@@ -248,6 +258,7 @@ public sealed class Produto : AggregateRoot
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku,
         string? codigoInterno,
         string? codigoBarras,
@@ -273,12 +284,18 @@ public sealed class Produto : AggregateRoot
             throw new DomainException("O estoque mínimo não pode ser negativo.");
         }
 
+        if (valor < 0)
+        {
+            throw new DomainException("O valor do produto não pode ser negativo.");
+        }
+
         ValidateOptionalCodes(sku, codigoInterno, codigoBarras);
 
         TipoProdutoId = tipoProdutoId;
         UnidadeMedidaId = unidadeMedidaId;
         Nome = nome.Trim();
         EstoqueMinimo = estoqueMinimo;
+        Valor = valor;
         Sku = NormalizeOptionalCode(sku);
         CodigoInterno = NormalizeOptionalCode(codigoInterno);
         CodigoBarras = NormalizeOptionalCode(codigoBarras);

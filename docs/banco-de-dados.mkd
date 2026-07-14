@@ -641,7 +641,12 @@ produto
 - tipo_produto_id
 - unidade_medida_id
 - nome
+- sku
+- codigo_interno
+- codigo_barras
 - estoque_minimo
+- valor
+- controla_estoque
 - ativo
 - criado_em
 - atualizado_em

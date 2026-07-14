@@ -1575,6 +1575,7 @@ Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **
       "codigoInterno": "MED-001",
       "codigoBarras": null,
       "estoqueMinimo": 10,
+      "valor": 150.00,
       "controlaEstoque": true,
       "ativo": true,
       "criadoEm": "2026-06-25T12:00:00Z",
@@ -1604,6 +1605,7 @@ Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **
   "unidadeMedidaId": "e5f6a7b8-c9d0-1234-efab-345678901234",
   "nome": "Tirzepatida",
   "estoqueMinimo": 10,
+  "valor": 150.00,
   "sku": "TZP-001",
   "codigoInterno": "MED-001",
   "codigoBarras": null,
@@ -1617,6 +1619,7 @@ Cadastro de produtos físicos para controle de estoque. Todas as rotas exigem **
 | `unidadeMedidaId` | Sim | Unidade de medida ativa da empresa |
 | `nome` | Sim | Único na empresa |
 | `estoqueMinimo` | Sim | `>= 0` |
+| `valor` | Sim | `>= 0` |
 | `sku` | Não | Único na empresa quando informado |
 | `codigoInterno` | Não | Único na empresa quando informado |
 | `codigoBarras` | Não | EAN/GTIN |
@@ -1812,7 +1815,10 @@ Saldo atual por **unidade + produto**, calculado a partir das movimentações:
 
 ```text
 saldo = ENTRADAS - SAIDAS + AJUSTES - PERDAS
+valorEstoque = saldoAtual × valorUnitario
 ```
+
+`valorUnitario` prioriza o **último `valorUnitario` de pedido ao fornecedor recebido** para o produto; se não houver compra recebida, usa o **valor cadastral** (`produto.valor`). `valorEstoque` é `saldoAtual × valorUnitario` (arredondado em 2 casas).
 
 Somente combinações com ao menos uma movimentação aparecem na listagem.
 
@@ -1839,7 +1845,10 @@ Somente combinações com ao menos uma movimentação aparecem na listagem.
       "unidadeMedidaSigla": "mg",
       "estoqueMinimo": 10,
       "saldoAtual": 150,
-      "abaixoDoMinimo": false
+      "valorUnitario": 150.00,
+      "valorEstoque": 22500.00,
+      "abaixoDoMinimo": false,
+      "origensEntrada": ["PEDIDO_FORNECEDOR", "AJUSTE_MANUAL"]
     }
   ],
   "success": true,
@@ -1848,6 +1857,8 @@ Somente combinações com ao menos uma movimentação aparecem na listagem.
 ```
 
 `saldoAtual` pode ser negativo se saídas/perdas superarem entradas.
+
+`origensEntrada` lista as origens distintas das movimentações de **entrada** que compõem o saldo (ex.: `PEDIDO_FORNECEDOR`, `AJUSTE_MANUAL`). Um saldo pode ter mais de uma origem.
 
 ---
 
@@ -1882,6 +1893,8 @@ Ordenação: `data` decrescente, depois `criadoEm` decrescente.
       "tipo": "Entrada",
       "motivo": "Compra",
       "quantidade": 15,
+      "valorUnitario": 50.00,
+      "valorTotal": 750.00,
       "data": "2026-06-25T14:00:00Z",
       "origem": "PEDIDO_FORNECEDOR",
       "pedidoFornecedorId": "uuid",
@@ -1894,6 +1907,8 @@ Ordenação: `data` decrescente, depois `criadoEm` decrescente.
   "message": null
 }
 ```
+
+`valorUnitario` prioriza o valor do item no pedido ao fornecedor (quando `origem` é `PEDIDO_FORNECEDOR`); caso contrário usa `produto.valor`. `valorTotal` = `quantidade × valorUnitario`.
 
 Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`), do cancelamento de aplicação (`origem: APLICACAO_PACIENTE_CANCELAMENTO`) ou de ajuste manual (`origem: AJUSTE_MANUAL`, `tipo: Entrada`). Saídas vêm de `POST /api/patient-applications` (`origem: APLICACAO_PACIENTE`) ou de perda manual (`origem: PERDA_MANUAL`, `tipo: Saida`). A distinção entre operação automática e manual é feita pelo campo `origem`.
 
@@ -2374,7 +2389,12 @@ interface Product {
   unidadeMedidaNome: string;
   unidadeMedidaSigla: string;
   nome: string;
+  sku: string | null;
+  codigoInterno: string | null;
+  codigoBarras: string | null;
   estoqueMinimo: number;
+  valor: number;
+  controlaEstoque: boolean;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string | null;
@@ -2504,7 +2524,13 @@ interface StockBalance {
   unidadeMedidaSigla: string;
   estoqueMinimo: number;
   saldoAtual: number;
+  /** Último valor de pedido recebido; senão `produto.valor`. */
+  valorUnitario: number | null;
+  /** `saldoAtual × valorUnitario` (0 se sem valor). */
+  valorEstoque: number;
   abaixoDoMinimo: boolean;
+  /** Origens distintas das entradas (ex.: PEDIDO_FORNECEDOR, AJUSTE_MANUAL). */
+  origensEntrada: string[];
 }
 
 interface StockMovement {
@@ -2514,7 +2540,12 @@ interface StockMovement {
   produtoId: string;
   produtoNome: string;
   tipo: 'Entrada' | 'Saida' | 'Ajuste' | 'Perda';
+  motivo: string;
   quantidade: number;
+  /** Valor do item no pedido recebido; senão `produto.valor`. */
+  valorUnitario: number;
+  /** `quantidade × valorUnitario`. */
+  valorTotal: number;
   data: string;
   origem: string;
   pedidoFornecedorId: string | null;

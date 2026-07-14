@@ -23,6 +23,7 @@ internal static class ProductsAuditSerializer
             produto.CodigoInterno,
             produto.CodigoBarras,
             produto.EstoqueMinimo,
+            produto.Valor,
             produto.ControlaEstoque,
             produto.Ativo,
         }, Options);

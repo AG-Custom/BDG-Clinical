@@ -9,6 +9,8 @@ public sealed record StockMovementDto(
     string Tipo,
     string Motivo,
     decimal Quantidade,
+    decimal ValorUnitario,
+    decimal ValorTotal,
     DateTime Data,
     string Origem,
     Guid? PedidoFornecedorId,

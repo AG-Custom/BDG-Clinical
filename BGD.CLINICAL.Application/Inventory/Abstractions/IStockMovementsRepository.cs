@@ -27,4 +27,9 @@ public interface IStockMovementsRepository
         DateTime? dataFim,
         int limit,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<(Guid PedidoId, Guid ProdutoId), decimal>> GetValoresUnitariosPorPedidosAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> pedidoIds,
+        CancellationToken cancellationToken = default);
 }

@@ -15,6 +15,16 @@ internal static class ProductValidation
 
         return null;
     }
+
+    public static string? ValidateValor(decimal valor)
+    {
+        if (valor < 0)
+        {
+            return "O valor do produto não pode ser negativo.";
+        }
+
+        return null;
+    }
 }
 
 internal static class ProductRequestValidator
@@ -25,6 +35,7 @@ internal static class ProductRequestValidator
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku,
         string? codigoInterno,
         string? codigoBarras,
@@ -52,6 +63,12 @@ internal static class ProductRequestValidator
         if (estoqueError is not null)
         {
             return Result<ValidatedProductData>.Failure(estoqueError);
+        }
+
+        var valorError = ProductValidation.ValidateValor(valor);
+        if (valorError is not null)
+        {
+            return Result<ValidatedProductData>.Failure(valorError);
         }
 
         var skuTrimmed = string.IsNullOrWhiteSpace(sku) ? null : sku.Trim();
@@ -106,6 +123,7 @@ internal static class ProductRequestValidator
             unidadeMedidaId,
             nomeTrimmed,
             estoqueMinimo,
+            valor,
             skuTrimmed,
             codigoInternoTrimmed,
             codigoBarrasTrimmed,
@@ -118,6 +136,7 @@ internal sealed record ValidatedProductData(
     Guid UnidadeMedidaId,
     string Nome,
     decimal EstoqueMinimo,
+    decimal Valor,
     string? Sku,
     string? CodigoInterno,
     string? CodigoBarras,
