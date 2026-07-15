@@ -143,7 +143,6 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                 await _stockMovementsRepository.AddRangeAsync(movimentacoes, cancellationToken);
             }
 
-            // Attach application to in-memory collection so saldo helpers see it before save
             compra.Aplicacoes.Add(aplicacao);
             compra.CompleteIfExhausted();
             _patientPurchasesRepository.Update(compra);
