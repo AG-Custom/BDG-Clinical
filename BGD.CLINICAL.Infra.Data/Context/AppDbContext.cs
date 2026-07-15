@@ -38,6 +38,9 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<MovimentacaoEstoque> MovimentacoesEstoque => Set<MovimentacaoEstoque>();
     public DbSet<AplicacaoPaciente> AplicacoesPaciente => Set<AplicacaoPaciente>();
     public DbSet<AplicacaoSintoma> AplicacoesSintomas => Set<AplicacaoSintoma>();
+    public DbSet<Pacote> Pacotes => Set<Pacote>();
+    public DbSet<ItemPacote> ItensPacote => Set<ItemPacote>();
+    public DbSet<CompraPaciente> ComprasPaciente => Set<CompraPaciente>();
     public DbSet<Agendamento> Agendamentos => Set<Agendamento>();
     public DbSet<AgendamentoProcedimento> AgendamentosProcedimento => Set<AgendamentoProcedimento>();
     public DbSet<HorarioFuncionamentoUnidade> HorariosFuncionamentoUnidade => Set<HorarioFuncionamentoUnidade>();
@@ -48,9 +51,6 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Ignore<Pacote>();
-        modelBuilder.Ignore<ItemPacote>();
-        modelBuilder.Ignore<CompraPaciente>();
         modelBuilder.Ignore<FormaPagamento>();
         modelBuilder.Ignore<ContaReceber>();
         modelBuilder.Ignore<PagamentoPaciente>();

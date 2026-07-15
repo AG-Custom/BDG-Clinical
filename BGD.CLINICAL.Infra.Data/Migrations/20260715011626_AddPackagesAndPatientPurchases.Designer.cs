@@ -4,6 +4,7 @@ using BGD.CLINICAL.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BGD.CLINICAL.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260715011626_AddPackagesAndPatientPurchases")]
+    partial class AddPackagesAndPatientPurchases
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -548,6 +551,10 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Property<Guid>("PacoteId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("pacote_id");
+
+                    b.Property<int>("QuantidadeAplicacoes")
+                        .HasColumnType("int")
+                        .HasColumnName("quantidade_aplicacoes");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1584,6 +1591,10 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)")
                         .HasColumnName("nome");
+
+                    b.Property<int>("QuantidadeAplicacoes")
+                        .HasColumnType("int")
+                        .HasColumnName("quantidade_aplicacoes");
 
                     b.Property<decimal>("Valor")
                         .HasPrecision(18, 2)

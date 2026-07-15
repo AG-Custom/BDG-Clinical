@@ -96,7 +96,8 @@ public sealed class CreateAppointmentsService : ICreateAppointmentsService
                 data.DataFim,
                 data.Observacao,
                 data.ExcecaoHorario,
-                _tenantContext.UsuarioId);
+                _tenantContext.UsuarioId,
+                data.CompraPacienteId);
 
             await _appointmentsRepository.AddAsync(agendamento, cancellationToken);
 

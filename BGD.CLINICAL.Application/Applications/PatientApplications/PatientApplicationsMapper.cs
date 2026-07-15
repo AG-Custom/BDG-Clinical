@@ -12,6 +12,7 @@ internal static class PatientApplicationsMapper
             aplicacao.Id,
             aplicacao.PacienteId,
             aplicacao.Paciente?.Nome ?? string.Empty,
+            aplicacao.CompraPacienteId,
             aplicacao.ProdutoId,
             aplicacao.Produto?.Nome,
             aplicacao.ProcedimentoId,

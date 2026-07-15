@@ -1981,9 +1981,88 @@ Desativa ou reativa o procedimento.
 
 ---
 
+---
+
+## 18.5. Pacotes — `/api/packages`
+
+Catálogo comercial de pacotes vendidos aos pacientes (RF017–RF018).
+
+### GET `/api/packages`
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `includeInactive` | `boolean` | `false` | Incluir inativos |
+| `search` | `string` | — | Busca por nome (mín. 2) |
+| `limit` | `number` | — | Máx. 50 |
+
+Permissão auxiliar: `pacote.visualizar` (ou `compra_paciente.criar` / `aplicacao.criar` / `agendamento.criar`).
+
+### GET `/api/packages/{id}`
+
+### POST `/api/packages` — `pacote.criar`
+
+```json
+{
+  "nome": "Pacote Tirzepatida 60mg",
+  "descricao": "12 aplicações",
+  "quantidadeAplicacoes": 12,
+  "valor": 3500.00,
+  "itens": [
+    { "produtoId": "uuid", "quantidadeTotal": 60, "unidadeMedida": "mg" }
+  ]
+}
+```
+
+### PUT `/api/packages/{id}` — `pacote.editar`
+
+Mesmo body do create (substitui itens).
+
+### PATCH `/api/packages/{id}/deactivate` | `/reactivate` — `pacote.editar`
+
+---
+
+## 18.6. Compras de pacote do paciente
+
+### GET `/api/patients/{patientId}/purchases`
+
+| Param | Tipo | Descrição |
+|-------|------|-----------|
+| `status` | `Ativo\|Concluido\|Cancelado\|Vencido` | Filtro opcional |
+
+### GET `/api/patients/{patientId}/purchases/active`
+
+Lista compras ativas (para selects de aplicação/agenda).
+
+### POST `/api/patients/{patientId}/purchases` — `compra_paciente.criar`
+
+```json
+{
+  "pacoteId": "uuid",
+  "unidadeId": "uuid",
+  "dataCompra": "2026-07-14T12:00:00Z",
+  "observacao": null
+}
+```
+
+**Não altera estoque.** Copia `quantidadeAplicacoes` do pacote.
+
+### GET `/api/patient-purchases/{id}`
+
+Inclui `saldo` calculado (aplicações + quantidade por produto).
+
+### GET `/api/patient-purchases/{id}/balance`
+
+### POST `/api/patient-purchases/{id}/cancel` — `compra_paciente.cancelar`
+
+```json
+{ "observacao": "Motivo" }
+```
+
+---
+
 ## 19. Aplicações em Pacientes — `/api/patient-applications`
 
-Registro de aplicações realizadas. **Sempre** informe `procedimentoId` — o produto aplicado é resolvido internamente a partir do procedimento. Ao criar, gera saída(s) de estoque; ao cancelar, estorna todas.
+Registro de aplicações realizadas. **Sempre** informe `procedimentoId` e **`compraPacienteId`**. Ao criar, gera saída(s) de estoque e debita o saldo da compra; ao cancelar, estorna estoque e restaura saldo (pode reabrir compra `Concluido` → `Ativo`).
 
 ### GET `/api/patient-applications`
 
@@ -2008,6 +2087,7 @@ Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unid
 ```json
 {
   "pacienteId": "uuid",
+  "compraPacienteId": "uuid",
   "procedimentoId": "uuid",
   "aplicadorId": "uuid",
   "unidadeId": "uuid",
@@ -2021,6 +2101,7 @@ Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unid
 ```json
 {
   "pacienteId": "uuid",
+  "compraPacienteId": "uuid",
   "procedimentoId": "uuid",
   "aplicadorId": "uuid",
   "unidadeId": "uuid",
@@ -2031,12 +2112,12 @@ Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unid
 | Campo | Obrigatório | Regra |
 |-------|-------------|-------|
 | `pacienteId` | Sim | Paciente ativo no tenant |
+| `compraPacienteId` | Sim | Compra ativa do mesmo paciente, com saldo |
 | `procedimentoId` | Sim | Procedimento ativo |
 | `quantidadeUtilizada` | Se o procedimento tem produto aplicado | &gt; 0; omitir em procedimento só com insumos |
 | `aplicadorId` | Sim | Funcionário aplicador ativo na unidade |
 | `unidadeId` | Sim | Unidade ativa |
 | `dataAplicacao` | Sim | Data/hora |
-| `compraPacienteId` | Não | Só quando o procedimento tem produto aplicado |
 
 **Response 201** — inclui `procedimentoId`, `procedimentoNome`, `itensConsumidos[]`. Gera N saídas (`motivo: Aplicacao`) para produtos com `controlaEstoque = true`.
 
@@ -2104,7 +2185,7 @@ Cria agendamento. `criadoPorId` e `empresaId` vêm do token.
 **Tipos:** `Consulta`, `Retorno`, `Aplicacao`, `Avaliacao`
 
 **Regras:**
-- `procedimentoId` obrigatório quando `tipo = Aplicacao`
+- `procedimentoId` (ou `procedimentoIds`) e `compraPacienteId` obrigatórios quando `tipo = Aplicacao`
 - Valida conflito de horário, bloqueio de agenda e disponibilidade do funcionário (quando configurada)
 - Valida horário de funcionamento da unidade (quando configurado em `/api/units/{unitId}/operating-hours`)
 - Fora do horário da unidade: envie `excecaoHorario: 1` para confirmar o agendamento (o usuário deve aceitar a exceção no front)

@@ -3,10 +3,11 @@ using BGD.CLINICAL.Application.Abstractions.Security;
 using BGD.CLINICAL.Application.Applications.Abstractions;
 using BGD.CLINICAL.Application.Applications.Dtos;
 using BGD.CLINICAL.Application.Common;
+using BGD.CLINICAL.Application.Core.Abstractions;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
+using BGD.CLINICAL.Application.Packages.Abstractions;
 using BGD.CLINICAL.Application.Patients.Abstractions;
-using BGD.CLINICAL.Application.Core.Abstractions;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -24,6 +25,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IPatientApplicationsRepository _patientApplicationsRepository;
+    private readonly IPatientPurchasesRepository _patientPurchasesRepository;
     private readonly IPatientsRepository _patientsRepository;
     private readonly IProductsRepository _productsRepository;
     private readonly IProceduresRepository _proceduresRepository;
@@ -38,6 +40,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
     public CreatePatientApplicationsService(
         ICurrentTenantContext tenantContext,
         IPatientApplicationsRepository patientApplicationsRepository,
+        IPatientPurchasesRepository patientPurchasesRepository,
         IPatientsRepository patientsRepository,
         IProductsRepository productsRepository,
         IProceduresRepository proceduresRepository,
@@ -51,6 +54,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
     {
         _tenantContext = tenantContext;
         _patientApplicationsRepository = patientApplicationsRepository;
+        _patientPurchasesRepository = patientPurchasesRepository;
         _patientsRepository = patientsRepository;
         _productsRepository = productsRepository;
         _proceduresRepository = proceduresRepository;
@@ -80,6 +84,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
             _symptomsRepository,
             _stockBalancesRepository,
             _patientApplicationsRepository,
+            _patientPurchasesRepository,
             cancellationToken);
 
         if (validation.IsFailure)
@@ -90,9 +95,22 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
         try
         {
             var data = validation.Value!;
+            var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                data.CompraPacienteId,
+                empresaId,
+                cancellationToken);
+
+            if (compra is null)
+            {
+                return Result<PatientApplicationDto>.Failure("Compra de pacote não encontrada.");
+            }
+
+            compra.EnsurePodeAplicar(data.PacienteId, data.ProdutoId, data.QuantidadeUtilizada);
+
             var aplicacao = AplicacaoPaciente.CreateRealizada(
                 empresaId,
                 data.PacienteId,
+                data.CompraPacienteId,
                 data.ProdutoId,
                 data.ProcedimentoId,
                 data.AplicadorId,
@@ -124,6 +142,11 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
             {
                 await _stockMovementsRepository.AddRangeAsync(movimentacoes, cancellationToken);
             }
+
+            // Attach application to in-memory collection so saldo helpers see it before save
+            compra.Aplicacoes.Add(aplicacao);
+            compra.CompleteIfExhausted();
+            _patientPurchasesRepository.Update(compra);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -5,6 +5,7 @@ using BGD.CLINICAL.Application.Applications.PatientApplications;
 using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
+using BGD.CLINICAL.Application.Packages.Abstractions;
 using BGD.CLINICAL.Application.Schedules.Abstractions;
 using BGD.CLINICAL.Application.Schedules.Dtos;
 using BGD.CLINICAL.Domain.Entities;
@@ -30,6 +31,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
     private readonly IStockBalancesRepository _stockBalancesRepository;
     private readonly IStockMovementsRepository _stockMovementsRepository;
     private readonly IPatientApplicationsRepository _patientApplicationsRepository;
+    private readonly IPatientPurchasesRepository _patientPurchasesRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -41,6 +43,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         IStockBalancesRepository stockBalancesRepository,
         IStockMovementsRepository stockMovementsRepository,
         IPatientApplicationsRepository patientApplicationsRepository,
+        IPatientPurchasesRepository patientPurchasesRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
@@ -51,6 +54,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         _stockBalancesRepository = stockBalancesRepository;
         _stockMovementsRepository = stockMovementsRepository;
         _patientApplicationsRepository = patientApplicationsRepository;
+        _patientPurchasesRepository = patientPurchasesRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -127,6 +131,12 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         Guid empresaId,
         CancellationToken cancellationToken)
     {
+        if (agendamento.Tipo == TipoAgendamento.Aplicacao
+            && (!agendamento.CompraPacienteId.HasValue || agendamento.CompraPacienteId == Guid.Empty))
+        {
+            return "Informe a compra de pacote no agendamento antes de concluir.";
+        }
+
         var procedimentoIds = agendamento.GetProcedimentoIds();
         if (procedimentoIds.Count == 0)
         {
@@ -152,6 +162,20 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             if (error is not null)
             {
                 return error;
+            }
+        }
+
+        if (agendamento.CompraPacienteId.HasValue)
+        {
+            var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                agendamento.CompraPacienteId.Value,
+                empresaId,
+                cancellationToken);
+
+            if (compra is not null)
+            {
+                compra.CompleteIfExhausted();
+                _patientPurchasesRepository.Update(compra);
             }
         }
 
@@ -282,6 +306,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         var aplicacao = AplicacaoPaciente.CreateRealizada(
             empresaId,
             agendamento.PacienteId,
+            agendamento.CompraPacienteId,
             procedimento.ProdutoAplicadoId,
             procedimento.Id,
             agendamento.FuncionarioId,

@@ -10,6 +10,7 @@ namespace BGD.CLINICAL.Application.Applications.PatientApplications;
 
 internal sealed record ValidatedCreatePatientApplicationData(
     Guid PacienteId,
+    Guid CompraPacienteId,
     Guid? ProdutoId,
     Guid? ProcedimentoId,
     Guid AplicadorId,
@@ -37,11 +38,17 @@ internal static class PatientApplicationRequestValidator
         ISymptomsRepository symptomsRepository,
         IStockBalancesRepository stockBalancesRepository,
         IPatientApplicationsRepository patientApplicationsRepository,
+        BGD.CLINICAL.Application.Packages.Abstractions.IPatientPurchasesRepository patientPurchasesRepository,
         CancellationToken cancellationToken)
     {
         if (request.PacienteId == Guid.Empty)
         {
             return Result<ValidatedCreatePatientApplicationData>.Failure("Informe o paciente.");
+        }
+
+        if (request.CompraPacienteId == Guid.Empty)
+        {
+            return Result<ValidatedCreatePatientApplicationData>.Failure("Informe a compra de pacote do paciente.");
         }
 
         if (request.AplicadorId == Guid.Empty)
@@ -95,6 +102,28 @@ internal static class PatientApplicationRequestValidator
         if (!unidade.Ativo)
         {
             return Result<ValidatedCreatePatientApplicationData>.Failure("A unidade está inativa.");
+        }
+
+        var compra = await patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+            request.CompraPacienteId,
+            empresaId,
+            cancellationToken);
+
+        if (compra is null)
+        {
+            return Result<ValidatedCreatePatientApplicationData>.Failure("Compra de pacote não encontrada.");
+        }
+
+        try
+        {
+            compra.EnsurePodeAplicar(
+                request.PacienteId,
+                null,
+                null);
+        }
+        catch (Domain.Exceptions.DomainException exception)
+        {
+            return Result<ValidatedCreatePatientApplicationData>.Failure(exception.Message);
         }
 
         var aplicador = await employeesRepository.GetByIdAndEmpresaIdAsync(request.AplicadorId, empresaId, cancellationToken);
@@ -158,6 +187,18 @@ internal static class PatientApplicationRequestValidator
                 "Quantidade utilizada não se aplica a procedimentos sem produto aplicado.");
         }
 
+        try
+        {
+            compra.EnsurePodeAplicar(
+                request.PacienteId,
+                produtoIdResolvido,
+                request.QuantidadeUtilizada);
+        }
+        catch (Domain.Exceptions.DomainException exception)
+        {
+            return Result<ValidatedCreatePatientApplicationData>.Failure(exception.Message);
+        }
+
         var productIds = new HashSet<Guid>();
         if (produtoIdResolvido.HasValue)
         {
@@ -203,6 +244,7 @@ internal static class PatientApplicationRequestValidator
 
         return Result<ValidatedCreatePatientApplicationData>.Success(new ValidatedCreatePatientApplicationData(
             request.PacienteId,
+            request.CompraPacienteId,
             produtoIdResolvido,
             procedimentoIdResolvido,
             request.AplicadorId,

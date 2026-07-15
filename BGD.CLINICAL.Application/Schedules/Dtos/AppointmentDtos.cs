@@ -12,6 +12,7 @@ public sealed record AppointmentDto(
     string FuncionarioNome,
     Guid? ProcedimentoId,
     string? ProcedimentoNome,
+    Guid? CompraPacienteId,
     IReadOnlyList<AppointmentProcedureDto> Procedimentos,
     string Tipo,
     string Status,
@@ -37,6 +38,7 @@ public sealed record CreateAppointmentRequest(
     DateTime DataFim,
     Guid? ProcedimentoId = null,
     IReadOnlyList<Guid>? ProcedimentoIds = null,
+    Guid? CompraPacienteId = null,
     string? Observacao = null,
     int ExcecaoHorario = 0);
 
@@ -49,6 +51,7 @@ public sealed record UpdateAppointmentRequest(
     DateTime DataFim,
     Guid? ProcedimentoId = null,
     IReadOnlyList<Guid>? ProcedimentoIds = null,
+    Guid? CompraPacienteId = null,
     string? Observacao = null,
     int ExcecaoHorario = 0);
 
