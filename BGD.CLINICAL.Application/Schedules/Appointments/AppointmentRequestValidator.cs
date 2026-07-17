@@ -13,6 +13,7 @@ internal sealed record ValidatedAppointmentData(
     Guid PacienteId,
     Guid FuncionarioId,
     IReadOnlyList<Guid> ProcedimentoIds,
+    Guid? CompraPacienteId,
     TipoAgendamento Tipo,
     DateTime DataInicio,
     DateTime DataFim,
@@ -48,6 +49,7 @@ internal static class AppointmentRequestValidator
             request.DataInicio,
             request.DataFim,
             procedimentoIdsResult.Value!,
+            request.CompraPacienteId,
             request.Observacao,
             request.ExcecaoHorario != 0,
             excludeAppointmentId,
@@ -87,6 +89,7 @@ internal static class AppointmentRequestValidator
             request.DataInicio,
             request.DataFim,
             procedimentoIdsResult.Value!,
+            request.CompraPacienteId,
             request.Observacao,
             request.ExcecaoHorario != 0,
             appointmentId,
@@ -138,6 +141,7 @@ internal static class AppointmentRequestValidator
         DateTime dataInicio,
         DateTime dataFim,
         IReadOnlyList<Guid> procedimentoIds,
+        Guid? compraPacienteId,
         string? observacao,
         bool excecaoHorario,
         Guid? excludeAppointmentId,
@@ -179,10 +183,27 @@ internal static class AppointmentRequestValidator
             return Result<ValidatedAppointmentData>.Failure("Informe ao menos um procedimento para agendamentos do tipo aplicação.");
         }
 
+        if (tipoAgendamento == TipoAgendamento.Aplicacao
+            && (!compraPacienteId.HasValue || compraPacienteId.Value == Guid.Empty))
+        {
+            return Result<ValidatedAppointmentData>.Failure("Informe a compra de pacote para agendamentos do tipo aplicação.");
+        }
+
         if (tipoAgendamento != TipoAgendamento.Aplicacao && procedimentoIds.Count > 0)
         {
             return Result<ValidatedAppointmentData>.Failure("Procedimento só pode ser informado em agendamentos do tipo aplicação.");
         }
+
+        if (tipoAgendamento != TipoAgendamento.Aplicacao
+            && compraPacienteId.HasValue
+            && compraPacienteId.Value != Guid.Empty)
+        {
+            return Result<ValidatedAppointmentData>.Failure("Compra de pacote só pode ser informada em agendamentos do tipo aplicação.");
+        }
+
+        var resolvedCompraId = tipoAgendamento == TipoAgendamento.Aplicacao
+            ? compraPacienteId
+            : null;
 
         var unidade = await unitsRepository.GetByIdAndEmpresaIdAsync(unidadeId, empresaId, cancellationToken);
         if (unidade is null || !unidade.Ativo)
@@ -268,6 +289,7 @@ internal static class AppointmentRequestValidator
             pacienteId,
             funcionarioId,
             procedimentoIds,
+            resolvedCompraId,
             tipoAgendamento,
             dataInicio,
             dataFim,

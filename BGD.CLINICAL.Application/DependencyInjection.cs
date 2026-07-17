@@ -19,6 +19,8 @@ using BGD.CLINICAL.Application.Inventory.StockBalances;
 using BGD.CLINICAL.Application.Inventory.StockMovements;
 using BGD.CLINICAL.Application.Applications.PatientApplications;
 using BGD.CLINICAL.Application.Applications.Procedures;
+using BGD.CLINICAL.Application.Packages.Packages;
+using BGD.CLINICAL.Application.Packages.PatientPurchases;
 using BGD.CLINICAL.Application.Schedules.Appointments;
 using BGD.CLINICAL.Application.Schedules.UnitOperatingHours;
 using BGD.CLINICAL.Application.Modules.EmployeePermissions;
@@ -140,6 +142,21 @@ public static class DependencyInjection
         services.AddScoped<IUpdateProceduresService, UpdateProceduresService>();
         services.AddScoped<IDeactivateProceduresService, DeactivateProceduresService>();
         services.AddScoped<IReactivateProceduresService, ReactivateProceduresService>();
+
+        services.AddScoped<ICreatePackagesService, CreatePackagesService>();
+        services.AddScoped<IListPackagesService, ListPackagesService>();
+        services.AddScoped<IGetPackagesService, GetPackagesService>();
+        services.AddScoped<IUpdatePackagesService, UpdatePackagesService>();
+        services.AddScoped<IDeactivatePackagesService, DeactivatePackagesService>();
+        services.AddScoped<IReactivatePackagesService, ReactivatePackagesService>();
+
+        services.AddScoped<ICreatePatientPurchasesService, CreatePatientPurchasesService>();
+        services.AddScoped<IListAllPatientPurchasesService, ListAllPatientPurchasesService>();
+        services.AddScoped<IListPatientPurchasesService, ListPatientPurchasesService>();
+        services.AddScoped<IListActivePatientPurchasesService, ListActivePatientPurchasesService>();
+        services.AddScoped<IGetPatientPurchasesService, GetPatientPurchasesService>();
+        services.AddScoped<IGetPatientPurchaseBalanceService, GetPatientPurchaseBalanceService>();
+        services.AddScoped<ICancelPatientPurchasesService, CancelPatientPurchasesService>();
 
         services.AddScoped<ICreateAppointmentsService, CreateAppointmentsService>();
         services.AddScoped<IEmailOutboxEnqueueService, EmailOutboxEnqueueService>();

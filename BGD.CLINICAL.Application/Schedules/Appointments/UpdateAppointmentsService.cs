@@ -103,7 +103,8 @@ public sealed class UpdateAppointmentsService : IUpdateAppointmentsService
                 data.DataInicio,
                 data.DataFim,
                 data.Observacao,
-                data.ExcecaoHorario);
+                data.ExcecaoHorario,
+                data.CompraPacienteId);
 
             _appointmentsRepository.Update(agendamento);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

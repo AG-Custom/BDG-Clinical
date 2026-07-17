@@ -14,6 +14,7 @@ public sealed record PatientApplicationDto(
     Guid Id,
     Guid PacienteId,
     string PacienteNome,
+    Guid? CompraPacienteId,
     Guid? ProdutoId,
     string? ProdutoNome,
     Guid? ProcedimentoId,
@@ -35,6 +36,7 @@ public sealed record PatientApplicationDto(
 
 public sealed record CreatePatientApplicationRequest(
     Guid PacienteId,
+    Guid CompraPacienteId,
     Guid ProcedimentoId,
     Guid AplicadorId,
     Guid UnidadeId,

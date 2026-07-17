@@ -92,4 +92,21 @@ internal static class AuxiliaryPermissionAlternates
         "aplicacao.criar",
         "aplicacao.editar"
     ];
+
+    public static readonly string[] Packages =
+    [
+        "pacote.visualizar",
+        "compra_paciente.criar",
+        "aplicacao.criar",
+        "agendamento.criar"
+    ];
+
+    public static readonly string[] PatientPurchases =
+    [
+        "compra_paciente.visualizar",
+        "aplicacao.criar",
+        "aplicacao.editar",
+        "agendamento.criar",
+        "agendamento.editar"
+    ];
 }

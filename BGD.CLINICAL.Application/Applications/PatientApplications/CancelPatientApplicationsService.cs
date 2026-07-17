@@ -5,6 +5,7 @@ using BGD.CLINICAL.Application.Applications.Dtos;
 using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
+using BGD.CLINICAL.Application.Packages.Abstractions;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -22,6 +23,7 @@ public sealed class CancelPatientApplicationsService : ICancelPatientApplication
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IPatientApplicationsRepository _patientApplicationsRepository;
+    private readonly IPatientPurchasesRepository _patientPurchasesRepository;
     private readonly IStockMovementsRepository _stockMovementsRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
@@ -29,12 +31,14 @@ public sealed class CancelPatientApplicationsService : ICancelPatientApplication
     public CancelPatientApplicationsService(
         ICurrentTenantContext tenantContext,
         IPatientApplicationsRepository patientApplicationsRepository,
+        IPatientPurchasesRepository patientPurchasesRepository,
         IStockMovementsRepository stockMovementsRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
         _tenantContext = tenantContext;
         _patientApplicationsRepository = patientApplicationsRepository;
+        _patientPurchasesRepository = patientPurchasesRepository;
         _stockMovementsRepository = stockMovementsRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
@@ -81,6 +85,20 @@ public sealed class CancelPatientApplicationsService : ICancelPatientApplication
             if (movimentacoesEstorno.Count > 0)
             {
                 await _stockMovementsRepository.AddRangeAsync(movimentacoesEstorno, cancellationToken);
+            }
+
+            if (aplicacao.CompraPacienteId.HasValue)
+            {
+                var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                    aplicacao.CompraPacienteId.Value,
+                    empresaId,
+                    cancellationToken);
+
+                if (compra is not null)
+                {
+                    compra.ReopenIfCompleted();
+                    _patientPurchasesRepository.Update(compra);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

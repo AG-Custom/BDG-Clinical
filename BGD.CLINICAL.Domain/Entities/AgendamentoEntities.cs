@@ -15,6 +15,7 @@ public sealed class Agendamento : AggregateRoot
     public Guid PacienteId { get; private set; }
     public Guid FuncionarioId { get; private set; }
     public Guid? ProcedimentoId { get; private set; }
+    public Guid? CompraPacienteId { get; private set; }
     public TipoAgendamento Tipo { get; private set; }
     public StatusAgendamento Status { get; private set; }
     public DateTime DataInicio { get; private set; }
@@ -30,6 +31,7 @@ public sealed class Agendamento : AggregateRoot
     public Paciente Paciente { get; private set; } = null!;
     public Funcionario Funcionario { get; private set; } = null!;
     public Procedimento? Procedimento { get; private set; }
+    public CompraPaciente? CompraPaciente { get; private set; }
     public Usuario CriadoPor { get; private set; } = null!;
     public Usuario? CanceladoPor { get; private set; }
     public ICollection<AplicacaoPaciente> AplicacoesPaciente { get; private set; } = [];
@@ -46,7 +48,8 @@ public sealed class Agendamento : AggregateRoot
         DateTime dataFim,
         string? observacao,
         bool excecaoHorario,
-        Guid criadoPorId)
+        Guid criadoPorId,
+        Guid? compraPacienteId = null)
     {
         ValidateCore(
             empresaId,
@@ -57,7 +60,8 @@ public sealed class Agendamento : AggregateRoot
             procedimentoIds,
             dataInicio,
             dataFim,
-            criadoPorId);
+            criadoPorId,
+            compraPacienteId);
 
         var agendamento = new Agendamento
         {
@@ -68,6 +72,7 @@ public sealed class Agendamento : AggregateRoot
             PacienteId = pacienteId,
             FuncionarioId = funcionarioId,
             ProcedimentoId = procedimentoIds.Count > 0 ? procedimentoIds[0] : null,
+            CompraPacienteId = compraPacienteId is null || compraPacienteId == Guid.Empty ? null : compraPacienteId,
             Tipo = tipo,
             Status = StatusAgendamento.Agendado,
             DataInicio = dataInicio,
@@ -90,7 +95,8 @@ public sealed class Agendamento : AggregateRoot
         DateTime dataInicio,
         DateTime dataFim,
         string? observacao,
-        bool excecaoHorario)
+        bool excecaoHorario,
+        Guid? compraPacienteId = null)
     {
         EnsureEditable();
 
@@ -103,12 +109,14 @@ public sealed class Agendamento : AggregateRoot
             procedimentoIds,
             dataInicio,
             dataFim,
-            CriadoPorId);
+            CriadoPorId,
+            compraPacienteId);
 
         UnidadeId = unidadeId;
         PacienteId = pacienteId;
         FuncionarioId = funcionarioId;
         ProcedimentoId = procedimentoIds.Count > 0 ? procedimentoIds[0] : null;
+        CompraPacienteId = compraPacienteId is null || compraPacienteId == Guid.Empty ? null : compraPacienteId;
         Tipo = tipo;
         DataInicio = dataInicio;
         DataFim = dataFim;
@@ -231,7 +239,8 @@ public sealed class Agendamento : AggregateRoot
         IReadOnlyList<Guid> procedimentoIds,
         DateTime dataInicio,
         DateTime dataFim,
-        Guid criadoPorId)
+        Guid criadoPorId,
+        Guid? compraPacienteId = null)
     {
         if (empresaId == Guid.Empty)
         {
@@ -273,9 +282,22 @@ public sealed class Agendamento : AggregateRoot
             throw new DomainException("Informe ao menos um procedimento para agendamentos do tipo aplicação.");
         }
 
+        if (tipo == TipoAgendamento.Aplicacao
+            && (!compraPacienteId.HasValue || compraPacienteId.Value == Guid.Empty))
+        {
+            throw new DomainException("Informe a compra de pacote para agendamentos do tipo aplicação.");
+        }
+
         if (tipo != TipoAgendamento.Aplicacao && normalizedProcedimentoIds.Count > 0)
         {
             throw new DomainException("Procedimento só pode ser informado em agendamentos do tipo aplicação.");
+        }
+
+        if (tipo != TipoAgendamento.Aplicacao
+            && compraPacienteId.HasValue
+            && compraPacienteId.Value != Guid.Empty)
+        {
+            throw new DomainException("Compra de pacote só pode ser informada em agendamentos do tipo aplicação.");
         }
 
         if (normalizedProcedimentoIds.Count != procedimentoIds.Count(id => id != Guid.Empty))

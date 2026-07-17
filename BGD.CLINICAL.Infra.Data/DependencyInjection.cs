@@ -6,6 +6,7 @@ using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Application.Applications.Abstractions;
 using BGD.CLINICAL.Application.Modules.Abstractions;
 using BGD.CLINICAL.Application.Notifications.Abstractions;
+using BGD.CLINICAL.Application.Packages.Abstractions;
 using BGD.CLINICAL.Application.Schedules.Abstractions;
 using BGD.CLINICAL.Infra.Data.Context;
 using BGD.CLINICAL.Infra.Data.Repositories;
@@ -15,6 +16,7 @@ using BGD.CLINICAL.Infra.Data.Repositories.Inventory;
 using BGD.CLINICAL.Infra.Data.Repositories.Patients;
 using BGD.CLINICAL.Infra.Data.Repositories.Applications;
 using BGD.CLINICAL.Infra.Data.Repositories.Modules;
+using BGD.CLINICAL.Infra.Data.Repositories.Packages;
 using BGD.CLINICAL.Infra.Data.Services.Permissions;
 using BGD.CLINICAL.Infra.Data.Repositories.Notifications;
 using BGD.CLINICAL.Infra.Data.Repositories.Schedules;
@@ -35,7 +37,11 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlServer(connectionString, sql =>
+                sql.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null)));
 
         services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -57,6 +63,8 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogsService, AuditLogsService>();
         services.AddScoped<IPatientApplicationsRepository, PatientApplicationsRepository>();
         services.AddScoped<IProceduresRepository, ProceduresRepository>();
+        services.AddScoped<IPackagesRepository, PackagesRepository>();
+        services.AddScoped<IPatientPurchasesRepository, PatientPurchasesRepository>();
         services.AddScoped<ISymptomsRepository, SymptomsRepository>();
         services.AddMemoryCache();
         services.AddScoped<IPermissionCatalogRepository, PermissionCatalogRepository>();

@@ -21,6 +21,17 @@ public static class PermissionCatalog
         new("paciente.editar", "Editar paciente", "Pacientes", PermissionModuleCodes.Pacientes, 12),
         new("paciente.excluir", "Excluir paciente", "Pacientes", PermissionModuleCodes.Pacientes, 13),
 
+        // Pacote
+        new("pacote.visualizar", "Visualizar pacotes", "Pacotes", PermissionModuleCodes.Pacientes, 20),
+        new("pacote.criar", "Criar pacote", "Pacotes", PermissionModuleCodes.Pacientes, 21),
+        new("pacote.editar", "Editar pacote", "Pacotes", PermissionModuleCodes.Pacientes, 22),
+        new("pacote.excluir", "Excluir pacote", "Pacotes", PermissionModuleCodes.Pacientes, 23),
+
+        // Compra de pacote
+        new("compra_paciente.visualizar", "Visualizar compras de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 30),
+        new("compra_paciente.criar", "Criar compra de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 31),
+        new("compra_paciente.cancelar", "Cancelar compra de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 32),
+
         // Sintoma
         new("sintoma.visualizar", "Visualizar sintomas", "Sintomas", PermissionModuleCodes.Pacientes, 10),
         new("sintoma.criar", "Criar sintoma", "Sintomas", PermissionModuleCodes.Pacientes, 11),

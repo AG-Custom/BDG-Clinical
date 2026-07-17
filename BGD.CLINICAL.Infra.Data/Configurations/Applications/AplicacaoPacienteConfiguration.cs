@@ -19,6 +19,11 @@ internal sealed class AplicacaoPacienteConfiguration : IEntityTypeConfiguration<
         builder.HasIndex(entity => new { entity.EmpresaId, entity.Cancelada });
         builder.HasOne(entity => entity.Produto).WithMany().HasForeignKey(entity => entity.ProdutoId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
         builder.HasOne(entity => entity.Procedimento).WithMany().HasForeignKey(entity => entity.ProcedimentoId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+        builder.HasOne(entity => entity.CompraPaciente)
+            .WithMany(entity => entity.Aplicacoes)
+            .HasForeignKey(entity => entity.CompraPacienteId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
         builder.HasOne(entity => entity.Funcionario).WithMany().HasForeignKey(entity => entity.FuncionarioId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Unidade).WithMany().HasForeignKey(entity => entity.UnidadeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(entity => entity.Agendamento)
