@@ -143,6 +143,7 @@ public sealed class ProductsRepository : IProductsRepository
 
         return await _context.Produtos
             .AsNoTracking()
+            .Include(produto => produto.TipoProduto)
             .Where(produto => produto.EmpresaId == empresaId
                 && produto.Ativo
                 && ids.Contains(produto.Id))
