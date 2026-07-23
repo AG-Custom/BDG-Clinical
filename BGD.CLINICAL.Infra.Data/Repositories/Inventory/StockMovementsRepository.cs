@@ -43,6 +43,7 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
             .AsNoTracking()
             .Include(movimentacao => movimentacao.Unidade)
             .Include(movimentacao => movimentacao.Produto)
+            .Include(movimentacao => movimentacao.LoteProduto)
             .Where(movimentacao => movimentacao.EmpresaId == empresaId);
 
         if (unidadeId.HasValue)
@@ -85,6 +86,7 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
         return _context.MovimentacoesEstoque
             .Include(movimentacao => movimentacao.Unidade)
             .Include(movimentacao => movimentacao.Produto)
+            .Include(movimentacao => movimentacao.LoteProduto)
             .FirstOrDefaultAsync(
                 movimentacao => movimentacao.Id == id && movimentacao.EmpresaId == empresaId,
                 cancellationToken);

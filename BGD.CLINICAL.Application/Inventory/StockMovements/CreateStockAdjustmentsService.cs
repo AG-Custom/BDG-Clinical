@@ -26,6 +26,7 @@ public sealed class CreateStockAdjustmentsService : ICreateStockAdjustmentsServi
     private readonly IStockBalancesRepository _stockBalancesRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IStockMovementsRepository _stockMovementsRepository;
+    private readonly IMedicationLotStockService _medicationLotStockService;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -36,6 +37,7 @@ public sealed class CreateStockAdjustmentsService : ICreateStockAdjustmentsServi
         IStockBalancesRepository stockBalancesRepository,
         IUsersRepository usersRepository,
         IStockMovementsRepository stockMovementsRepository,
+        IMedicationLotStockService medicationLotStockService,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
@@ -45,6 +47,7 @@ public sealed class CreateStockAdjustmentsService : ICreateStockAdjustmentsServi
         _stockBalancesRepository = stockBalancesRepository;
         _usersRepository = usersRepository;
         _stockMovementsRepository = stockMovementsRepository;
+        _medicationLotStockService = medicationLotStockService;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -55,33 +58,75 @@ public sealed class CreateStockAdjustmentsService : ICreateStockAdjustmentsServi
     {
         var empresaId = _tenantContext.EmpresaId;
 
-        var validation = await StockMovementRequestValidator.ValidateManualAsync(
-            empresaId,
-            _tenantContext.UsuarioId,
-            request,
-            requireAvailableBalance: false,
-            _unitsRepository,
-            _productsRepository,
-            _stockBalancesRepository,
-            _usersRepository,
-            cancellationToken);
-
-        if (validation.IsFailure)
-        {
-            return Result<StockMovementDto>.Failure(validation.Error!);
-        }
-
         try
         {
+            var produto = await _productsRepository.GetByIdAndEmpresaIdAsync(
+                request.ProdutoId,
+                empresaId,
+                cancellationToken);
+
+            if (produto is null || !produto.Ativo)
+            {
+                return Result<StockMovementDto>.Failure("Produto não encontrado ou inativo.");
+            }
+
+            var requiresLot = _medicationLotStockService.RequiresLot(produto);
+
+            var validation = await StockMovementRequestValidator.ValidateManualAsync(
+                empresaId,
+                _tenantContext.UsuarioId,
+                request,
+                requireAvailableBalance: false,
+                requiresLot,
+                _unitsRepository,
+                _productsRepository,
+                _stockBalancesRepository,
+                _usersRepository,
+                cancellationToken);
+
+            if (validation.IsFailure)
+            {
+                return Result<StockMovementDto>.Failure(validation.Error!);
+            }
+
             var data = validation.Value!;
+            decimal quantidade;
+            Guid? loteId = null;
+            decimal? quantidadeEmbalagem = null;
+
+            if (requiresLot)
+            {
+                var entry = await _medicationLotStockService.ResolveEntryAsync(
+                    empresaId,
+                    data.UnidadeId,
+                    produto,
+                    request.QuantidadeEmbalagem!.Value,
+                    request.LoteCodigo!,
+                    request.DataValidade!.Value,
+                    cancellationToken);
+
+                quantidade = entry.QuantidadeEstoque;
+                loteId = entry.Lote.Id;
+                quantidadeEmbalagem = request.QuantidadeEmbalagem;
+            }
+            else
+            {
+                quantidade = request.Quantidade!.Value;
+            }
+
             var movimentacao = MovimentacaoEstoque.CreateAjusteManual(
                 empresaId,
                 data.UnidadeId,
                 data.ProdutoId,
-                data.Quantidade,
+                quantidade,
                 data.Data,
                 data.FuncionarioId,
                 data.Observacao);
+
+            if (loteId.HasValue)
+            {
+                movimentacao.AssignLote(loteId.Value, quantidadeEmbalagem);
+            }
 
             await _stockMovementsRepository.AddAsync(movimentacao, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

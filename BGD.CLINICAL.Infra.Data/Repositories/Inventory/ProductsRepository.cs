@@ -24,6 +24,8 @@ public sealed class ProductsRepository : IProductsRepository
             .AsNoTracking()
             .Include(produto => produto.TipoProduto)
             .Include(produto => produto.UnidadeMedida)
+            .Include(produto => produto.UnidadeEmbalagem)
+            .Include(produto => produto.UnidadeConteudo)
             .Where(produto => produto.EmpresaId == empresaId);
 
         if (tipoProdutoId.HasValue)
@@ -49,6 +51,8 @@ public sealed class ProductsRepository : IProductsRepository
         return _context.Produtos
             .Include(produto => produto.TipoProduto)
             .Include(produto => produto.UnidadeMedida)
+            .Include(produto => produto.UnidadeEmbalagem)
+            .Include(produto => produto.UnidadeConteudo)
             .FirstOrDefaultAsync(
                 produto => produto.Id == id && produto.EmpresaId == empresaId,
                 cancellationToken);
@@ -143,6 +147,7 @@ public sealed class ProductsRepository : IProductsRepository
 
         return await _context.Produtos
             .AsNoTracking()
+            .Include(produto => produto.TipoProduto)
             .Where(produto => produto.EmpresaId == empresaId
                 && produto.Ativo
                 && ids.Contains(produto.Id))

@@ -8,6 +8,7 @@ using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Application.Packages.Abstractions;
 using BGD.CLINICAL.Application.Patients.Abstractions;
+using BGD.CLINICAL.Application.Inventory.StockMovements;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -34,6 +35,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
     private readonly ISymptomsRepository _symptomsRepository;
     private readonly IStockBalancesRepository _stockBalancesRepository;
     private readonly IStockMovementsRepository _stockMovementsRepository;
+    private readonly IMedicationLotStockService _medicationLotStockService;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -49,6 +51,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
         ISymptomsRepository symptomsRepository,
         IStockBalancesRepository stockBalancesRepository,
         IStockMovementsRepository stockMovementsRepository,
+        IMedicationLotStockService medicationLotStockService,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
@@ -63,6 +66,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
         _symptomsRepository = symptomsRepository;
         _stockBalancesRepository = stockBalancesRepository;
         _stockMovementsRepository = stockMovementsRepository;
+        _medicationLotStockService = medicationLotStockService;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -125,17 +129,57 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                 aplicacao.Sintomas.Add(new AplicacaoSintoma(aplicacao.Id, sintomaId));
             }
 
-            var movimentacoes = data.StockLines
-                .Where(line => line.ControlaEstoque)
-                .Select(line => MovimentacaoEstoque.CreateSaidaFromAplicacao(
-                    empresaId,
-                    data.UnidadeId,
-                    line.ProdutoId,
-                    aplicacao.Id,
-                    data.AplicadorId,
-                    line.Quantidade,
-                    data.DataAplicacao))
-                .ToList();
+            var stockLines = data.StockLines.Where(line => line.ControlaEstoque).ToList();
+            var produtosEstoque = await _productsRepository.GetActiveByIdsAndEmpresaIdAsync(
+                empresaId,
+                stockLines.Select(line => line.ProdutoId).Distinct().ToList(),
+                cancellationToken);
+            var produtosPorId = produtosEstoque.ToDictionary(produto => produto.Id);
+
+            var movimentacoes = new List<MovimentacaoEstoque>();
+
+            foreach (var line in stockLines)
+            {
+                if (!produtosPorId.TryGetValue(line.ProdutoId, out var produtoLinha))
+                {
+                    return Result<PatientApplicationDto>.Failure("Produto de estoque não encontrado.");
+                }
+
+                if (_medicationLotStockService.RequiresLot(produtoLinha))
+                {
+                    var alocacoes = await _medicationLotStockService.AllocateFefoAsync(
+                        empresaId,
+                        data.UnidadeId,
+                        produtoLinha,
+                        line.Quantidade,
+                        cancellationToken);
+
+                    foreach (var alocacao in alocacoes)
+                    {
+                        var movimentacao = MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                            empresaId,
+                            data.UnidadeId,
+                            line.ProdutoId,
+                            aplicacao.Id,
+                            data.AplicadorId,
+                            alocacao.Quantidade,
+                            data.DataAplicacao);
+                        movimentacao.AssignLote(alocacao.LoteProdutoId);
+                        movimentacoes.Add(movimentacao);
+                    }
+                }
+                else
+                {
+                    movimentacoes.Add(MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                        empresaId,
+                        data.UnidadeId,
+                        line.ProdutoId,
+                        aplicacao.Id,
+                        data.AplicadorId,
+                        line.Quantidade,
+                        data.DataAplicacao));
+                }
+            }
 
             await _patientApplicationsRepository.AddAsync(aplicacao, cancellationToken);
             if (movimentacoes.Count > 0)

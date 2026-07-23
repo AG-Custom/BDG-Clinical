@@ -210,9 +210,12 @@ public sealed class SupplierOrderController : ControllerBase
 
     [HttpPatch("{id:guid}/receive")]
     [RequirePermission("pedido.aprovar")]
-    public async Task<IActionResult> Receive(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Receive(
+        Guid id,
+        [FromBody] ReceiveSupplierOrderRequest? request,
+        CancellationToken cancellationToken)
     {
-        var result = await _receiveSupplierOrdersService.ExecuteAsync(id, cancellationToken);
+        var result = await _receiveSupplierOrdersService.ExecuteAsync(id, request, cancellationToken);
 
         if (result.IsFailure)
         {

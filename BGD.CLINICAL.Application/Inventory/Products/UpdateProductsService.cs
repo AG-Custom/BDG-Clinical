@@ -22,17 +22,20 @@ public sealed class UpdateProductsService : IUpdateProductsService
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IProductsRepository _productsRepository;
+    private readonly IProductTypesRepository _productTypesRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
     public UpdateProductsService(
         ICurrentTenantContext tenantContext,
         IProductsRepository productsRepository,
+        IProductTypesRepository productTypesRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
         _tenantContext = tenantContext;
         _productsRepository = productsRepository;
+        _productTypesRepository = productTypesRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -61,12 +64,18 @@ public sealed class UpdateProductsService : IUpdateProductsService
             request.UnidadeMedidaId,
             request.Nome,
             request.EstoqueMinimo,
+            request.Valor,
             request.Sku,
             request.CodigoInterno,
             request.CodigoBarras,
             request.ControlaEstoque,
+            request.UnidadeEmbalagemId,
+            request.ConteudoPorEmbalagem,
+            request.UnidadeConteudoId,
+            request.ConcentracaoPorConteudo,
             excludeProductId: id,
             _productsRepository,
+            _productTypesRepository,
             cancellationToken);
 
         if (validation.IsFailure)
@@ -84,10 +93,15 @@ public sealed class UpdateProductsService : IUpdateProductsService
                 data.UnidadeMedidaId,
                 data.Nome,
                 data.EstoqueMinimo,
+                data.Valor,
                 data.Sku,
                 data.CodigoInterno,
                 data.CodigoBarras,
-                data.ControlaEstoque);
+                data.ControlaEstoque,
+                data.UnidadeEmbalagemId,
+                data.ConteudoPorEmbalagem,
+                data.UnidadeConteudoId,
+                data.ConcentracaoPorConteudo);
 
             _productsRepository.Update(produto);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

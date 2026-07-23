@@ -21,6 +21,7 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
     private readonly ITokenService _tokenService;
     private readonly ICompanyModuleLicensesProvisioner _moduleLicensesProvisioner;
     private readonly ICompanyDefaultMeasurementUnitsProvisioner _defaultMeasurementUnitsProvisioner;
+    private readonly ICompanyDefaultProductTypesProvisioner _defaultProductTypesProvisioner;
     private readonly IUnitOfWork _unitOfWork;
 
     public RegisterCompaniesService(
@@ -31,6 +32,7 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
         ITokenService tokenService,
         ICompanyModuleLicensesProvisioner moduleLicensesProvisioner,
         ICompanyDefaultMeasurementUnitsProvisioner defaultMeasurementUnitsProvisioner,
+        ICompanyDefaultProductTypesProvisioner defaultProductTypesProvisioner,
         IUnitOfWork unitOfWork)
     {
         _empresaRepository = empresaRepository;
@@ -40,6 +42,7 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
         _tokenService = tokenService;
         _moduleLicensesProvisioner = moduleLicensesProvisioner;
         _defaultMeasurementUnitsProvisioner = defaultMeasurementUnitsProvisioner;
+        _defaultProductTypesProvisioner = defaultProductTypesProvisioner;
         _unitOfWork = unitOfWork;
     }
 
@@ -110,6 +113,7 @@ public sealed class RegisterCompaniesService : IRegisterCompaniesService
 
         await _moduleLicensesProvisioner.ProvisionAllModulesAsync(empresa.Id, cancellationToken);
         await _defaultMeasurementUnitsProvisioner.ProvisionDefaultMeasurementUnitsAsync(empresa.Id, cancellationToken);
+        await _defaultProductTypesProvisioner.ProvisionDefaultProductTypesAsync(empresa.Id, cancellationToken);
 
         var token = _tokenService.GenerateToken(usuario);
 

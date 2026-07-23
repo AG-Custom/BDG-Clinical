@@ -10,6 +10,7 @@ internal static class ProductTypesMapper
         return new ProductTypeDto(
             tipoProduto.Id,
             tipoProduto.Nome,
+            tipoProduto.Codigo,
             tipoProduto.Ativo,
             tipoProduto.CriadoEm,
             tipoProduto.AtualizadoEm);

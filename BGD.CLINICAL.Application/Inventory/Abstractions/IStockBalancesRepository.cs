@@ -26,4 +26,21 @@ public interface IStockBalancesRepository
         Guid unidadeId,
         Guid produtoId,
         CancellationToken cancellationToken = default);
+
+    Task<decimal> GetSaldoByLoteAsync(
+        Guid empresaId,
+        Guid loteProdutoId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<LotBalanceRow>> ListLotBalancesAsync(
+        Guid empresaId,
+        Guid? unidadeId,
+        Guid? produtoId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<(Guid LoteProdutoId, DateOnly DataValidade, DateTime CriadoEm, decimal Saldo)>> ListLotsWithBalanceFefoAsync(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        CancellationToken cancellationToken = default);
 }

@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IEmployeesRepository, EmployeesRepository>();
         services.AddScoped<IPatientsRepository, PatientsRepository>();
         services.AddScoped<IProductTypesRepository, ProductTypesRepository>();
+        services.AddScoped<IProductLotsRepository, ProductLotsRepository>();
         services.AddScoped<IMeasurementUnitsRepository, MeasurementUnitsRepository>();
         services.AddScoped<IProductsRepository, ProductsRepository>();
         services.AddScoped<ISuppliersRepository, SuppliersRepository>();
@@ -72,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<IUserPermissionsRepository, UserPermissionsRepository>();
         services.AddScoped<ICompanyModuleLicensesProvisioner, CompanyModuleLicensesProvisioner>();
         services.AddScoped<ICompanyDefaultMeasurementUnitsProvisioner, CompanyDefaultMeasurementUnitsProvisioner>();
+        services.AddScoped<ICompanyDefaultProductTypesProvisioner, CompanyDefaultProductTypesProvisioner>();
         services.AddScoped<ISystemModulesRepository, SystemModulesRepository>();
         services.AddScoped<IPermissionChecker, CachedPermissionChecker>();
         services.AddScoped<IPermissionCacheInvalidator, CachedPermissionChecker>();

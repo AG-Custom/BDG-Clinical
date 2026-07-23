@@ -6,6 +6,7 @@ using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Domain.Entities;
 using BGD.CLINICAL.Domain.Enums;
+using BGD.CLINICAL.Domain.Exceptions;
 
 namespace BGD.CLINICAL.Application.Inventory.ProductTypes;
 
@@ -52,9 +53,22 @@ public sealed class DeactivateProductTypesService : IDeactivateProductTypesServi
             return Result<ProductTypeDto>.Failure("Tipo de produto já está inativo.");
         }
 
+        if (tipoProduto.EhTipoSistema)
+        {
+            return Result<ProductTypeDto>.Failure("Tipos de produto padrão do sistema não podem ser excluídos.");
+        }
+
         var dadosAnteriores = ProductTypesAuditSerializer.Serialize(tipoProduto);
 
-        tipoProduto.Deactivate();
+        try
+        {
+            tipoProduto.Deactivate();
+        }
+        catch (DomainException exception)
+        {
+            return Result<ProductTypeDto>.Failure(exception.Message);
+        }
+
         _productTypesRepository.Update(tipoProduto);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -70,16 +70,26 @@ public sealed class CancelPatientApplicationsService : ICancelPatientApplication
                 .Where(movimentacao => movimentacao.Tipo == TipoMovimentacaoEstoque.Saida)
                 .ToList();
 
-            var movimentacoesEstorno = saidas
-                .Select(movimentacao => MovimentacaoEstoque.CreateEntradaFromCancelamentoAplicacao(
+            var movimentacoesEstorno = new List<MovimentacaoEstoque>();
+
+            foreach (var movimentacao in saidas)
+            {
+                var estorno = MovimentacaoEstoque.CreateEntradaFromCancelamentoAplicacao(
                     empresaId,
                     aplicacao.UnidadeId,
                     movimentacao.ProdutoId,
                     aplicacao.Id,
                     aplicacao.FuncionarioId,
                     movimentacao.Quantidade,
-                    dataCancelamento))
-                .ToList();
+                    dataCancelamento);
+
+                if (movimentacao.LoteProdutoId.HasValue)
+                {
+                    estorno.AssignLote(movimentacao.LoteProdutoId.Value);
+                }
+
+                movimentacoesEstorno.Add(estorno);
+            }
 
             _patientApplicationsRepository.Update(aplicacao);
             if (movimentacoesEstorno.Count > 0)

@@ -94,22 +94,26 @@ public sealed class TipoProduto : AggregateRoot
     {
     }
 
-    private TipoProduto(Guid empresaId, string nome)
+    private TipoProduto(Guid empresaId, string nome, string? codigo)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
         Nome = nome;
+        Codigo = codigo;
         Ativo = true;
     }
 
     public Guid EmpresaId { get; private set; }
     public string Nome { get; private set; } = string.Empty;
+    public string? Codigo { get; private set; }
     public bool Ativo { get; private set; }
+
+    public bool EhTipoSistema => !string.IsNullOrWhiteSpace(Codigo);
 
     public Empresa Empresa { get; private set; } = null!;
     public ICollection<Produto> Produtos { get; private set; } = [];
 
-    public static TipoProduto Create(Guid empresaId, string nome)
+    public static TipoProduto Create(Guid empresaId, string nome, string? codigo = null)
     {
         if (empresaId == Guid.Empty)
         {
@@ -121,7 +125,7 @@ public sealed class TipoProduto : AggregateRoot
             throw new DomainException("Informe o nome do tipo de produto.");
         }
 
-        return new TipoProduto(empresaId, nome.Trim());
+        return new TipoProduto(empresaId, nome.Trim(), NormalizeCodigo(codigo));
     }
 
     public void UpdateDetails(string nome)
@@ -135,8 +139,31 @@ public sealed class TipoProduto : AggregateRoot
         AtualizadoEm = DateTime.UtcNow;
     }
 
+    public void AssignSystemCodigo(string codigo)
+    {
+        if (EhTipoSistema)
+        {
+            throw new DomainException("O código do tipo de produto não pode ser alterado.");
+        }
+
+        var normalized = NormalizeCodigo(codigo);
+
+        if (normalized is null)
+        {
+            throw new DomainException("Informe o código do tipo de produto.");
+        }
+
+        Codigo = normalized;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     public void Deactivate()
     {
+        if (EhTipoSistema)
+        {
+            throw new DomainException("Tipos de produto padrão do sistema não podem ser excluídos.");
+        }
+
         Ativo = false;
         AtualizadoEm = DateTime.UtcNow;
     }
@@ -145,6 +172,16 @@ public sealed class TipoProduto : AggregateRoot
     {
         Ativo = true;
         AtualizadoEm = DateTime.UtcNow;
+    }
+
+    private static string? NormalizeCodigo(string? codigo)
+    {
+        if (string.IsNullOrWhiteSpace(codigo))
+        {
+            return null;
+        }
+
+        return codigo.Trim().ToUpperInvariant();
     }
 }
 
@@ -160,10 +197,15 @@ public sealed class Produto : AggregateRoot
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku,
         string? codigoInterno,
         string? codigoBarras,
-        bool controlaEstoque)
+        bool controlaEstoque,
+        Guid? unidadeEmbalagemId,
+        decimal? conteudoPorEmbalagem,
+        Guid? unidadeConteudoId,
+        decimal? concentracaoPorConteudo)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -171,27 +213,50 @@ public sealed class Produto : AggregateRoot
         UnidadeMedidaId = unidadeMedidaId;
         Nome = nome;
         EstoqueMinimo = estoqueMinimo;
+        Valor = valor;
         Sku = sku;
         CodigoInterno = codigoInterno;
         CodigoBarras = codigoBarras;
         ControlaEstoque = controlaEstoque;
+        UnidadeEmbalagemId = unidadeEmbalagemId;
+        ConteudoPorEmbalagem = conteudoPorEmbalagem;
+        UnidadeConteudoId = unidadeConteudoId;
+        ConcentracaoPorConteudo = concentracaoPorConteudo;
         Ativo = true;
     }
 
     public Guid EmpresaId { get; private set; }
     public Guid TipoProdutoId { get; private set; }
     public Guid UnidadeMedidaId { get; private set; }
+    public Guid? UnidadeEmbalagemId { get; private set; }
+    public decimal? ConteudoPorEmbalagem { get; private set; }
+    public Guid? UnidadeConteudoId { get; private set; }
+    public decimal? ConcentracaoPorConteudo { get; private set; }
     public string Nome { get; private set; } = string.Empty;
     public string? Sku { get; private set; }
     public string? CodigoInterno { get; private set; }
     public string? CodigoBarras { get; private set; }
     public decimal EstoqueMinimo { get; private set; }
+    public decimal Valor { get; private set; }
     public bool ControlaEstoque { get; private set; }
     public bool Ativo { get; private set; }
+
+    public decimal? FatorEmbalagemParaEstoque =>
+        ConteudoPorEmbalagem is > 0 && ConcentracaoPorConteudo is > 0
+            ? ConteudoPorEmbalagem.Value * ConcentracaoPorConteudo.Value
+            : null;
+
+    public bool TemConversaoMedicamento =>
+        UnidadeEmbalagemId.HasValue
+        && UnidadeConteudoId.HasValue
+        && ConteudoPorEmbalagem is > 0
+        && ConcentracaoPorConteudo is > 0;
 
     public Empresa Empresa { get; private set; } = null!;
     public TipoProduto TipoProduto { get; private set; } = null!;
     public UnidadeMedida UnidadeMedida { get; private set; } = null!;
+    public UnidadeMedida? UnidadeEmbalagem { get; private set; }
+    public UnidadeMedida? UnidadeConteudo { get; private set; }
 
     public static Produto Create(
         Guid empresaId,
@@ -199,10 +264,15 @@ public sealed class Produto : AggregateRoot
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku = null,
         string? codigoInterno = null,
         string? codigoBarras = null,
-        bool controlaEstoque = true)
+        bool controlaEstoque = true,
+        Guid? unidadeEmbalagemId = null,
+        decimal? conteudoPorEmbalagem = null,
+        Guid? unidadeConteudoId = null,
+        decimal? concentracaoPorConteudo = null)
     {
         if (empresaId == Guid.Empty)
         {
@@ -229,7 +299,18 @@ public sealed class Produto : AggregateRoot
             throw new DomainException("O estoque mínimo não pode ser negativo.");
         }
 
+        if (valor < 0)
+        {
+            throw new DomainException("O valor do produto não pode ser negativo.");
+        }
+
         ValidateOptionalCodes(sku, codigoInterno, codigoBarras);
+        ValidateConversaoMedicamento(
+            unidadeEmbalagemId,
+            conteudoPorEmbalagem,
+            unidadeConteudoId,
+            concentracaoPorConteudo,
+            requireComplete: false);
 
         return new Produto(
             empresaId,
@@ -237,10 +318,15 @@ public sealed class Produto : AggregateRoot
             unidadeMedidaId,
             nome.Trim(),
             estoqueMinimo,
+            valor,
             NormalizeOptionalCode(sku),
             NormalizeOptionalCode(codigoInterno),
             NormalizeOptionalCode(codigoBarras),
-            controlaEstoque);
+            controlaEstoque,
+            unidadeEmbalagemId,
+            conteudoPorEmbalagem,
+            unidadeConteudoId,
+            concentracaoPorConteudo);
     }
 
     public void UpdateDetails(
@@ -248,10 +334,15 @@ public sealed class Produto : AggregateRoot
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku,
         string? codigoInterno,
         string? codigoBarras,
-        bool controlaEstoque)
+        bool controlaEstoque,
+        Guid? unidadeEmbalagemId = null,
+        decimal? conteudoPorEmbalagem = null,
+        Guid? unidadeConteudoId = null,
+        decimal? concentracaoPorConteudo = null)
     {
         if (tipoProdutoId == Guid.Empty)
         {
@@ -273,17 +364,101 @@ public sealed class Produto : AggregateRoot
             throw new DomainException("O estoque mínimo não pode ser negativo.");
         }
 
+        if (valor < 0)
+        {
+            throw new DomainException("O valor do produto não pode ser negativo.");
+        }
+
         ValidateOptionalCodes(sku, codigoInterno, codigoBarras);
+        ValidateConversaoMedicamento(
+            unidadeEmbalagemId,
+            conteudoPorEmbalagem,
+            unidadeConteudoId,
+            concentracaoPorConteudo,
+            requireComplete: false);
 
         TipoProdutoId = tipoProdutoId;
         UnidadeMedidaId = unidadeMedidaId;
         Nome = nome.Trim();
         EstoqueMinimo = estoqueMinimo;
+        Valor = valor;
         Sku = NormalizeOptionalCode(sku);
         CodigoInterno = NormalizeOptionalCode(codigoInterno);
         CodigoBarras = NormalizeOptionalCode(codigoBarras);
         ControlaEstoque = controlaEstoque;
+        UnidadeEmbalagemId = unidadeEmbalagemId;
+        ConteudoPorEmbalagem = conteudoPorEmbalagem;
+        UnidadeConteudoId = unidadeConteudoId;
+        ConcentracaoPorConteudo = concentracaoPorConteudo;
         AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public decimal ConverterEmbalagemParaEstoque(decimal quantidadeEmbalagem)
+    {
+        if (!TemConversaoMedicamento || FatorEmbalagemParaEstoque is null)
+        {
+            throw new DomainException("Produto sem conversão de embalagem para estoque configurada.");
+        }
+
+        if (quantidadeEmbalagem <= 0)
+        {
+            throw new DomainException("A quantidade de embalagem deve ser maior que zero.");
+        }
+
+        return quantidadeEmbalagem * FatorEmbalagemParaEstoque.Value;
+    }
+
+    public static void ValidateConversaoMedicamentoObrigatoria(
+        Guid? unidadeEmbalagemId,
+        decimal? conteudoPorEmbalagem,
+        Guid? unidadeConteudoId,
+        decimal? concentracaoPorConteudo)
+    {
+        ValidateConversaoMedicamento(
+            unidadeEmbalagemId,
+            conteudoPorEmbalagem,
+            unidadeConteudoId,
+            concentracaoPorConteudo,
+            requireComplete: true);
+    }
+
+    private static void ValidateConversaoMedicamento(
+        Guid? unidadeEmbalagemId,
+        decimal? conteudoPorEmbalagem,
+        Guid? unidadeConteudoId,
+        decimal? concentracaoPorConteudo,
+        bool requireComplete)
+    {
+        var hasAny =
+            unidadeEmbalagemId.HasValue
+            || unidadeConteudoId.HasValue
+            || conteudoPorEmbalagem.HasValue
+            || concentracaoPorConteudo.HasValue;
+
+        if (!requireComplete && !hasAny)
+        {
+            return;
+        }
+
+        if (unidadeEmbalagemId is null || unidadeEmbalagemId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade de embalagem do medicamento.");
+        }
+
+        if (unidadeConteudoId is null || unidadeConteudoId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade de conteúdo do medicamento.");
+        }
+
+        if (conteudoPorEmbalagem is null or <= 0)
+        {
+            throw new DomainException("Informe o conteúdo por embalagem maior que zero.");
+        }
+
+        if (concentracaoPorConteudo is null or <= 0)
+        {
+            throw new DomainException("Informe a concentração por conteúdo maior que zero.");
+        }
     }
 
     private static void ValidateOptionalCodes(string? sku, string? codigoInterno, string? codigoBarras)
@@ -319,6 +494,80 @@ public sealed class Produto : AggregateRoot
     {
         Ativo = true;
         AtualizadoEm = DateTime.UtcNow;
+    }
+}
+
+public sealed class LoteProduto : AggregateRoot
+{
+    private LoteProduto()
+    {
+    }
+
+    private LoteProduto(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        string codigo,
+        DateOnly dataValidade)
+        : base(Guid.NewGuid())
+    {
+        EmpresaId = empresaId;
+        UnidadeId = unidadeId;
+        ProdutoId = produtoId;
+        Codigo = codigo;
+        DataValidade = dataValidade;
+        Ativo = true;
+    }
+
+    public Guid EmpresaId { get; private set; }
+    public Guid UnidadeId { get; private set; }
+    public Guid ProdutoId { get; private set; }
+    public string Codigo { get; private set; } = string.Empty;
+    public DateOnly DataValidade { get; private set; }
+    public bool Ativo { get; private set; }
+
+    public Empresa Empresa { get; private set; } = null!;
+    public Unidade Unidade { get; private set; } = null!;
+    public Produto Produto { get; private set; } = null!;
+
+    public static LoteProduto Create(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        string codigo,
+        DateOnly dataValidade)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa do lote.");
+        }
+
+        if (unidadeId == Guid.Empty)
+        {
+            throw new DomainException("Informe a unidade do lote.");
+        }
+
+        if (produtoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o produto do lote.");
+        }
+
+        if (string.IsNullOrWhiteSpace(codigo))
+        {
+            throw new DomainException("Informe o código do lote.");
+        }
+
+        if (codigo.Trim().Length > 80)
+        {
+            throw new DomainException("O código do lote deve ter no máximo 80 caracteres.");
+        }
+
+        return new LoteProduto(
+            empresaId,
+            unidadeId,
+            produtoId,
+            codigo.Trim(),
+            dataValidade);
     }
 }
 
@@ -837,9 +1086,11 @@ public sealed class MovimentacaoEstoque : AggregateRoot
     public Guid EmpresaId { get; private set; }
     public Guid UnidadeId { get; private set; }
     public Guid ProdutoId { get; private set; }
+    public Guid? LoteProdutoId { get; private set; }
     public TipoMovimentacaoEstoque Tipo { get; private set; }
     public MotivoMovimentacaoEstoque Motivo { get; private set; }
     public decimal Quantidade { get; private set; }
+    public decimal? QuantidadeEmbalagem { get; private set; }
     public DateTime Data { get; private set; }
     public string Origem { get; private set; } = string.Empty;
     public Guid? FuncionarioId { get; private set; }
@@ -850,9 +1101,26 @@ public sealed class MovimentacaoEstoque : AggregateRoot
     public Empresa Empresa { get; private set; } = null!;
     public Unidade Unidade { get; private set; } = null!;
     public Produto Produto { get; private set; } = null!;
+    public LoteProduto? LoteProduto { get; private set; }
     public Funcionario? Funcionario { get; private set; }
     public AplicacaoPaciente? AplicacaoPaciente { get; private set; }
     public PedidoFornecedor? PedidoFornecedor { get; private set; }
+
+    public void AssignLote(Guid loteProdutoId, decimal? quantidadeEmbalagem = null)
+    {
+        if (loteProdutoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o lote da movimentação.");
+        }
+
+        if (quantidadeEmbalagem is <= 0)
+        {
+            throw new DomainException("A quantidade de embalagem deve ser maior que zero.");
+        }
+
+        LoteProdutoId = loteProdutoId;
+        QuantidadeEmbalagem = quantidadeEmbalagem;
+    }
 
     public static MovimentacaoEstoque CreateEntradaFromPedido(
         Guid empresaId,

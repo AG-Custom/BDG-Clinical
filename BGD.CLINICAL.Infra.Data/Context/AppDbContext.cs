@@ -27,6 +27,7 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<PacienteUnidade> PacientesUnidade => Set<PacienteUnidade>();
     public DbSet<Sintoma> Sintomas => Set<Sintoma>();
     public DbSet<Produto> Produtos => Set<Produto>();
+    public DbSet<LoteProduto> LotesProduto => Set<LoteProduto>();
     public DbSet<UnidadeMedida> UnidadesMedida => Set<UnidadeMedida>();
     public DbSet<TipoProduto> TiposProduto => Set<TipoProduto>();
     public DbSet<Fornecedor> Fornecedores => Set<Fornecedor>();

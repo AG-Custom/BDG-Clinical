@@ -1,6 +1,9 @@
 using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Dtos;
+using BGD.CLINICAL.Domain.Constants;
+using BGD.CLINICAL.Domain.Entities;
+using BGD.CLINICAL.Domain.Exceptions;
 
 namespace BGD.CLINICAL.Application.Inventory.Products;
 
@@ -15,6 +18,16 @@ internal static class ProductValidation
 
         return null;
     }
+
+    public static string? ValidateValor(decimal valor)
+    {
+        if (valor < 0)
+        {
+            return "O valor do produto não pode ser negativo.";
+        }
+
+        return null;
+    }
 }
 
 internal static class ProductRequestValidator
@@ -25,12 +38,18 @@ internal static class ProductRequestValidator
         Guid unidadeMedidaId,
         string nome,
         decimal estoqueMinimo,
+        decimal valor,
         string? sku,
         string? codigoInterno,
         string? codigoBarras,
         bool controlaEstoque,
+        Guid? unidadeEmbalagemId,
+        decimal? conteudoPorEmbalagem,
+        Guid? unidadeConteudoId,
+        decimal? concentracaoPorConteudo,
         Guid? excludeProductId,
         IProductsRepository productsRepository,
+        IProductTypesRepository productTypesRepository,
         CancellationToken cancellationToken)
     {
         if (tipoProdutoId == Guid.Empty)
@@ -54,6 +73,12 @@ internal static class ProductRequestValidator
             return Result<ValidatedProductData>.Failure(estoqueError);
         }
 
+        var valorError = ProductValidation.ValidateValor(valor);
+        if (valorError is not null)
+        {
+            return Result<ValidatedProductData>.Failure(valorError);
+        }
+
         var skuTrimmed = string.IsNullOrWhiteSpace(sku) ? null : sku.Trim();
         var codigoInternoTrimmed = string.IsNullOrWhiteSpace(codigoInterno) ? null : codigoInterno.Trim();
         var codigoBarrasTrimmed = string.IsNullOrWhiteSpace(codigoBarras) ? null : codigoBarras.Trim();
@@ -73,7 +98,12 @@ internal static class ProductRequestValidator
             return Result<ValidatedProductData>.Failure("O código de barras deve ter no máximo 50 caracteres.");
         }
 
-        if (!await productsRepository.ExistsActiveTipoProdutoInEmpresaAsync(tipoProdutoId, empresaId, cancellationToken))
+        var tipoProduto = await productTypesRepository.GetByIdAndEmpresaIdAsync(
+            tipoProdutoId,
+            empresaId,
+            cancellationToken);
+
+        if (tipoProduto is null || !tipoProduto.Ativo)
         {
             return Result<ValidatedProductData>.Failure("Tipo de produto não encontrado.");
         }
@@ -81,6 +111,49 @@ internal static class ProductRequestValidator
         if (!await productsRepository.ExistsActiveUnidadeMedidaInEmpresaAsync(unidadeMedidaId, empresaId, cancellationToken))
         {
             return Result<ValidatedProductData>.Failure("Unidade de medida não encontrada.");
+        }
+
+        var isMedicamento = tipoProduto.Codigo == ProductTypeCodes.Medicamento;
+        Guid? embalagemId = null;
+        Guid? conteudoId = null;
+        decimal? conteudoPorEmb = null;
+        decimal? concentracao = null;
+
+        if (isMedicamento)
+        {
+            try
+            {
+                Produto.ValidateConversaoMedicamentoObrigatoria(
+                    unidadeEmbalagemId,
+                    conteudoPorEmbalagem,
+                    unidadeConteudoId,
+                    concentracaoPorConteudo);
+            }
+            catch (DomainException exception)
+            {
+                return Result<ValidatedProductData>.Failure(exception.Message);
+            }
+
+            embalagemId = unidadeEmbalagemId;
+            conteudoId = unidadeConteudoId;
+            conteudoPorEmb = conteudoPorEmbalagem;
+            concentracao = concentracaoPorConteudo;
+
+            if (!await productsRepository.ExistsActiveUnidadeMedidaInEmpresaAsync(
+                    embalagemId!.Value,
+                    empresaId,
+                    cancellationToken))
+            {
+                return Result<ValidatedProductData>.Failure("Unidade de embalagem não encontrada.");
+            }
+
+            if (!await productsRepository.ExistsActiveUnidadeMedidaInEmpresaAsync(
+                    conteudoId!.Value,
+                    empresaId,
+                    cancellationToken))
+            {
+                return Result<ValidatedProductData>.Failure("Unidade de conteúdo não encontrada.");
+            }
         }
 
         var nomeTrimmed = nome.Trim();
@@ -106,10 +179,15 @@ internal static class ProductRequestValidator
             unidadeMedidaId,
             nomeTrimmed,
             estoqueMinimo,
+            valor,
             skuTrimmed,
             codigoInternoTrimmed,
             codigoBarrasTrimmed,
-            controlaEstoque));
+            controlaEstoque,
+            embalagemId,
+            conteudoPorEmb,
+            conteudoId,
+            concentracao));
     }
 }
 
@@ -118,7 +196,12 @@ internal sealed record ValidatedProductData(
     Guid UnidadeMedidaId,
     string Nome,
     decimal EstoqueMinimo,
+    decimal Valor,
     string? Sku,
     string? CodigoInterno,
     string? CodigoBarras,
-    bool ControlaEstoque);
+    bool ControlaEstoque,
+    Guid? UnidadeEmbalagemId,
+    decimal? ConteudoPorEmbalagem,
+    Guid? UnidadeConteudoId,
+    decimal? ConcentracaoPorConteudo);
