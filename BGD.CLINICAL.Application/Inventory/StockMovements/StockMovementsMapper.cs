@@ -27,7 +27,7 @@ internal static class StockMovementsMapper
             movimentacao.Tipo.ToString(),
             movimentacao.Motivo.ToString(),
             movimentacao.Quantidade,
-            movimentacao.QuantidadeEmbalagem,
+            movimentacao.QuantidadeEmbalagem ?? 0,
             valorUnitario,
             valorTotal,
             movimentacao.Data,
