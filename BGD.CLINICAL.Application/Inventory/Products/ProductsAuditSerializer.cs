@@ -25,6 +25,10 @@ internal static class ProductsAuditSerializer
             produto.EstoqueMinimo,
             produto.Valor,
             produto.ControlaEstoque,
+            produto.UnidadeEmbalagemId,
+            produto.ConteudoPorEmbalagem,
+            produto.UnidadeConteudoId,
+            produto.ConcentracaoPorConteudo,
             produto.Ativo,
         }, Options);
     }

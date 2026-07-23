@@ -1,6 +1,9 @@
 using BGD.CLINICAL.Application.Common;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Application.Inventory.Dtos;
+using BGD.CLINICAL.Domain.Constants;
+using BGD.CLINICAL.Domain.Entities;
+using BGD.CLINICAL.Domain.Exceptions;
 
 namespace BGD.CLINICAL.Application.Inventory.Products;
 
@@ -40,8 +43,13 @@ internal static class ProductRequestValidator
         string? codigoInterno,
         string? codigoBarras,
         bool controlaEstoque,
+        Guid? unidadeEmbalagemId,
+        decimal? conteudoPorEmbalagem,
+        Guid? unidadeConteudoId,
+        decimal? concentracaoPorConteudo,
         Guid? excludeProductId,
         IProductsRepository productsRepository,
+        IProductTypesRepository productTypesRepository,
         CancellationToken cancellationToken)
     {
         if (tipoProdutoId == Guid.Empty)
@@ -90,7 +98,12 @@ internal static class ProductRequestValidator
             return Result<ValidatedProductData>.Failure("O código de barras deve ter no máximo 50 caracteres.");
         }
 
-        if (!await productsRepository.ExistsActiveTipoProdutoInEmpresaAsync(tipoProdutoId, empresaId, cancellationToken))
+        var tipoProduto = await productTypesRepository.GetByIdAndEmpresaIdAsync(
+            tipoProdutoId,
+            empresaId,
+            cancellationToken);
+
+        if (tipoProduto is null || !tipoProduto.Ativo)
         {
             return Result<ValidatedProductData>.Failure("Tipo de produto não encontrado.");
         }
@@ -98,6 +111,49 @@ internal static class ProductRequestValidator
         if (!await productsRepository.ExistsActiveUnidadeMedidaInEmpresaAsync(unidadeMedidaId, empresaId, cancellationToken))
         {
             return Result<ValidatedProductData>.Failure("Unidade de medida não encontrada.");
+        }
+
+        var isMedicamento = tipoProduto.Codigo == ProductTypeCodes.Medicamento;
+        Guid? embalagemId = null;
+        Guid? conteudoId = null;
+        decimal? conteudoPorEmb = null;
+        decimal? concentracao = null;
+
+        if (isMedicamento)
+        {
+            try
+            {
+                Produto.ValidateConversaoMedicamentoObrigatoria(
+                    unidadeEmbalagemId,
+                    conteudoPorEmbalagem,
+                    unidadeConteudoId,
+                    concentracaoPorConteudo);
+            }
+            catch (DomainException exception)
+            {
+                return Result<ValidatedProductData>.Failure(exception.Message);
+            }
+
+            embalagemId = unidadeEmbalagemId;
+            conteudoId = unidadeConteudoId;
+            conteudoPorEmb = conteudoPorEmbalagem;
+            concentracao = concentracaoPorConteudo;
+
+            if (!await productsRepository.ExistsActiveUnidadeMedidaInEmpresaAsync(
+                    embalagemId!.Value,
+                    empresaId,
+                    cancellationToken))
+            {
+                return Result<ValidatedProductData>.Failure("Unidade de embalagem não encontrada.");
+            }
+
+            if (!await productsRepository.ExistsActiveUnidadeMedidaInEmpresaAsync(
+                    conteudoId!.Value,
+                    empresaId,
+                    cancellationToken))
+            {
+                return Result<ValidatedProductData>.Failure("Unidade de conteúdo não encontrada.");
+            }
         }
 
         var nomeTrimmed = nome.Trim();
@@ -127,7 +183,11 @@ internal static class ProductRequestValidator
             skuTrimmed,
             codigoInternoTrimmed,
             codigoBarrasTrimmed,
-            controlaEstoque));
+            controlaEstoque,
+            embalagemId,
+            conteudoPorEmb,
+            conteudoId,
+            concentracao));
     }
 }
 
@@ -140,4 +200,8 @@ internal sealed record ValidatedProductData(
     string? Sku,
     string? CodigoInterno,
     string? CodigoBarras,
-    bool ControlaEstoque);
+    bool ControlaEstoque,
+    Guid? UnidadeEmbalagemId,
+    decimal? ConteudoPorEmbalagem,
+    Guid? UnidadeConteudoId,
+    decimal? ConcentracaoPorConteudo);

@@ -42,9 +42,15 @@ using (var scope = app.Services.CreateScope())
     var systemModulesRepository = scope.ServiceProvider.GetRequiredService<ISystemModulesRepository>();
     var moduleLicensesProvisioner = scope.ServiceProvider.GetRequiredService<ICompanyModuleLicensesProvisioner>();
     var measurementUnitsProvisioner = scope.ServiceProvider.GetRequiredService<ICompanyDefaultMeasurementUnitsProvisioner>();
+    var productTypesProvisioner = scope.ServiceProvider.GetRequiredService<ICompanyDefaultProductTypesProvisioner>();
     var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
     await PermissionSeeder.SeedAsync(catalogRepository, unitOfWork);
-    await ModuleSeeder.SeedAsync(systemModulesRepository, moduleLicensesProvisioner, measurementUnitsProvisioner, unitOfWork);
+    await ModuleSeeder.SeedAsync(
+        systemModulesRepository,
+        moduleLicensesProvisioner,
+        measurementUnitsProvisioner,
+        productTypesProvisioner,
+        unitOfWork);
 }
 
 app.MapOpenApi();

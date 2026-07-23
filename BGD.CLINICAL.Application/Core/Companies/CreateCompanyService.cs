@@ -30,6 +30,7 @@ public sealed class CreateCompanyService : ICreateCompanyService
     private readonly ITokenService _tokenService;
     private readonly ICompanyModuleLicensesProvisioner _moduleLicensesProvisioner;
     private readonly ICompanyDefaultMeasurementUnitsProvisioner _defaultMeasurementUnitsProvisioner;
+    private readonly ICompanyDefaultProductTypesProvisioner _defaultProductTypesProvisioner;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateCompanyService(
@@ -40,6 +41,7 @@ public sealed class CreateCompanyService : ICreateCompanyService
         ITokenService tokenService,
         ICompanyModuleLicensesProvisioner moduleLicensesProvisioner,
         ICompanyDefaultMeasurementUnitsProvisioner defaultMeasurementUnitsProvisioner,
+        ICompanyDefaultProductTypesProvisioner defaultProductTypesProvisioner,
         IUnitOfWork unitOfWork)
     {
         _tenantContext = tenantContext;
@@ -49,6 +51,7 @@ public sealed class CreateCompanyService : ICreateCompanyService
         _tokenService = tokenService;
         _moduleLicensesProvisioner = moduleLicensesProvisioner;
         _defaultMeasurementUnitsProvisioner = defaultMeasurementUnitsProvisioner;
+        _defaultProductTypesProvisioner = defaultProductTypesProvisioner;
         _unitOfWork = unitOfWork;
     }
 
@@ -127,6 +130,7 @@ public sealed class CreateCompanyService : ICreateCompanyService
 
         await _moduleLicensesProvisioner.ProvisionAllModulesAsync(empresa.Id, cancellationToken);
         await _defaultMeasurementUnitsProvisioner.ProvisionDefaultMeasurementUnitsAsync(empresa.Id, cancellationToken);
+        await _defaultProductTypesProvisioner.ProvisionDefaultProductTypesAsync(empresa.Id, cancellationToken);
 
         var token = _tokenService.GenerateToken(novoUsuario);
 

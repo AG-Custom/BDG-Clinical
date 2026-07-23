@@ -4,9 +4,19 @@ public sealed record ProductDto(
     Guid Id,
     Guid TipoProdutoId,
     string TipoProdutoNome,
+    string? TipoProdutoCodigo,
     Guid UnidadeMedidaId,
     string UnidadeMedidaNome,
     string UnidadeMedidaSigla,
+    Guid? UnidadeEmbalagemId,
+    string? UnidadeEmbalagemNome,
+    string? UnidadeEmbalagemSigla,
+    decimal? ConteudoPorEmbalagem,
+    Guid? UnidadeConteudoId,
+    string? UnidadeConteudoNome,
+    string? UnidadeConteudoSigla,
+    decimal? ConcentracaoPorConteudo,
+    decimal? FatorEmbalagemParaEstoque,
     string Nome,
     string? Sku,
     string? CodigoInterno,
@@ -27,7 +37,11 @@ public sealed record CreateProductRequest(
     string? Sku = null,
     string? CodigoInterno = null,
     string? CodigoBarras = null,
-    bool ControlaEstoque = true);
+    bool ControlaEstoque = true,
+    Guid? UnidadeEmbalagemId = null,
+    decimal? ConteudoPorEmbalagem = null,
+    Guid? UnidadeConteudoId = null,
+    decimal? ConcentracaoPorConteudo = null);
 
 public sealed record UpdateProductRequest(
     Guid TipoProdutoId,
@@ -38,4 +52,8 @@ public sealed record UpdateProductRequest(
     string? Sku = null,
     string? CodigoInterno = null,
     string? CodigoBarras = null,
-    bool ControlaEstoque = true);
+    bool ControlaEstoque = true,
+    Guid? UnidadeEmbalagemId = null,
+    decimal? ConteudoPorEmbalagem = null,
+    Guid? UnidadeConteudoId = null,
+    decimal? ConcentracaoPorConteudo = null);

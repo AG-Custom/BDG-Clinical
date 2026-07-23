@@ -13,7 +13,7 @@ namespace BGD.CLINICAL.Application.Inventory.StockMovements;
 
 public interface ICreateStockLossesService
 {
-    Task<Result<StockMovementDto>> ExecuteAsync(
+    Task<Result<IReadOnlyList<StockMovementDto>>> ExecuteAsync(
         CreateManualStockMovementRequest request,
         CancellationToken cancellationToken = default);
 }
@@ -26,6 +26,7 @@ public sealed class CreateStockLossesService : ICreateStockLossesService
     private readonly IStockBalancesRepository _stockBalancesRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IStockMovementsRepository _stockMovementsRepository;
+    private readonly IMedicationLotStockService _medicationLotStockService;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -36,6 +37,7 @@ public sealed class CreateStockLossesService : ICreateStockLossesService
         IStockBalancesRepository stockBalancesRepository,
         IUsersRepository usersRepository,
         IStockMovementsRepository stockMovementsRepository,
+        IMedicationLotStockService medicationLotStockService,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
@@ -45,67 +47,116 @@ public sealed class CreateStockLossesService : ICreateStockLossesService
         _stockBalancesRepository = stockBalancesRepository;
         _usersRepository = usersRepository;
         _stockMovementsRepository = stockMovementsRepository;
+        _medicationLotStockService = medicationLotStockService;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<StockMovementDto>> ExecuteAsync(
+    public async Task<Result<IReadOnlyList<StockMovementDto>>> ExecuteAsync(
         CreateManualStockMovementRequest request,
         CancellationToken cancellationToken = default)
     {
         var empresaId = _tenantContext.EmpresaId;
 
-        var validation = await StockMovementRequestValidator.ValidateManualAsync(
-            empresaId,
-            _tenantContext.UsuarioId,
-            request,
-            requireAvailableBalance: true,
-            _unitsRepository,
-            _productsRepository,
-            _stockBalancesRepository,
-            _usersRepository,
-            cancellationToken);
-
-        if (validation.IsFailure)
-        {
-            return Result<StockMovementDto>.Failure(validation.Error!);
-        }
-
         try
         {
-            var data = validation.Value!;
-            var movimentacao = MovimentacaoEstoque.CreatePerdaManual(
-                empresaId,
-                data.UnidadeId,
-                data.ProdutoId,
-                data.Quantidade,
-                data.Data,
-                data.FuncionarioId,
-                data.Observacao);
-
-            await _stockMovementsRepository.AddAsync(movimentacao, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            await _auditLogsService.RegisterEntityChangeAsync(
-                empresaId,
-                _tenantContext.UsuarioId,
-                nameof(MovimentacaoEstoque),
-                movimentacao.Id,
-                AcaoAuditoria.GerarMovimentacao,
-                dadosNovos: StockMovementsAuditSerializer.Serialize(movimentacao),
-                cancellationToken: cancellationToken);
-
-            var persisted = await _stockMovementsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-                movimentacao.Id,
+            var produto = await _productsRepository.GetByIdAndEmpresaIdAsync(
+                request.ProdutoId,
                 empresaId,
                 cancellationToken);
 
-            return Result<StockMovementDto>.Success(
-                StockMovementsMapper.Map(persisted ?? movimentacao));
+            if (produto is null || !produto.Ativo)
+            {
+                return Result<IReadOnlyList<StockMovementDto>>.Failure("Produto não encontrado ou inativo.");
+            }
+
+            var requiresLot = _medicationLotStockService.RequiresLot(produto);
+
+            var validation = await StockMovementRequestValidator.ValidateManualAsync(
+                empresaId,
+                _tenantContext.UsuarioId,
+                request,
+                requireAvailableBalance: true,
+                requiresLotForEntry: false,
+                _unitsRepository,
+                _productsRepository,
+                _stockBalancesRepository,
+                _usersRepository,
+                cancellationToken);
+
+            if (validation.IsFailure)
+            {
+                return Result<IReadOnlyList<StockMovementDto>>.Failure(validation.Error!);
+            }
+
+            var data = validation.Value!;
+            var quantidade = request.Quantidade!.Value;
+            var movimentacoes = new List<MovimentacaoEstoque>();
+
+            if (requiresLot)
+            {
+                var alocacoes = await _medicationLotStockService.AllocateFefoAsync(
+                    empresaId,
+                    data.UnidadeId,
+                    produto,
+                    quantidade,
+                    cancellationToken);
+
+                foreach (var alocacao in alocacoes)
+                {
+                    var movimentacao = MovimentacaoEstoque.CreatePerdaManual(
+                        empresaId,
+                        data.UnidadeId,
+                        data.ProdutoId,
+                        alocacao.Quantidade,
+                        data.Data,
+                        data.FuncionarioId,
+                        data.Observacao);
+                    movimentacao.AssignLote(alocacao.LoteProdutoId);
+                    movimentacoes.Add(movimentacao);
+                }
+            }
+            else
+            {
+                movimentacoes.Add(MovimentacaoEstoque.CreatePerdaManual(
+                    empresaId,
+                    data.UnidadeId,
+                    data.ProdutoId,
+                    quantidade,
+                    data.Data,
+                    data.FuncionarioId,
+                    data.Observacao));
+            }
+
+            await _stockMovementsRepository.AddRangeAsync(movimentacoes, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var dtos = new List<StockMovementDto>();
+
+            foreach (var movimentacao in movimentacoes)
+            {
+                await _auditLogsService.RegisterEntityChangeAsync(
+                    empresaId,
+                    _tenantContext.UsuarioId,
+                    nameof(MovimentacaoEstoque),
+                    movimentacao.Id,
+                    AcaoAuditoria.GerarMovimentacao,
+                    dadosNovos: StockMovementsAuditSerializer.Serialize(movimentacao),
+                    cancellationToken: cancellationToken);
+
+                var persisted = await _stockMovementsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                    movimentacao.Id,
+                    empresaId,
+                    cancellationToken);
+
+                dtos.Add(StockMovementsMapper.Map(persisted ?? movimentacao));
+            }
+
+            return Result<IReadOnlyList<StockMovementDto>>.Success(dtos);
         }
         catch (DomainException exception)
         {
-            return Result<StockMovementDto>.Failure(exception.Message);
+            return Result<IReadOnlyList<StockMovementDto>>.Failure(exception.Message);
         }
     }
 }

@@ -10,6 +10,7 @@ public static class ModuleSeeder
         ISystemModulesRepository repository,
         ICompanyModuleLicensesProvisioner moduleLicensesProvisioner,
         ICompanyDefaultMeasurementUnitsProvisioner measurementUnitsProvisioner,
+        ICompanyDefaultProductTypesProvisioner productTypesProvisioner,
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken = default)
     {
@@ -22,5 +23,6 @@ public static class ModuleSeeder
 
         await moduleLicensesProvisioner.BackfillAllCompaniesAsync(cancellationToken);
         await measurementUnitsProvisioner.BackfillAllCompaniesAsync(cancellationToken);
+        await productTypesProvisioner.BackfillAllCompaniesAsync(cancellationToken);
     }
 }

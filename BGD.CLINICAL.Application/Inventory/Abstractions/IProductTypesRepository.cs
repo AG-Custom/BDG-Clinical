@@ -20,6 +20,16 @@ public interface IProductTypesRepository
         Guid? excludeId,
         CancellationToken cancellationToken = default);
 
+    Task<bool> ExistsByCodigoAsync(
+        Guid empresaId,
+        string codigo,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TipoProduto>> ListByExactNomeWithoutCodigoAsync(
+        Guid empresaId,
+        string nome,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsActiveByIdAndEmpresaIdAsync(
         Guid id,
         Guid empresaId,

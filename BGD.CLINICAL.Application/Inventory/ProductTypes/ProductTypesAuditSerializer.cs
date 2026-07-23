@@ -17,6 +17,7 @@ internal static class ProductTypesAuditSerializer
             tipoProduto.Id,
             tipoProduto.EmpresaId,
             tipoProduto.Nome,
+            tipoProduto.Codigo,
             tipoProduto.Ativo,
         }, Options);
     }

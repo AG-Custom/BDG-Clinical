@@ -1,5 +1,4 @@
 ﻿using BGD.CLINICAL.Domain.Entities;
-using BGD.CLINICAL.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,7 +16,12 @@ internal sealed class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.Property(entity => entity.CodigoBarras).HasMaxLength(50);
         builder.Property(entity => entity.EstoqueMinimo).HasPrecision(18, 4);
         builder.Property(entity => entity.Valor).HasPrecision(18, 2);
+        builder.Property(entity => entity.Valor).HasPrecision(18, 2);
+        builder.Property(entity => entity.ConteudoPorEmbalagem).HasPrecision(18, 4);
+        builder.Property(entity => entity.ConcentracaoPorConteudo).HasPrecision(18, 4);
         builder.Property(entity => entity.ControlaEstoque).HasDefaultValue(true);
+        builder.Ignore(entity => entity.FatorEmbalagemParaEstoque);
+        builder.Ignore(entity => entity.TemConversaoMedicamento);
         builder.HasOne(entity => entity.Empresa)
             .WithMany()
             .HasForeignKey(entity => entity.EmpresaId)
@@ -29,6 +33,14 @@ internal sealed class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.HasOne(entity => entity.UnidadeMedida)
             .WithMany(entity => entity.Produtos)
             .HasForeignKey(entity => entity.UnidadeMedidaId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.UnidadeEmbalagem)
+            .WithMany()
+            .HasForeignKey(entity => entity.UnidadeEmbalagemId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.UnidadeConteudo)
+            .WithMany()
+            .HasForeignKey(entity => entity.UnidadeConteudoId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(entity => new { entity.EmpresaId, entity.Nome }).IsUnique();
         builder.HasIndex(entity => new { entity.EmpresaId, entity.Sku })

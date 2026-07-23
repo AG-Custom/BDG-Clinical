@@ -21,17 +21,20 @@ public sealed class CreateProductsService : ICreateProductsService
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IProductsRepository _productsRepository;
+    private readonly IProductTypesRepository _productTypesRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateProductsService(
         ICurrentTenantContext tenantContext,
         IProductsRepository productsRepository,
+        IProductTypesRepository productTypesRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
         _tenantContext = tenantContext;
         _productsRepository = productsRepository;
+        _productTypesRepository = productTypesRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -53,8 +56,13 @@ public sealed class CreateProductsService : ICreateProductsService
             request.CodigoInterno,
             request.CodigoBarras,
             request.ControlaEstoque,
+            request.UnidadeEmbalagemId,
+            request.ConteudoPorEmbalagem,
+            request.UnidadeConteudoId,
+            request.ConcentracaoPorConteudo,
             excludeProductId: null,
             _productsRepository,
+            _productTypesRepository,
             cancellationToken);
 
         if (validation.IsFailure)
@@ -75,7 +83,11 @@ public sealed class CreateProductsService : ICreateProductsService
                 data.Sku,
                 data.CodigoInterno,
                 data.CodigoBarras,
-                data.ControlaEstoque);
+                data.ControlaEstoque,
+                data.UnidadeEmbalagemId,
+                data.ConteudoPorEmbalagem,
+                data.UnidadeConteudoId,
+                data.ConcentracaoPorConteudo);
 
             await _productsRepository.AddAsync(produto, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

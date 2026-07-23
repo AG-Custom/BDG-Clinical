@@ -59,6 +59,34 @@ public sealed class ProductTypesRepository : IProductTypesRepository
             cancellationToken);
     }
 
+    public Task<bool> ExistsByCodigoAsync(
+        Guid empresaId,
+        string codigo,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedCodigo = codigo.Trim().ToUpperInvariant();
+
+        return _context.TiposProduto.AnyAsync(
+            tipo => tipo.EmpresaId == empresaId
+                && tipo.Codigo != null
+                && tipo.Codigo == normalizedCodigo,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<TipoProduto>> ListByExactNomeWithoutCodigoAsync(
+        Guid empresaId,
+        string nome,
+        CancellationToken cancellationToken = default)
+    {
+        var tipos = await _context.TiposProduto
+            .Where(tipo => tipo.EmpresaId == empresaId && tipo.Codigo == null)
+            .ToListAsync(cancellationToken);
+
+        return tipos
+            .Where(tipo => string.Equals(tipo.Nome, nome, StringComparison.Ordinal))
+            .ToList();
+    }
+
     public Task<bool> ExistsActiveByIdAndEmpresaIdAsync(
         Guid id,
         Guid empresaId,
