@@ -1,3 +1,4 @@
+using BGD.CLINICAL.Application.Inventory;
 using BGD.CLINICAL.Application.Inventory.Abstractions;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Infra.Data.Context;
@@ -79,7 +80,7 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 UnidadeMedidaSigla = unidadeMedida.Sigla,
                 produto.EstoqueMinimo,
                 balance.SaldoAtual,
-                ValorUnitario =
+                ValorEmbalagemOuPedido =
                     _context.ItensPedidoFornecedor
                         .AsNoTracking()
                         .Where(item =>
@@ -90,7 +91,9 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                         .ThenByDescending(item => item.PedidoFornecedor.AtualizadoEm)
                         .Select(item => (decimal?)item.ValorUnitario)
                         .FirstOrDefault()
-                    ?? produto.Valor
+                    ?? produto.Valor,
+                produto.ConteudoPorEmbalagem,
+                produto.ConcentracaoPorConteudo
             };
 
         if (abaixoDoMinimo == true)
@@ -141,18 +144,28 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                     .ToList());
 
         return rows
-            .Select(row => new StockBalanceRow(
-                row.UnidadeId,
-                row.UnidadeNome,
-                row.ProdutoId,
-                row.ProdutoNome,
-                row.UnidadeMedidaSigla,
-                row.EstoqueMinimo,
-                row.SaldoAtual,
-                row.ValorUnitario,
-                origensPorChave.TryGetValue((row.UnidadeId, row.ProdutoId), out var origens)
-                    ? origens
-                    : Array.Empty<string>()))
+            .Select(row =>
+            {
+                var fator = ProductStockValuation.ResolveFatorEmbalagemParaEstoque(
+                    row.ConteudoPorEmbalagem,
+                    row.ConcentracaoPorConteudo);
+                var valorUnitario = ProductStockValuation.ResolveValorPorUnidadeEstoque(
+                    row.ValorEmbalagemOuPedido,
+                    fator);
+
+                return new StockBalanceRow(
+                    row.UnidadeId,
+                    row.UnidadeNome,
+                    row.ProdutoId,
+                    row.ProdutoNome,
+                    row.UnidadeMedidaSigla,
+                    row.EstoqueMinimo,
+                    row.SaldoAtual,
+                    valorUnitario,
+                    origensPorChave.TryGetValue((row.UnidadeId, row.ProdutoId), out var origens)
+                        ? origens
+                        : Array.Empty<string>());
+            })
             .ToList();
     }
 

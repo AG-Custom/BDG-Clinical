@@ -1,3 +1,4 @@
+using BGD.CLINICAL.Application.Inventory;
 using BGD.CLINICAL.Application.Inventory.Dtos;
 using BGD.CLINICAL.Domain.Entities;
 
@@ -51,14 +52,22 @@ internal static class StockMovementsMapper
         MovimentacaoEstoque movimentacao,
         IReadOnlyDictionary<(Guid PedidoId, Guid ProdutoId), decimal>? valoresPedido)
     {
+        decimal valorEmbalagemOuCadastro;
+
         if (
             movimentacao.PedidoFornecedorId is Guid pedidoId
             && valoresPedido is not null
             && valoresPedido.TryGetValue((pedidoId, movimentacao.ProdutoId), out var valorPedido))
         {
-            return valorPedido;
+            valorEmbalagemOuCadastro = valorPedido;
+        }
+        else
+        {
+            valorEmbalagemOuCadastro = movimentacao.Produto?.Valor ?? 0m;
         }
 
-        return movimentacao.Produto?.Valor ?? 0m;
+        return ProductStockValuation.ResolveValorPorUnidadeEstoque(
+            valorEmbalagemOuCadastro,
+            movimentacao.Produto?.FatorEmbalagemParaEstoque);
     }
 }
