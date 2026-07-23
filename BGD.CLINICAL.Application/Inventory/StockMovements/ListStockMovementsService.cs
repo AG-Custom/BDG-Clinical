@@ -69,6 +69,18 @@ public sealed class ListStockMovementsService : IListStockMovementsService
             limitResult.Value!,
             cancellationToken);
 
-        return Result<IReadOnlyList<StockMovementDto>>.Success(StockMovementsMapper.Map(movimentacoes));
+        var pedidoIds = movimentacoes
+            .Where(movimentacao => movimentacao.PedidoFornecedorId.HasValue)
+            .Select(movimentacao => movimentacao.PedidoFornecedorId!.Value)
+            .Distinct()
+            .ToList();
+
+        var valoresPedido = await _stockMovementsRepository.GetValoresUnitariosPorPedidosAsync(
+            _tenantContext.EmpresaId,
+            pedidoIds,
+            cancellationToken);
+
+        return Result<IReadOnlyList<StockMovementDto>>.Success(
+            StockMovementsMapper.Map(movimentacoes, valoresPedido));
     }
 }

@@ -8,7 +8,8 @@ public sealed record StockBalanceRow(
     string UnidadeMedidaSigla,
     decimal EstoqueMinimo,
     decimal SaldoAtual,
-    decimal? ValorUnitario);
+    decimal? ValorUnitario,
+    IReadOnlyList<string> OrigensEntrada);
 
 public interface IStockBalancesRepository
 {

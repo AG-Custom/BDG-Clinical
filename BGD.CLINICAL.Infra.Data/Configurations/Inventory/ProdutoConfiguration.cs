@@ -16,6 +16,7 @@ internal sealed class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.Property(entity => entity.CodigoBarras).HasMaxLength(50);
         builder.Property(entity => entity.EstoqueMinimo).HasPrecision(18, 4);
         builder.Property(entity => entity.Valor).HasPrecision(18, 2);
+        builder.Property(entity => entity.Valor).HasPrecision(18, 2);
         builder.Property(entity => entity.ConteudoPorEmbalagem).HasPrecision(18, 4);
         builder.Property(entity => entity.ConcentracaoPorConteudo).HasPrecision(18, 4);
         builder.Property(entity => entity.ControlaEstoque).HasDefaultValue(true);

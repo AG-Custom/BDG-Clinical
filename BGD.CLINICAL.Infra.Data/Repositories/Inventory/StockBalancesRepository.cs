@@ -79,16 +79,18 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 UnidadeMedidaSigla = unidadeMedida.Sigla,
                 produto.EstoqueMinimo,
                 balance.SaldoAtual,
-                ValorUnitario = _context.ItensPedidoFornecedor
-                    .AsNoTracking()
-                    .Where(item =>
-                        item.ProdutoId == balance.ProdutoId
-                        && item.PedidoFornecedor.EmpresaId == empresaId
-                        && item.PedidoFornecedor.Status == StatusPedidoFornecedor.RecebidoPelaUnidade)
-                    .OrderByDescending(item => item.PedidoFornecedor.DataPedido)
-                    .ThenByDescending(item => item.PedidoFornecedor.AtualizadoEm)
-                    .Select(item => (decimal?)item.ValorUnitario)
-                    .FirstOrDefault()
+                ValorUnitario =
+                    _context.ItensPedidoFornecedor
+                        .AsNoTracking()
+                        .Where(item =>
+                            item.ProdutoId == balance.ProdutoId
+                            && item.PedidoFornecedor.EmpresaId == empresaId
+                            && item.PedidoFornecedor.Status == StatusPedidoFornecedor.RecebidoPelaUnidade)
+                        .OrderByDescending(item => item.PedidoFornecedor.DataPedido)
+                        .ThenByDescending(item => item.PedidoFornecedor.AtualizadoEm)
+                        .Select(item => (decimal?)item.ValorUnitario)
+                        .FirstOrDefault()
+                    ?? produto.Valor
             };
 
         if (abaixoDoMinimo == true)
@@ -104,6 +106,40 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
             ? await orderedQuery.Take(limit.Value).ToListAsync(cancellationToken)
             : await orderedQuery.ToListAsync(cancellationToken);
 
+        if (rows.Count == 0)
+        {
+            return Array.Empty<StockBalanceRow>();
+        }
+
+        var unidadeIds = rows.Select(row => row.UnidadeId).Distinct().ToList();
+        var produtoIds = rows.Select(row => row.ProdutoId).Distinct().ToList();
+
+        var origensEntrada = await _context.MovimentacoesEstoque
+            .AsNoTracking()
+            .Where(movimentacao =>
+                movimentacao.EmpresaId == empresaId
+                && unidadeIds.Contains(movimentacao.UnidadeId)
+                && produtoIds.Contains(movimentacao.ProdutoId)
+                && movimentacao.Tipo == TipoMovimentacaoEstoque.Entrada)
+            .Select(movimentacao => new
+            {
+                movimentacao.UnidadeId,
+                movimentacao.ProdutoId,
+                movimentacao.Origem
+            })
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var origensPorChave = origensEntrada
+            .GroupBy(item => (item.UnidadeId, item.ProdutoId))
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<string>)group
+                    .Select(item => item.Origem)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(origem => origem, StringComparer.Ordinal)
+                    .ToList());
+
         return rows
             .Select(row => new StockBalanceRow(
                 row.UnidadeId,
@@ -113,7 +149,10 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 row.UnidadeMedidaSigla,
                 row.EstoqueMinimo,
                 row.SaldoAtual,
-                row.ValorUnitario))
+                row.ValorUnitario,
+                origensPorChave.TryGetValue((row.UnidadeId, row.ProdutoId), out var origens)
+                    ? origens
+                    : Array.Empty<string>()))
             .ToList();
     }
 

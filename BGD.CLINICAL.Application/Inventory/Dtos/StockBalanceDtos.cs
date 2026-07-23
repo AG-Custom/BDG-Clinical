@@ -10,4 +10,5 @@ public sealed record StockBalanceDto(
     decimal SaldoAtual,
     decimal? ValorUnitario,
     decimal ValorEstoque,
-    bool AbaixoDoMinimo);
+    bool AbaixoDoMinimo,
+    IReadOnlyList<string> OrigensEntrada);

@@ -4,6 +4,7 @@ using BGD.CLINICAL.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BGD.CLINICAL.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260714163458_AddProductValor")]
+    partial class AddProductValor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,10 +39,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Property<Guid?>("CanceladoPorId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("cancelado_por_id");
-
-                    b.Property<Guid?>("CompraPacienteId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("compra_paciente_id");
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2")
@@ -108,9 +107,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
                     b.HasIndex("CanceladoPorId")
                         .HasDatabaseName("ix_agendamento_cancelado_por_id");
-
-                    b.HasIndex("CompraPacienteId")
-                        .HasDatabaseName("ix_agendamento_compra_paciente_id");
 
                     b.HasIndex("CriadoPorId")
                         .HasDatabaseName("ix_agendamento_criado_por_id");
@@ -248,10 +244,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("cancelada");
 
-                    b.Property<Guid?>("CompraPacienteId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("compra_paciente_id");
-
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2")
                         .HasColumnName("criado_em");
@@ -308,9 +300,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
                     b.HasIndex("AgendamentoId")
                         .HasDatabaseName("ix_aplicacao_paciente_agendamento_id");
-
-                    b.HasIndex("CompraPacienteId")
-                        .HasDatabaseName("ix_aplicacao_paciente_compra_paciente_id");
 
                     b.HasIndex("FuncionarioId")
                         .HasDatabaseName("ix_aplicacao_paciente_funcionario_id");
@@ -511,70 +500,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasDatabaseName("ix_cargo_permissao_item_cargo_id_permission_key");
 
                     b.ToTable("cargo_permissao_item", (string)null);
-                });
-
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CompraPaciente", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("AtualizadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("atualizado_em");
-
-                    b.Property<DateTime>("CriadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("criado_em");
-
-                    b.Property<DateTime>("DataCompra")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("data_compra");
-
-                    b.Property<Guid>("EmpresaId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("empresa_id");
-
-                    b.Property<string>("Observacao")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)")
-                        .HasColumnName("observacao");
-
-                    b.Property<Guid>("PacienteId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("paciente_id");
-
-                    b.Property<Guid>("PacoteId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("pacote_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("status");
-
-                    b.Property<Guid>("UnidadeId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("unidade_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_compra_paciente");
-
-                    b.HasIndex("PacienteId")
-                        .HasDatabaseName("ix_compra_paciente_paciente_id");
-
-                    b.HasIndex("PacoteId")
-                        .HasDatabaseName("ix_compra_paciente_pacote_id");
-
-                    b.HasIndex("UnidadeId")
-                        .HasDatabaseName("ix_compra_paciente_unidade_id");
-
-                    b.HasIndex("EmpresaId", "PacienteId", "Status")
-                        .HasDatabaseName("ix_compra_paciente_empresa_id_paciente_id_status");
-
-                    b.ToTable("compra_paciente", (string)null);
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ConvitePrimeiroAcesso", b =>
@@ -963,53 +888,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.ToTable("horario_funcionamento_unidade", (string)null);
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ItemPacote", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("AtualizadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("atualizado_em");
-
-                    b.Property<DateTime>("CriadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("criado_em");
-
-                    b.Property<Guid>("PacoteId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("pacote_id");
-
-                    b.Property<Guid>("ProdutoId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("produto_id");
-
-                    b.Property<decimal>("QuantidadeTotal")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)")
-                        .HasColumnName("quantidade_total");
-
-                    b.Property<string>("UnidadeMedida")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .HasColumnName("unidade_medida");
-
-                    b.HasKey("Id")
-                        .HasName("pk_item_pacote");
-
-                    b.HasIndex("ProdutoId")
-                        .HasDatabaseName("ix_item_pacote_produto_id");
-
-                    b.HasIndex("PacoteId", "ProdutoId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_item_pacote_pacote_id_produto_id");
-
-                    b.ToTable("item_pacote", (string)null);
-                });
-
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ItemPedidoFornecedor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1227,63 +1105,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.ToTable("log_auditoria", (string)null);
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.LoteProduto", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("bit")
-                        .HasColumnName("ativo");
-
-                    b.Property<DateTime?>("AtualizadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("atualizado_em");
-
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)")
-                        .HasColumnName("codigo");
-
-                    b.Property<DateTime>("CriadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("criado_em");
-
-                    b.Property<DateOnly>("DataValidade")
-                        .HasColumnType("date")
-                        .HasColumnName("data_validade");
-
-                    b.Property<Guid>("EmpresaId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("empresa_id");
-
-                    b.Property<Guid>("ProdutoId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("produto_id");
-
-                    b.Property<Guid>("UnidadeId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("unidade_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_lote_produto");
-
-                    b.HasIndex("ProdutoId")
-                        .HasDatabaseName("ix_lote_produto_produto_id");
-
-                    b.HasIndex("UnidadeId")
-                        .HasDatabaseName("ix_lote_produto_unidade_id");
-
-                    b.HasIndex("EmpresaId", "UnidadeId", "ProdutoId", "Codigo")
-                        .IsUnique()
-                        .HasDatabaseName("ix_lote_produto_empresa_id_unidade_id_produto_id_codigo");
-
-                    b.ToTable("lote_produto", (string)null);
-                });
-
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ModuloSistema", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1361,10 +1182,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("funcionario_id");
 
-                    b.Property<Guid?>("LoteProdutoId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("lote_produto_id");
-
                     b.Property<string>("Motivo")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -1395,11 +1212,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("decimal(18,4)")
                         .HasColumnName("quantidade");
 
-                    b.Property<decimal?>("QuantidadeEmbalagem")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)")
-                        .HasColumnName("quantidade_embalagem");
-
                     b.Property<string>("Tipo")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -1419,9 +1231,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.HasIndex("FuncionarioId")
                         .HasDatabaseName("ix_movimentacao_estoque_funcionario_id");
 
-                    b.HasIndex("LoteProdutoId")
-                        .HasDatabaseName("ix_movimentacao_estoque_lote_produto_id");
-
                     b.HasIndex("PedidoFornecedorId")
                         .HasDatabaseName("ix_movimentacao_estoque_pedido_fornecedor_id");
 
@@ -1430,9 +1239,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
                     b.HasIndex("UnidadeId")
                         .HasDatabaseName("ix_movimentacao_estoque_unidade_id");
-
-                    b.HasIndex("EmpresaId", "LoteProdutoId")
-                        .HasDatabaseName("ix_movimentacao_estoque_empresa_id_lote_produto_id");
 
                     b.HasIndex("EmpresaId", "UnidadeId", "ProdutoId", "Data")
                         .HasDatabaseName("ix_movimentacao_estoque_empresa_id_unidade_id_produto_id_data");
@@ -1621,55 +1427,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasDatabaseName("ix_paciente_unidade_paciente_id_unidade_id");
 
                     b.ToTable("paciente_unidade", (string)null);
-                });
-
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Pacote", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("bit")
-                        .HasColumnName("ativo");
-
-                    b.Property<DateTime?>("AtualizadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("atualizado_em");
-
-                    b.Property<DateTime>("CriadoEm")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("criado_em");
-
-                    b.Property<string>("Descricao")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("descricao");
-
-                    b.Property<Guid>("EmpresaId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("empresa_id");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)")
-                        .HasColumnName("nome");
-
-                    b.Property<decimal>("Valor")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("valor");
-
-                    b.HasKey("Id")
-                        .HasName("pk_pacote");
-
-                    b.HasIndex("EmpresaId", "Nome")
-                        .IsUnique()
-                        .HasDatabaseName("ix_pacote_empresa_id_nome");
-
-                    b.ToTable("pacote", (string)null);
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", b =>
@@ -1874,16 +1631,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("codigo_interno");
 
-                    b.Property<decimal?>("ConcentracaoPorConteudo")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)")
-                        .HasColumnName("concentracao_por_conteudo");
-
-                    b.Property<decimal?>("ConteudoPorEmbalagem")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)")
-                        .HasColumnName("conteudo_por_embalagem");
-
                     b.Property<bool>("ControlaEstoque")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -1918,14 +1665,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("tipo_produto_id");
 
-                    b.Property<Guid?>("UnidadeConteudoId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("unidade_conteudo_id");
-
-                    b.Property<Guid?>("UnidadeEmbalagemId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("unidade_embalagem_id");
-
                     b.Property<Guid>("UnidadeMedidaId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("unidade_medida_id");
@@ -1940,12 +1679,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
                     b.HasIndex("TipoProdutoId")
                         .HasDatabaseName("ix_produto_tipo_produto_id");
-
-                    b.HasIndex("UnidadeConteudoId")
-                        .HasDatabaseName("ix_produto_unidade_conteudo_id");
-
-                    b.HasIndex("UnidadeEmbalagemId")
-                        .HasDatabaseName("ix_produto_unidade_embalagem_id");
 
                     b.HasIndex("UnidadeMedidaId")
                         .HasDatabaseName("ix_produto_unidade_medida_id");
@@ -2021,11 +1754,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("atualizado_em");
 
-                    b.Property<string>("Codigo")
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("codigo");
-
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2")
                         .HasColumnName("criado_em");
@@ -2042,11 +1770,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_tipo_produto");
-
-                    b.HasIndex("EmpresaId", "Codigo")
-                        .IsUnique()
-                        .HasDatabaseName("ix_tipo_produto_empresa_id_codigo")
-                        .HasFilter("[codigo] IS NOT NULL");
 
                     b.HasIndex("EmpresaId", "Nome")
                         .IsUnique()
@@ -2288,12 +2011,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_agendamento_usuario_cancelado_por_id");
 
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.CompraPaciente", "CompraPaciente")
-                        .WithMany("Agendamentos")
-                        .HasForeignKey("CompraPacienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_agendamento_compra_paciente_compra_paciente_id");
-
                     b.HasOne("BGD.CLINICAL.Domain.Entities.Usuario", "CriadoPor")
                         .WithMany()
                         .HasForeignKey("CriadoPorId")
@@ -2336,8 +2053,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasConstraintName("fk_agendamento_unidade_unidade_id");
 
                     b.Navigation("CanceladoPor");
-
-                    b.Navigation("CompraPaciente");
 
                     b.Navigation("CriadoPor");
 
@@ -2393,12 +2108,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_aplicacao_paciente_agendamento_agendamento_id");
 
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.CompraPaciente", "CompraPaciente")
-                        .WithMany("Aplicacoes")
-                        .HasForeignKey("CompraPacienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_aplicacao_paciente_compra_paciente_compra_paciente_id");
-
                     b.HasOne("BGD.CLINICAL.Domain.Entities.Empresa", "Empresa")
                         .WithMany()
                         .HasForeignKey("EmpresaId")
@@ -2440,8 +2149,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasConstraintName("fk_aplicacao_paciente_unidade_unidade_id");
 
                     b.Navigation("Agendamento");
-
-                    b.Navigation("CompraPaciente");
 
                     b.Navigation("Empresa");
 
@@ -2538,45 +2245,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasConstraintName("fk_cargo_permissao_item_cargo_cargo_id");
 
                     b.Navigation("Cargo");
-                });
-
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CompraPaciente", b =>
-                {
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Empresa", "Empresa")
-                        .WithMany()
-                        .HasForeignKey("EmpresaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_compra_paciente_empresa_empresa_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Paciente", "Paciente")
-                        .WithMany()
-                        .HasForeignKey("PacienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_compra_paciente_paciente_paciente_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Pacote", "Pacote")
-                        .WithMany("Compras")
-                        .HasForeignKey("PacoteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_compra_paciente_pacote_pacote_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Unidade", "Unidade")
-                        .WithMany()
-                        .HasForeignKey("UnidadeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_compra_paciente_unidade_unidade_id");
-
-                    b.Navigation("Empresa");
-
-                    b.Navigation("Paciente");
-
-                    b.Navigation("Pacote");
-
-                    b.Navigation("Unidade");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ConvitePrimeiroAcesso", b =>
@@ -2690,27 +2358,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Unidade");
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ItemPacote", b =>
-                {
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Pacote", "Pacote")
-                        .WithMany("Itens")
-                        .HasForeignKey("PacoteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_item_pacote_pacote_pacote_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Produto", "Produto")
-                        .WithMany()
-                        .HasForeignKey("ProdutoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_item_pacote_produto_produto_id");
-
-                    b.Navigation("Pacote");
-
-                    b.Navigation("Produto");
-                });
-
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.ItemPedidoFornecedor", b =>
                 {
                     b.HasOne("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", "PedidoFornecedor")
@@ -2795,36 +2442,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.LoteProduto", b =>
-                {
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Empresa", "Empresa")
-                        .WithMany()
-                        .HasForeignKey("EmpresaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_lote_produto_empresa_empresa_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Produto", "Produto")
-                        .WithMany()
-                        .HasForeignKey("ProdutoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_lote_produto_produto_produto_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Unidade", "Unidade")
-                        .WithMany()
-                        .HasForeignKey("UnidadeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_lote_produto_unidade_unidade_id");
-
-                    b.Navigation("Empresa");
-
-                    b.Navigation("Produto");
-
-                    b.Navigation("Unidade");
-                });
-
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.MovimentacaoEstoque", b =>
                 {
                     b.HasOne("BGD.CLINICAL.Domain.Entities.AplicacaoPaciente", "AplicacaoPaciente")
@@ -2845,12 +2462,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasForeignKey("FuncionarioId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_movimentacao_estoque_funcionario_funcionario_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.LoteProduto", "LoteProduto")
-                        .WithMany()
-                        .HasForeignKey("LoteProdutoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_movimentacao_estoque_lote_produto_lote_produto_id");
 
                     b.HasOne("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", "PedidoFornecedor")
                         .WithMany()
@@ -2877,8 +2488,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Empresa");
 
                     b.Navigation("Funcionario");
-
-                    b.Navigation("LoteProduto");
 
                     b.Navigation("PedidoFornecedor");
 
@@ -2982,18 +2591,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Unidade");
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Pacote", b =>
-                {
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.Empresa", "Empresa")
-                        .WithMany()
-                        .HasForeignKey("EmpresaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_pacote_empresa_empresa_id");
-
-                    b.Navigation("Empresa");
-                });
-
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", b =>
                 {
                     b.HasOne("BGD.CLINICAL.Domain.Entities.Empresa", "Empresa")
@@ -3060,18 +2657,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_produto_tipo_produto_tipo_produto_id");
 
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.UnidadeMedida", "UnidadeConteudo")
-                        .WithMany()
-                        .HasForeignKey("UnidadeConteudoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_produto_unidade_medida_unidade_conteudo_id");
-
-                    b.HasOne("BGD.CLINICAL.Domain.Entities.UnidadeMedida", "UnidadeEmbalagem")
-                        .WithMany()
-                        .HasForeignKey("UnidadeEmbalagemId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_produto_unidade_medida_unidade_embalagem_id");
-
                     b.HasOne("BGD.CLINICAL.Domain.Entities.UnidadeMedida", "UnidadeMedida")
                         .WithMany("Produtos")
                         .HasForeignKey("UnidadeMedidaId")
@@ -3082,10 +2667,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Empresa");
 
                     b.Navigation("TipoProduto");
-
-                    b.Navigation("UnidadeConteudo");
-
-                    b.Navigation("UnidadeEmbalagem");
 
                     b.Navigation("UnidadeMedida");
                 });
@@ -3191,13 +2772,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Permissoes");
                 });
 
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.CompraPaciente", b =>
-                {
-                    b.Navigation("Agendamentos");
-
-                    b.Navigation("Aplicacoes");
-                });
-
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Empresa", b =>
                 {
                     b.Navigation("Cargos");
@@ -3231,13 +2805,6 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                     b.Navigation("Aplicacoes");
 
                     b.Navigation("UnidadesVinculadas");
-                });
-
-            modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.Pacote", b =>
-                {
-                    b.Navigation("Compras");
-
-                    b.Navigation("Itens");
                 });
 
             modelBuilder.Entity("BGD.CLINICAL.Domain.Entities.PedidoFornecedor", b =>

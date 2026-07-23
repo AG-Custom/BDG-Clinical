@@ -83,7 +83,8 @@ public sealed class ListStockBalancesService : IListStockBalancesService
                 row.SaldoAtual,
                 row.ValorUnitario,
                 Math.Round(row.SaldoAtual * (row.ValorUnitario ?? 0), 2, MidpointRounding.AwayFromZero),
-                row.SaldoAtual < row.EstoqueMinimo))
+                row.SaldoAtual < row.EstoqueMinimo,
+                row.OrigensEntrada))
             .ToList();
 
         return Result<IReadOnlyList<StockBalanceDto>>.Success(balances);
