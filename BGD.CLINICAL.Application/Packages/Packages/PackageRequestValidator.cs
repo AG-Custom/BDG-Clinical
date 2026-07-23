@@ -84,17 +84,24 @@ internal static class PackageRequestValidator
         }
 
         var productIds = normalizedItens.Select(item => item.ProdutoId).Distinct().ToList();
-        foreach (var productId in productIds)
-        {
-            var exists = await productsRepository.ExistsActiveByIdAndEmpresaIdAsync(
-                productId,
-                empresaId,
-                cancellationToken);
+        var products = await productsRepository.GetActiveByIdsAndEmpresaIdAsync(
+            empresaId,
+            productIds,
+            cancellationToken);
 
-            if (!exists)
-            {
-                return Result<ValidatedPackageData>.Failure("Um ou mais produtos do pacote são inválidos ou inativos.");
-            }
+        if (products.Count != productIds.Count)
+        {
+            return Result<ValidatedPackageData>.Failure("Um ou mais produtos do pacote são inválidos ou inativos.");
+        }
+
+        if (products.Any(product =>
+                !string.Equals(
+                    product.TipoProduto?.Nome?.Trim(),
+                    "Medicamento",
+                    StringComparison.OrdinalIgnoreCase)))
+        {
+            return Result<ValidatedPackageData>.Failure(
+                "Somente produtos do tipo Medicamento podem ser vinculados ao pacote.");
         }
 
         if (await packagesRepository.ExistsByNomeAsync(empresaId, normalizedNome, excludePackageId, cancellationToken))

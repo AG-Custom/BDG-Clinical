@@ -1,3 +1,4 @@
+using System.Globalization;
 using BGD.CLINICAL.Domain.Common;
 using BGD.CLINICAL.Domain.Enums;
 using BGD.CLINICAL.Domain.Exceptions;
@@ -315,8 +316,13 @@ public sealed class CompraPaciente : AggregateRoot
         if (quantidadeUtilizada.Value > restante)
         {
             throw new DomainException(
-                $"Quantidade insuficiente no saldo do pacote. Disponível: {restante} {item.UnidadeMedida}.");
+                $"Quantidade insuficiente no saldo do pacote. Disponível: {FormatarQuantidadeSaldo(restante)} {item.UnidadeMedida}.");
         }
+    }
+
+    private static string FormatarQuantidadeSaldo(decimal quantidade)
+    {
+        return quantidade.ToString("0.####", CultureInfo.GetCultureInfo("pt-BR"));
     }
 
     public void CompleteIfExhausted()
