@@ -17,7 +17,7 @@ namespace BGD.CLINICAL.Application.Applications.PatientApplications;
 
 public interface ICreatePatientApplicationsService
 {
-    Task<Result<PatientApplicationDto>> ExecuteAsync(
+    Task<Result<CreatePatientApplicationsResult>> ExecuteAsync(
         CreatePatientApplicationRequest request,
         CancellationToken cancellationToken = default);
 }
@@ -71,7 +71,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<PatientApplicationDto>> ExecuteAsync(
+    public async Task<Result<CreatePatientApplicationsResult>> ExecuteAsync(
         CreatePatientApplicationRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -87,127 +87,159 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
             _employeesRepository,
             _symptomsRepository,
             _stockBalancesRepository,
-            _patientApplicationsRepository,
             _patientPurchasesRepository,
             cancellationToken);
 
         if (validation.IsFailure)
         {
-            return Result<PatientApplicationDto>.Failure(validation.Error!);
+            return Result<CreatePatientApplicationsResult>.Failure(validation.Error!);
         }
 
         try
         {
             var data = validation.Value!;
-            var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-                data.CompraPacienteId,
-                empresaId,
-                cancellationToken);
+            CompraPaciente? compra = null;
 
-            if (compra is null)
+            if (data.CompraPacienteId.HasValue)
             {
-                return Result<PatientApplicationDto>.Failure("Compra de pacote não encontrada.");
-            }
+                compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                    data.CompraPacienteId.Value,
+                    empresaId,
+                    cancellationToken);
 
-            compra.EnsurePodeAplicar(data.PacienteId, data.ProdutoId, data.QuantidadeUtilizada);
-
-            var aplicacao = AplicacaoPaciente.CreateRealizada(
-                empresaId,
-                data.PacienteId,
-                data.CompraPacienteId,
-                data.ProdutoId,
-                data.ProcedimentoId,
-                data.AplicadorId,
-                data.UnidadeId,
-                data.DataAplicacao,
-                data.QuantidadeUtilizada,
-                data.Peso,
-                data.Observacao);
-
-            foreach (var sintomaId in data.SintomaIds)
-            {
-                aplicacao.Sintomas.Add(new AplicacaoSintoma(aplicacao.Id, sintomaId));
-            }
-
-            var stockLines = data.StockLines.Where(line => line.ControlaEstoque).ToList();
-            var produtosEstoque = await _productsRepository.GetActiveByIdsAndEmpresaIdAsync(
-                empresaId,
-                stockLines.Select(line => line.ProdutoId).Distinct().ToList(),
-                cancellationToken);
-            var produtosPorId = produtosEstoque.ToDictionary(produto => produto.Id);
-
-            var movimentacoes = new List<MovimentacaoEstoque>();
-
-            foreach (var line in stockLines)
-            {
-                if (!produtosPorId.TryGetValue(line.ProdutoId, out var produtoLinha))
+                if (compra is null)
                 {
-                    return Result<PatientApplicationDto>.Failure("Produto de estoque não encontrado.");
+                    return Result<CreatePatientApplicationsResult>.Failure("Compra de pacote não encontrada.");
+                }
+            }
+
+            var aplicacoesCriadas = new List<AplicacaoPaciente>();
+            var todasMovimentacoes = new List<MovimentacaoEstoque>();
+            var aplicarPeso = data.Procedimentos.Count == 1 ? data.Peso : null;
+
+            foreach (var procedimentoData in data.Procedimentos)
+            {
+                if (compra is not null)
+                {
+                    compra.EnsurePodeAplicar(
+                        data.PacienteId,
+                        procedimentoData.ProdutoId,
+                        procedimentoData.QuantidadeUtilizada);
                 }
 
-                if (_medicationLotStockService.RequiresLot(produtoLinha))
-                {
-                    var alocacoes = await _medicationLotStockService.AllocateFefoAsync(
-                        empresaId,
-                        data.UnidadeId,
-                        produtoLinha,
-                        line.Quantidade,
-                        cancellationToken);
+                var aplicacao = AplicacaoPaciente.CreateRealizada(
+                    empresaId,
+                    data.PacienteId,
+                    data.CompraPacienteId,
+                    procedimentoData.ProdutoId,
+                    procedimentoData.ProcedimentoId,
+                    data.AplicadorId,
+                    data.UnidadeId,
+                    data.DataAplicacao,
+                    procedimentoData.QuantidadeUtilizada,
+                    aplicarPeso,
+                    data.Observacao);
 
-                    foreach (var alocacao in alocacoes)
+                foreach (var sintomaId in data.SintomaIds)
+                {
+                    aplicacao.Sintomas.Add(new AplicacaoSintoma(aplicacao.Id, sintomaId));
+                }
+
+                var stockLines = procedimentoData.StockLines.Where(line => line.ControlaEstoque).ToList();
+                var produtosEstoque = await _productsRepository.GetActiveByIdsAndEmpresaIdAsync(
+                    empresaId,
+                    stockLines.Select(line => line.ProdutoId).Distinct().ToList(),
+                    cancellationToken);
+                var produtosPorId = produtosEstoque.ToDictionary(produto => produto.Id);
+
+                foreach (var line in stockLines)
+                {
+                    if (!produtosPorId.TryGetValue(line.ProdutoId, out var produtoLinha))
                     {
-                        var movimentacao = MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                        return Result<CreatePatientApplicationsResult>.Failure("Produto de estoque não encontrado.");
+                    }
+
+                    if (_medicationLotStockService.RequiresLot(produtoLinha))
+                    {
+                        var alocacoes = await _medicationLotStockService.AllocateFefoAsync(
+                            empresaId,
+                            data.UnidadeId,
+                            produtoLinha,
+                            line.Quantidade,
+                            cancellationToken);
+
+                        foreach (var alocacao in alocacoes)
+                        {
+                            var movimentacao = MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                                empresaId,
+                                data.UnidadeId,
+                                line.ProdutoId,
+                                aplicacao.Id,
+                                data.AplicadorId,
+                                alocacao.Quantidade,
+                                data.DataAplicacao);
+                            movimentacao.AssignLote(alocacao.LoteProdutoId);
+                            todasMovimentacoes.Add(movimentacao);
+                        }
+                    }
+                    else
+                    {
+                        todasMovimentacoes.Add(MovimentacaoEstoque.CreateSaidaFromAplicacao(
                             empresaId,
                             data.UnidadeId,
                             line.ProdutoId,
                             aplicacao.Id,
                             data.AplicadorId,
-                            alocacao.Quantidade,
-                            data.DataAplicacao);
-                        movimentacao.AssignLote(alocacao.LoteProdutoId);
-                        movimentacoes.Add(movimentacao);
+                            line.Quantidade,
+                            data.DataAplicacao));
                     }
                 }
-                else
+
+                await _patientApplicationsRepository.AddAsync(aplicacao, cancellationToken);
+
+                if (compra is not null)
                 {
-                    movimentacoes.Add(MovimentacaoEstoque.CreateSaidaFromAplicacao(
-                        empresaId,
-                        data.UnidadeId,
-                        line.ProdutoId,
-                        aplicacao.Id,
-                        data.AplicadorId,
-                        line.Quantidade,
-                        data.DataAplicacao));
+                    compra.Aplicacoes.Add(aplicacao);
                 }
+
+                aplicacoesCriadas.Add(aplicacao);
             }
 
-            await _patientApplicationsRepository.AddAsync(aplicacao, cancellationToken);
-            if (movimentacoes.Count > 0)
+            if (compra is not null)
             {
-                await _stockMovementsRepository.AddRangeAsync(movimentacoes, cancellationToken);
+                compra.CompleteIfExhausted();
+                _patientPurchasesRepository.Update(compra);
             }
 
-            compra.Aplicacoes.Add(aplicacao);
-            compra.CompleteIfExhausted();
-            _patientPurchasesRepository.Update(compra);
+            if (todasMovimentacoes.Count > 0)
+            {
+                await _stockMovementsRepository.AddRangeAsync(todasMovimentacoes, cancellationToken);
+            }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var persisted = await _patientApplicationsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-                aplicacao.Id,
-                empresaId,
-                cancellationToken);
+            var dtos = new List<PatientApplicationDto>();
 
-            await _auditLogsService.RegisterEntityChangeAsync(
-                empresaId,
-                _tenantContext.UsuarioId,
-                nameof(AplicacaoPaciente),
-                aplicacao.Id,
-                AcaoAuditoria.Criar,
-                dadosNovos: PatientApplicationsAuditSerializer.Serialize(persisted ?? aplicacao),
-                cancellationToken: cancellationToken);
+            foreach (var aplicacao in aplicacoesCriadas)
+            {
+                var persisted = await _patientApplicationsRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                    aplicacao.Id,
+                    empresaId,
+                    cancellationToken);
 
-            foreach (var movimentacao in movimentacoes)
+                await _auditLogsService.RegisterEntityChangeAsync(
+                    empresaId,
+                    _tenantContext.UsuarioId,
+                    nameof(AplicacaoPaciente),
+                    aplicacao.Id,
+                    AcaoAuditoria.Criar,
+                    dadosNovos: PatientApplicationsAuditSerializer.Serialize(persisted ?? aplicacao),
+                    cancellationToken: cancellationToken);
+
+                dtos.Add(PatientApplicationsMapper.Map(persisted ?? aplicacao));
+            }
+
+            foreach (var movimentacao in todasMovimentacoes)
             {
                 await _auditLogsService.RegisterEntityChangeAsync(
                     empresaId,
@@ -219,12 +251,11 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                     cancellationToken: cancellationToken);
             }
 
-            return Result<PatientApplicationDto>.Success(
-                PatientApplicationsMapper.Map(persisted ?? aplicacao));
+            return Result<CreatePatientApplicationsResult>.Success(new CreatePatientApplicationsResult(dtos));
         }
         catch (DomainException exception)
         {
-            return Result<PatientApplicationDto>.Failure(exception.Message);
+            return Result<CreatePatientApplicationsResult>.Failure(exception.Message);
         }
     }
 }

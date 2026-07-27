@@ -2097,44 +2097,49 @@ Registro de aplicações realizadas. **Sempre** informe `procedimentoId` e **`co
 
 Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unidade, sintomas).
 
-### POST `/api/patient-applications` — procedimento com medicamento
+### POST `/api/patient-applications` — um procedimento (legado)
 
 ```json
 {
   "pacienteId": "uuid",
-  "compraPacienteId": "uuid",
   "procedimentoId": "uuid",
   "aplicadorId": "uuid",
   "unidadeId": "uuid",
   "quantidadeUtilizada": 2.5,
-  "dataAplicacao": "2026-06-25T14:00:00Z"
+  "dataAplicacao": "2026-06-25T14:00:00Z",
+  "compraPacienteId": "uuid"
 }
 ```
 
-### POST `/api/patient-applications` — procedimento só insumos (ex.: Curativo)
+`compraPacienteId` é **opcional**. Quando omitido, não debita pacote (estoque segue sendo movimentado).
+
+### POST `/api/patient-applications` — vários procedimentos
 
 ```json
 {
   "pacienteId": "uuid",
-  "compraPacienteId": "uuid",
-  "procedimentoId": "uuid",
   "aplicadorId": "uuid",
   "unidadeId": "uuid",
-  "dataAplicacao": "2026-06-25T14:00:00Z"
+  "dataAplicacao": "2026-06-25T14:00:00Z",
+  "procedimentos": [
+    { "procedimentoId": "uuid", "quantidadeUtilizada": 2.5 },
+    { "procedimentoId": "uuid" }
+  ]
 }
 ```
 
 | Campo | Obrigatório | Regra |
 |-------|-------------|-------|
 | `pacienteId` | Sim | Paciente ativo no tenant |
-| `compraPacienteId` | Sim | Compra ativa do mesmo paciente, com saldo |
-| `procedimentoId` | Sim | Procedimento ativo |
-| `quantidadeUtilizada` | Se o procedimento tem produto aplicado | &gt; 0; omitir em procedimento só com insumos |
+| `procedimentoId` | Um de: `procedimentoId` ou `procedimentos[]` | Procedimento(s) ativo(s), sem repetir |
+| `procedimentos` | Um de: `procedimentoId` ou `procedimentos[]` | Lista com quantidade por item quando há produto aplicado |
+| `quantidadeUtilizada` | Se o procedimento tem produto aplicado (modo legado com um `procedimentoId`) | &gt; 0 |
+| `compraPacienteId` | Não | Quando informado, valida saldo e debita por procedimento com produto aplicado |
 | `aplicadorId` | Sim | Funcionário aplicador ativo na unidade |
 | `unidadeId` | Sim | Unidade ativa |
 | `dataAplicacao` | Sim | Data/hora |
 
-**Response 201** — inclui `procedimentoId`, `procedimentoNome`, `itensConsumidos[]`. Gera N saídas (`motivo: Aplicacao`) para produtos com `controlaEstoque = true`.
+**Response 201** — `{ "aplicacoes": [ PatientApplicationDto, ... ] }` (uma entrada por procedimento). Gera saídas de estoque por aplicação.
 
 ### PUT `/api/patient-applications/{id}`
 
@@ -2680,17 +2685,27 @@ interface PatientApplication {
   atualizadoEm: string | null;
 }
 
+interface CreatePatientApplicationProcedureRequest {
+  procedimentoId: string;
+  quantidadeUtilizada?: number | null;
+}
+
 interface CreatePatientApplicationRequest {
   pacienteId: string;
-  procedimentoId: string;
   aplicadorId: string;
   unidadeId: string;
   dataAplicacao: string;
+  procedimentoId?: string | null;
+  procedimentos?: CreatePatientApplicationProcedureRequest[] | null;
   quantidadeUtilizada?: number | null;
   peso?: number | null;
   observacao?: string | null;
   sintomaIds?: string[] | null;
   compraPacienteId?: string | null;
+}
+
+interface CreatePatientApplicationsResult {
+  aplicacoes: PatientApplication[];
 }
 
 interface UpdatePatientApplicationRequest {

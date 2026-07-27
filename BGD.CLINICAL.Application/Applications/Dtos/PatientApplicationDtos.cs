@@ -34,17 +34,25 @@ public sealed record PatientApplicationDto(
     DateTime CriadoEm,
     DateTime? AtualizadoEm);
 
+public sealed record CreatePatientApplicationProcedureRequest(
+    Guid ProcedimentoId,
+    decimal? QuantidadeUtilizada = null);
+
 public sealed record CreatePatientApplicationRequest(
     Guid PacienteId,
-    Guid CompraPacienteId,
-    Guid ProcedimentoId,
     Guid AplicadorId,
     Guid UnidadeId,
     DateTime DataAplicacao,
+    Guid? CompraPacienteId = null,
+    Guid? ProcedimentoId = null,
     decimal? QuantidadeUtilizada = null,
     decimal? Peso = null,
     string? Observacao = null,
-    IReadOnlyList<Guid>? SintomaIds = null);
+    IReadOnlyList<Guid>? SintomaIds = null,
+    IReadOnlyList<CreatePatientApplicationProcedureRequest>? Procedimentos = null);
+
+public sealed record CreatePatientApplicationsResult(
+    IReadOnlyList<PatientApplicationDto> Aplicacoes);
 
 public sealed record UpdatePatientApplicationRequest(
     DateTime DataAplicacao,

@@ -8,26 +8,29 @@ using BGD.CLINICAL.Domain.Entities;
 
 namespace BGD.CLINICAL.Application.Applications.PatientApplications;
 
-internal sealed record ValidatedCreatePatientApplicationData(
-    Guid PacienteId,
-    Guid CompraPacienteId,
+internal sealed record ValidatedCreatePatientApplicationProcedureData(
     Guid? ProdutoId,
-    Guid? ProcedimentoId,
+    Guid ProcedimentoId,
+    decimal? QuantidadeUtilizada,
+    IReadOnlyList<StockConsumptionLine> StockLines);
+
+internal sealed record ValidatedCreatePatientApplicationsData(
+    Guid PacienteId,
+    Guid? CompraPacienteId,
     Guid AplicadorId,
     Guid UnidadeId,
     DateTime DataAplicacao,
-    decimal? QuantidadeUtilizada,
     decimal? Peso,
     string? Observacao,
     IReadOnlyList<Guid> SintomaIds,
-    IReadOnlyList<StockConsumptionLine> StockLines);
+    IReadOnlyList<ValidatedCreatePatientApplicationProcedureData> Procedimentos);
 
 internal static class PatientApplicationRequestValidator
 {
     public const int DefaultListLimit = 100;
     public const int MaxListLimit = 500;
 
-    public static async Task<Result<ValidatedCreatePatientApplicationData>> ValidateCreateAsync(
+    public static async Task<Result<ValidatedCreatePatientApplicationsData>> ValidateCreateAsync(
         Guid empresaId,
         CreatePatientApplicationRequest request,
         IPatientsRepository patientsRepository,
@@ -37,109 +40,112 @@ internal static class PatientApplicationRequestValidator
         IEmployeesRepository employeesRepository,
         ISymptomsRepository symptomsRepository,
         IStockBalancesRepository stockBalancesRepository,
-        IPatientApplicationsRepository patientApplicationsRepository,
         BGD.CLINICAL.Application.Packages.Abstractions.IPatientPurchasesRepository patientPurchasesRepository,
         CancellationToken cancellationToken)
     {
         if (request.PacienteId == Guid.Empty)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Informe o paciente.");
-        }
-
-        if (request.CompraPacienteId == Guid.Empty)
-        {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Informe a compra de pacote do paciente.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("Informe o paciente.");
         }
 
         if (request.AplicadorId == Guid.Empty)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Informe o aplicador.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("Informe o aplicador.");
         }
 
         if (request.UnidadeId == Guid.Empty)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Informe a unidade.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("Informe a unidade.");
         }
 
-        if (request.ProcedimentoId == Guid.Empty)
+        var procedimentosResolvidos = PatientApplicationProcedureResolver.Resolve(
+            request.ProcedimentoId,
+            request.QuantidadeUtilizada,
+            request.Procedimentos);
+
+        if (procedimentosResolvidos.IsFailure)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Informe o procedimento.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure(procedimentosResolvidos.Error!);
         }
 
         if (request.Peso.HasValue && request.Peso.Value <= 0)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("O peso deve ser maior que zero quando informado.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("O peso deve ser maior que zero quando informado.");
         }
 
         if (!string.IsNullOrWhiteSpace(request.Observacao) && request.Observacao.Length > 2000)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("A observação deve ter no máximo 2000 caracteres.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("A observação deve ter no máximo 2000 caracteres.");
         }
 
         var paciente = await patientsRepository.GetByIdAndEmpresaIdWithDetailsAsync(request.PacienteId, empresaId, cancellationToken);
         if (paciente is null)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Paciente não encontrado.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("Paciente não encontrado.");
         }
 
         if (!paciente.Ativo)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("O paciente está inativo.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("O paciente está inativo.");
         }
 
         if (!paciente.IsLinkedToUnidade(request.UnidadeId))
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure(
+            return Result<ValidatedCreatePatientApplicationsData>.Failure(
                 "O paciente não pertence à unidade informada.");
         }
 
         var unidade = await unitsRepository.GetByIdAndEmpresaIdAsync(request.UnidadeId, empresaId, cancellationToken);
         if (unidade is null)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Unidade não encontrada.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("Unidade não encontrada.");
         }
 
         if (!unidade.Ativo)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("A unidade está inativa.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("A unidade está inativa.");
         }
 
-        var compra = await patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-            request.CompraPacienteId,
-            empresaId,
-            cancellationToken);
+        CompraPaciente? compra = null;
+        Guid? compraPacienteId = null;
 
-        if (compra is null)
+        if (request.CompraPacienteId.HasValue && request.CompraPacienteId.Value != Guid.Empty)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Compra de pacote não encontrada.");
-        }
+            compraPacienteId = request.CompraPacienteId.Value;
+            compra = await patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                compraPacienteId.Value,
+                empresaId,
+                cancellationToken);
 
-        try
-        {
-            compra.EnsurePodeAplicar(
-                request.PacienteId,
-                null,
-                null);
-        }
-        catch (Domain.Exceptions.DomainException exception)
-        {
-            return Result<ValidatedCreatePatientApplicationData>.Failure(exception.Message);
+            if (compra is null)
+            {
+                return Result<ValidatedCreatePatientApplicationsData>.Failure("Compra de pacote não encontrada.");
+            }
+
+            try
+            {
+                compra.EnsurePodeAplicar(request.PacienteId, null, null);
+            }
+            catch (Domain.Exceptions.DomainException exception)
+            {
+                return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
+            }
         }
 
         var aplicador = await employeesRepository.GetByIdAndEmpresaIdAsync(request.AplicadorId, empresaId, cancellationToken);
         if (aplicador is null)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Aplicador não encontrado.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("Aplicador não encontrado.");
         }
 
         if (!aplicador.Ativo)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("O aplicador está inativo.");
+            return Result<ValidatedCreatePatientApplicationsData>.Failure("O aplicador está inativo.");
         }
 
         if (!IsAplicadorForUnidade(aplicador, empresaId, request.UnidadeId))
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure(
+            return Result<ValidatedCreatePatientApplicationsData>.Failure(
                 "O funcionário selecionado não é aplicador ativo nesta unidade.");
         }
 
@@ -153,108 +159,116 @@ internal static class PatientApplicationRequestValidator
 
             if (!sintomasValidos)
             {
-                return Result<ValidatedCreatePatientApplicationData>.Failure(
+                return Result<ValidatedCreatePatientApplicationsData>.Failure(
                     "Um ou mais sintomas informados não foram encontrados ou estão inativos.");
             }
         }
 
-        Guid? produtoIdResolvido = null;
-        Guid? procedimentoIdResolvido = null;
+        var procedimentosValidados = new List<ValidatedCreatePatientApplicationProcedureData>();
 
-        var procedimento = await proceduresRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-            request.ProcedimentoId,
-            empresaId,
-            cancellationToken);
-
-        if (procedimento is null || !procedimento.Ativo)
+        foreach (var item in procedimentosResolvidos.Value!)
         {
-            return Result<ValidatedCreatePatientApplicationData>.Failure("Procedimento não encontrado ou inativo.");
-        }
-
-        procedimentoIdResolvido = procedimento.Id;
-        produtoIdResolvido = procedimento.ProdutoAplicadoId;
-
-        if (procedimento.ProdutoAplicadoId.HasValue)
-        {
-            if (!request.QuantidadeUtilizada.HasValue || request.QuantidadeUtilizada.Value <= 0)
-            {
-                return Result<ValidatedCreatePatientApplicationData>.Failure("A quantidade utilizada deve ser maior que zero.");
-            }
-        }
-        else if (request.QuantidadeUtilizada.HasValue)
-        {
-            return Result<ValidatedCreatePatientApplicationData>.Failure(
-                "Quantidade utilizada não se aplica a procedimentos sem produto aplicado.");
-        }
-
-        try
-        {
-            compra.EnsurePodeAplicar(
-                request.PacienteId,
-                produtoIdResolvido,
-                request.QuantidadeUtilizada);
-        }
-        catch (Domain.Exceptions.DomainException exception)
-        {
-            return Result<ValidatedCreatePatientApplicationData>.Failure(exception.Message);
-        }
-
-        var productIds = new HashSet<Guid>();
-        if (produtoIdResolvido.HasValue)
-        {
-            productIds.Add(produtoIdResolvido.Value);
-        }
-
-        foreach (var item in procedimento.Itens)
-        {
-            productIds.Add(item.ProdutoId);
-        }
-
-        var produtos = await productsRepository.GetActiveByIdsAndEmpresaIdAsync(
-            empresaId,
-            productIds,
-            cancellationToken);
-
-        if (produtos.Count != productIds.Count)
-        {
-            return Result<ValidatedCreatePatientApplicationData>.Failure(
-                "Um ou mais produtos do consumo não foram encontrados ou estão inativos.");
-        }
-
-        var productsById = produtos.ToDictionary(produto => produto.Id);
-        var stockLines = PatientApplicationStockPlanner.BuildLines(
-            request.QuantidadeUtilizada,
-            procedimento,
-            productsById);
-
-        foreach (var line in stockLines.Where(line => line.ControlaEstoque))
-        {
-            var saldo = await stockBalancesRepository.GetSaldoByUnidadeAndProdutoAsync(
+            var procedimento = await proceduresRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                item.ProcedimentoId,
                 empresaId,
-                request.UnidadeId,
-                line.ProdutoId,
                 cancellationToken);
 
-            if (saldo < line.Quantidade)
+            if (procedimento is null || !procedimento.Ativo)
             {
-                return Result<ValidatedCreatePatientApplicationData>.Failure(
-                    $"Estoque insuficiente para \"{line.ProdutoNome}\" na unidade selecionada. Saldo: {saldo} | Necessário: {line.Quantidade}");
+                return Result<ValidatedCreatePatientApplicationsData>.Failure("Procedimento não encontrado ou inativo.");
             }
+
+            var produtoIdResolvido = procedimento.ProdutoAplicadoId;
+            var quantidade = item.QuantidadeUtilizada;
+
+            if (procedimento.ProdutoAplicadoId.HasValue)
+            {
+                if (!quantidade.HasValue || quantidade.Value <= 0)
+                {
+                    return Result<ValidatedCreatePatientApplicationsData>.Failure("A quantidade utilizada deve ser maior que zero.");
+                }
+            }
+            else if (quantidade.HasValue)
+            {
+                return Result<ValidatedCreatePatientApplicationsData>.Failure(
+                    "Quantidade utilizada não se aplica a procedimentos sem produto aplicado.");
+            }
+
+            if (compra is not null)
+            {
+                try
+                {
+                    compra.EnsurePodeAplicar(
+                        request.PacienteId,
+                        produtoIdResolvido,
+                        quantidade);
+                }
+                catch (Domain.Exceptions.DomainException exception)
+                {
+                    return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
+                }
+            }
+
+            var productIds = new HashSet<Guid>();
+            if (produtoIdResolvido.HasValue)
+            {
+                productIds.Add(produtoIdResolvido.Value);
+            }
+
+            foreach (var kitItem in procedimento.Itens)
+            {
+                productIds.Add(kitItem.ProdutoId);
+            }
+
+            var produtos = await productsRepository.GetActiveByIdsAndEmpresaIdAsync(
+                empresaId,
+                productIds,
+                cancellationToken);
+
+            if (produtos.Count != productIds.Count)
+            {
+                return Result<ValidatedCreatePatientApplicationsData>.Failure(
+                    "Um ou mais produtos do consumo não foram encontrados ou estão inativos.");
+            }
+
+            var productsById = produtos.ToDictionary(produto => produto.Id);
+            var stockLines = PatientApplicationStockPlanner.BuildLines(
+                quantidade,
+                procedimento,
+                productsById);
+
+            foreach (var line in stockLines.Where(line => line.ControlaEstoque))
+            {
+                var saldo = await stockBalancesRepository.GetSaldoByUnidadeAndProdutoAsync(
+                    empresaId,
+                    request.UnidadeId,
+                    line.ProdutoId,
+                    cancellationToken);
+
+                if (saldo < line.Quantidade)
+                {
+                    return Result<ValidatedCreatePatientApplicationsData>.Failure(
+                        $"Estoque insuficiente para \"{line.ProdutoNome}\" na unidade selecionada. Saldo: {saldo} | Necessário: {line.Quantidade}");
+                }
+            }
+
+            procedimentosValidados.Add(new ValidatedCreatePatientApplicationProcedureData(
+                produtoIdResolvido,
+                procedimento.Id,
+                quantidade,
+                stockLines));
         }
 
-        return Result<ValidatedCreatePatientApplicationData>.Success(new ValidatedCreatePatientApplicationData(
+        return Result<ValidatedCreatePatientApplicationsData>.Success(new ValidatedCreatePatientApplicationsData(
             request.PacienteId,
-            request.CompraPacienteId,
-            produtoIdResolvido,
-            procedimentoIdResolvido,
+            compraPacienteId,
             request.AplicadorId,
             request.UnidadeId,
             request.DataAplicacao,
-            request.QuantidadeUtilizada,
             request.Peso,
             string.IsNullOrWhiteSpace(request.Observacao) ? null : request.Observacao.Trim(),
             sintomaIds,
-            stockLines));
+            procedimentosValidados));
     }
 
     public static async Task<Result<IReadOnlyList<Guid>>> ValidateUpdateAsync(

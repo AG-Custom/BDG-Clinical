@@ -93,10 +93,13 @@ public sealed class PatientApplicationController : ControllerBase
             return BadRequest(new ApiResponse<object?>(null!, false, result.Error));
         }
 
+        var aplicacoes = result.Value!.Aplicacoes;
+        var primeiroId = aplicacoes.Count > 0 ? aplicacoes[0].Id : Guid.Empty;
+
         return CreatedAtAction(
             nameof(Get),
-            new { id = result.Value!.Id },
-            new ApiResponse<PatientApplicationDto>(result.Value, true));
+            new { id = primeiroId },
+            new ApiResponse<CreatePatientApplicationsResult>(result.Value, true));
     }
 
     [HttpPut("{id:guid}")]
