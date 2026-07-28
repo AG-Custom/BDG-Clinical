@@ -21,6 +21,23 @@ public sealed class UsersRepository : IUsersRepository
             .FirstOrDefaultAsync(usuario => usuario.Id == id, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<UsuarioDisplayName>> ListDisplayNamesByIdsAndEmpresaIdAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return Array.Empty<UsuarioDisplayName>();
+        }
+
+        return await _context.Usuarios
+            .AsNoTracking()
+            .Where(usuario => usuario.EmpresaId == empresaId && ids.Contains(usuario.Id))
+            .Select(usuario => new UsuarioDisplayName(usuario.Id, usuario.Nome))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Usuario>> ListByEmailLoginAsync(
         string emailLogin,
         CancellationToken cancellationToken = default)

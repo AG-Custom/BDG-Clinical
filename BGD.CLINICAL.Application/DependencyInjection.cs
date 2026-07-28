@@ -3,6 +3,7 @@ using BGD.CLINICAL.Application.Identity.Abstractions;
 using BGD.CLINICAL.Application.Identity.Authentications;
 using BGD.CLINICAL.Application.Identity.Registrations;
 using BGD.CLINICAL.Application.Identity.FirstAccess;
+using BGD.CLINICAL.Application.Audits;
 using BGD.CLINICAL.Application.Identity.Users;
 using BGD.CLINICAL.Application.Core.Units;
 using BGD.CLINICAL.Application.Core.Companies;
@@ -39,6 +40,8 @@ public static class DependencyInjection
         services.AddScoped<ISwitchCompanyService, SwitchCompanyService>();
         services.AddScoped<IRegisterCompaniesService, RegisterCompaniesService>();
         services.AddScoped<IGetAuthenticatedUsersService, GetAuthenticatedUsersService>();
+        services.AddScoped<IResolveUserDisplayNamesService, ResolveUserDisplayNamesService>();
+        services.AddScoped<IGetEntityAuditSummaryService, GetEntityAuditSummaryService>();
         services.AddScoped<IProvisionEmployeeUsersService, ProvisionEmployeeUsersService>();
 
         services.AddScoped<IEmployeeFirstAccessInvitationService, EmployeeFirstAccessInvitationService>();

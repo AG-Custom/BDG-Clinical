@@ -19,6 +19,8 @@ using BGD.CLINICAL.Infra.Data.Repositories.Modules;
 using BGD.CLINICAL.Infra.Data.Repositories.Packages;
 using BGD.CLINICAL.Infra.Data.Services.Permissions;
 using BGD.CLINICAL.Infra.Data.Repositories.Notifications;
+using BGD.CLINICAL.Application.Audits.Abstractions;
+using BGD.CLINICAL.Infra.Data.Repositories.Audits;
 using BGD.CLINICAL.Infra.Data.Repositories.Schedules;
 using BGD.CLINICAL.Infra.Data.Services.Audits;
 using BGD.CLINICAL.Infra.Data.Services.Inventory;
@@ -62,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IStockMovementsRepository, StockMovementsRepository>();
         services.AddScoped<IStockBalancesRepository, StockBalancesRepository>();
         services.AddScoped<IAuditLogsService, AuditLogsService>();
+        services.AddScoped<IAuditLogsQueryRepository, AuditLogsQueryRepository>();
         services.AddScoped<IPatientApplicationsRepository, PatientApplicationsRepository>();
         services.AddScoped<IProceduresRepository, ProceduresRepository>();
         services.AddScoped<IPackagesRepository, PackagesRepository>();
