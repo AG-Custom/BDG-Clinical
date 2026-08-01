@@ -1,9 +1,9 @@
 ---
-description: Arquitetura, camadas, dependências e SOLID do backend BGD Clinical
+description: Arquitetura, camadas, dependências e SOLID do backend AG Clinical
 alwaysApply: true
 ---
 
-# Arquitetura — BGD Clinical
+# Arquitetura — AG Clinical
 
 Sistema SaaS white label para clínicas. Cada `Empresa` é um tenant isolado. Módulos são contratados via `LicencaModulo` e acessados conforme `PermissaoUsuario`.
 
@@ -11,13 +11,13 @@ Sistema SaaS white label para clínicas. Cada `Empresa` é um tenant isolado. M�
 
 | Projeto | Responsabilidade |
 |---------|------------------|
-| `BGD.CLINICAL.Domain` | Entidades, enums, value objects, exceções, regras de negócio |
-| `BGD.CLINICAL.Application` | Casos de uso por contexto, DTOs, validações, abstrações |
-| `BGD.CLINICAL.Infra.Data` | EF Core, DbContext, migrations, repositórios |
-| `BGD.CLINICAL.Infra.ExternalApis` | Integrações externas (Google Calendar, etc.) |
-| `BGD.CLINICAL.Infra.Jobs` | Workers e jobs em background |
-| `BGD.CLINICAL.WebApi` | Controllers, middlewares, composição DI da API REST |
-| `BGD.CLINICAL.Jobs.Web` | Host dos jobs em background |
+| `AG.CLINICAL.Domain` | Entidades, enums, value objects, exceções, regras de negócio |
+| `AG.CLINICAL.Application` | Casos de uso por contexto, DTOs, validações, abstrações |
+| `AG.CLINICAL.Infra.Data` | EF Core, DbContext, migrations, repositórios |
+| `AG.CLINICAL.Infra.ExternalApis` | Integrações externas (Google Calendar, etc.) |
+| `AG.CLINICAL.Infra.Jobs` | Workers e jobs em background |
+| `AG.CLINICAL.WebApi` | Controllers, middlewares, composição DI da API REST |
+| `AG.CLINICAL.Jobs.Web` | Host dos jobs em background |
 
 ## Contextos delimitados
 

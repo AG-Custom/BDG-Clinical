@@ -1,0 +1,48 @@
+using AG.CLINICAL.Application.Abstractions.Security;
+using AG.CLINICAL.Application.Abstractions.Storage;
+using AG.CLINICAL.Application.Common;
+using AG.CLINICAL.Application.Inventory.Abstractions;
+using AG.CLINICAL.Application.Inventory.Dtos;
+
+namespace AG.CLINICAL.Application.Inventory.SupplierOrders;
+
+public interface IGetSupplierOrdersService
+{
+    Task<Result<SupplierOrderDto>> ExecuteAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class GetSupplierOrdersService : IGetSupplierOrdersService
+{
+    private readonly ICurrentTenantContext _tenantContext;
+    private readonly ISupplierOrdersRepository _supplierOrdersRepository;
+    private readonly IObjectStorageService _objectStorageService;
+
+    public GetSupplierOrdersService(
+        ICurrentTenantContext tenantContext,
+        ISupplierOrdersRepository supplierOrdersRepository,
+        IObjectStorageService objectStorageService)
+    {
+        _tenantContext = tenantContext;
+        _supplierOrdersRepository = supplierOrdersRepository;
+        _objectStorageService = objectStorageService;
+    }
+
+    public async Task<Result<SupplierOrderDto>> ExecuteAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var pedido = await _supplierOrdersRepository.GetByIdAndEmpresaIdWithItensAsync(
+            id,
+            _tenantContext.EmpresaId,
+            cancellationToken);
+
+        if (pedido is null)
+        {
+            return Result<SupplierOrderDto>.Failure("Pedido não encontrado.");
+        }
+
+        return Result<SupplierOrderDto>.Success(SupplierOrdersMapper.Map(pedido, _objectStorageService));
+    }
+}

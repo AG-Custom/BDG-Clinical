@@ -1,0 +1,24 @@
+using System.Text.Json;
+using AG.CLINICAL.Domain.Entities;
+
+namespace AG.CLINICAL.Application.Core.Positions;
+
+internal static class PositionsAuditSerializer
+{
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
+    public static string Serialize(Cargo cargo)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            cargo.Id,
+            cargo.EmpresaId,
+            cargo.Nome,
+            cargo.FlagAplicador,
+            cargo.Ativo,
+        }, Options);
+    }
+}

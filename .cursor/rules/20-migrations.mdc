@@ -8,7 +8,7 @@ alwaysApply: true
 ## Criação
 
 ```bash
-dotnet ef migrations add {DescricaoPascalCase} --project BGD.CLINICAL.Infra.Data --startup-project BGD.CLINICAL.WebApi
+dotnet ef migrations add {DescricaoPascalCase} --project AG.CLINICAL.Infra.Data --startup-project AG.CLINICAL.WebApi
 ```
 
 ## Nomenclatura
@@ -26,7 +26,7 @@ dotnet ef migrations add {DescricaoPascalCase} --project BGD.CLINICAL.Infra.Data
 ## Aplicação
 
 ```bash
-dotnet ef database update --project BGD.CLINICAL.Infra.Data --startup-project BGD.CLINICAL.WebApi
+dotnet ef database update --project AG.CLINICAL.Infra.Data --startup-project AG.CLINICAL.WebApi
 ```
 
 ## Anti-padrões

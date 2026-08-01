@@ -1,17 +1,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ["BGD.CLINICAL.WebApi/BGD.CLINICAL.WebApi.csproj", "BGD.CLINICAL.WebApi/"]
-COPY ["BGD.CLINICAL.Application/BGD.CLINICAL.Application.csproj", "BGD.CLINICAL.Application/"]
-COPY ["BGD.CLINICAL.Domain/BGD.CLINICAL.Domain.csproj", "BGD.CLINICAL.Domain/"]
-COPY ["BGD.CLINICAL.Infra.Data/BGD.CLINICAL.Infra.Data.csproj", "BGD.CLINICAL.Infra.Data/"]
-COPY ["BGD.CLINICAL.Infra.ExternalApis/BGD.CLINICAL.Infra.ExternalApis.csproj", "BGD.CLINICAL.Infra.ExternalApis/"]
+COPY ["AG.CLINICAL.WebApi/AG.CLINICAL.WebApi.csproj", "AG.CLINICAL.WebApi/"]
+COPY ["AG.CLINICAL.Application/AG.CLINICAL.Application.csproj", "AG.CLINICAL.Application/"]
+COPY ["AG.CLINICAL.Domain/AG.CLINICAL.Domain.csproj", "AG.CLINICAL.Domain/"]
+COPY ["AG.CLINICAL.Infra.Data/AG.CLINICAL.Infra.Data.csproj", "AG.CLINICAL.Infra.Data/"]
+COPY ["AG.CLINICAL.Infra.ExternalApis/AG.CLINICAL.Infra.ExternalApis.csproj", "AG.CLINICAL.Infra.ExternalApis/"]
 
-RUN dotnet restore "BGD.CLINICAL.WebApi/BGD.CLINICAL.WebApi.csproj"
+RUN dotnet restore "AG.CLINICAL.WebApi/AG.CLINICAL.WebApi.csproj"
 
 COPY . .
 
-RUN dotnet publish "BGD.CLINICAL.WebApi/BGD.CLINICAL.WebApi.csproj" \
+RUN dotnet publish "AG.CLINICAL.WebApi/AG.CLINICAL.WebApi.csproj" \
     -c Release \
     -o /app/publish \
     /p:UseAppHost=false
@@ -23,4 +23,4 @@ COPY --from=build /app/publish .
 
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "BGD.CLINICAL.WebApi.dll"]
+ENTRYPOINT ["dotnet", "AG.CLINICAL.WebApi.dll"]

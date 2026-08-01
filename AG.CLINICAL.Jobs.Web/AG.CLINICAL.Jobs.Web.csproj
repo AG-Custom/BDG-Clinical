@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AG.CLINICAL.Application\AG.CLINICAL.Application.csproj" />
+    <ProjectReference Include="..\AG.CLINICAL.Infra.Data\AG.CLINICAL.Infra.Data.csproj" />
+    <ProjectReference Include="..\AG.CLINICAL.Infra.Jobs\AG.CLINICAL.Infra.Jobs.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

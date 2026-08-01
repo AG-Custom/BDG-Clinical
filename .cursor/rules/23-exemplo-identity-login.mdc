@@ -13,17 +13,17 @@ Ver também: `01-architecture.mdc`, `15-security.mdc`, `22-api-responses.mdc`.
 ## Árvore esperada
 
 ```
-BGD.CLINICAL.Application/Identity/
+AG.CLINICAL.Application/Identity/
   Abstractions/          → ILoginUsersService, IUsersRepository, ITokenService
   Authentications/       → LoginUsersService
   Registrations/         → RegisterCompaniesService
   Users/                 → GetAuthenticatedUsersService
   Dtos/
 
-BGD.CLINICAL.Infra.Data/Repositories/Identity/UsersRepository.cs
-BGD.CLINICAL.WebApi/Controllers/Auth/AuthController.cs
-BGD.CLINICAL.WebApi/Extensions/Auth/AuthServiceCollectionExtensions.cs
-BGD.CLINICAL.WebApi/Infrastructure/Auth/JwtTokensService.cs
+AG.CLINICAL.Infra.Data/Repositories/Identity/UsersRepository.cs
+AG.CLINICAL.WebApi/Controllers/Auth/AuthController.cs
+AG.CLINICAL.WebApi/Extensions/Auth/AuthServiceCollectionExtensions.cs
+AG.CLINICAL.WebApi/Infrastructure/Auth/JwtTokensService.cs
 ```
 
 ## Fluxo Login

@@ -1,0 +1,133 @@
+using AG.CLINICAL.Application.Identity;
+using AG.CLINICAL.Application.Identity.Abstractions;
+using AG.CLINICAL.Domain.Entities;
+using AG.CLINICAL.Infra.Data.Context;
+using Microsoft.EntityFrameworkCore;
+
+namespace AG.CLINICAL.Infra.Data.Repositories.Identity;
+
+public sealed class UsersRepository : IUsersRepository
+{
+    private readonly AppDbContext _context;
+
+    public UsersRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return WithAuthDetails(_context.Usuarios)
+            .FirstOrDefaultAsync(usuario => usuario.Id == id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<UsuarioDisplayName>> ListDisplayNamesByIdsAndEmpresaIdAsync(
+        Guid empresaId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return Array.Empty<UsuarioDisplayName>();
+        }
+
+        return await _context.Usuarios
+            .AsNoTracking()
+            .Where(usuario => usuario.EmpresaId == empresaId && ids.Contains(usuario.Id))
+            .Select(usuario => new UsuarioDisplayName(usuario.Id, usuario.Nome))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Usuario>> ListByEmailLoginAsync(
+        string emailLogin,
+        CancellationToken cancellationToken = default)
+    {
+        return await WithAuthDetails(_context.Usuarios)
+            .Where(usuario =>
+                usuario.EmailLogin == emailLogin
+                && usuario.AuthProvider == IdentityConstants.AuthProviderLocal)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<Usuario?> GetByEmailLoginAndEmpresaIdAsync(
+        string emailLogin,
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
+        return WithAuthDetails(_context.Usuarios)
+            .FirstOrDefaultAsync(
+                usuario =>
+                    usuario.EmailLogin == emailLogin
+                    && usuario.EmpresaId == empresaId
+                    && usuario.AuthProvider == IdentityConstants.AuthProviderLocal,
+                cancellationToken);
+    }
+
+    public Task<bool> ExistsActiveEmailLoginAsync(string emailLogin, CancellationToken cancellationToken = default)
+    {
+        return _context.Usuarios.AnyAsync(
+            usuario =>
+                usuario.EmailLogin == emailLogin
+                && usuario.Ativo
+                && usuario.AuthProvider == IdentityConstants.AuthProviderLocal,
+            cancellationToken);
+    }
+
+    public Task<bool> ExistsActiveByEmailAsync(string emailLogin, CancellationToken cancellationToken = default)
+    {
+        return _context.Usuarios.AnyAsync(
+            usuario => usuario.EmailLogin == emailLogin && usuario.Ativo,
+            cancellationToken);
+    }
+
+    public Task<bool> ExistsActiveEmailLoginByEmpresaAsync(
+        Guid empresaId,
+        string emailLogin,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Usuarios.AnyAsync(
+            usuario =>
+                usuario.EmpresaId == empresaId
+                && usuario.EmailLogin == emailLogin
+                && usuario.Ativo
+                && usuario.AuthProvider == IdentityConstants.AuthProviderLocal,
+            cancellationToken);
+    }
+
+    public Task<Usuario?> GetByFuncionarioIdAndEmpresaIdAsync(
+        Guid funcionarioId,
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Usuarios.FirstOrDefaultAsync(
+            usuario => usuario.FuncionarioId == funcionarioId && usuario.EmpresaId == empresaId,
+            cancellationToken);
+    }
+
+    public async Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default)
+    {
+        await _context.Usuarios.AddAsync(usuario, cancellationToken);
+    }
+
+    public void Update(Usuario usuario)
+    {
+        var entry = _context.Entry(usuario);
+
+        if (entry.State == EntityState.Detached)
+        {
+            _context.Usuarios.Update(usuario);
+        }
+    }
+
+    private static IQueryable<Usuario> WithAuthDetails(IQueryable<Usuario> query)
+    {
+        return query
+            .Include(usuario => usuario.Empresa)
+            .Include(usuario => usuario.Funcionario)
+                .ThenInclude(funcionario => funcionario!.Vinculos)
+                    .ThenInclude(vinculo => vinculo.Unidade)
+            .Include(usuario => usuario.Funcionario)
+                .ThenInclude(funcionario => funcionario!.Vinculos)
+                    .ThenInclude(vinculo => vinculo.Cargo);
+    }
+}

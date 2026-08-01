@@ -1,6 +1,6 @@
-# BGD Clinical — Referência de API para o Frontend
+# AG Clinical — Referência de API para o Frontend
 
-Documento de contrato HTTP entre o backend (`BGD.CLINICAL.WebApi`) e o frontend.
+Documento de contrato HTTP entre o backend (`AG.CLINICAL.WebApi`) e o frontend.
 
 **Base URL (desenvolvimento):** `http://localhost:5111` ou `https://localhost:7013`  
 **Swagger:** `/swagger`  
@@ -427,7 +427,7 @@ Retorna o usuário autenticado a partir do token. **Requer Bearer token.**
 ```json
 {
   "status": "Healthy",
-  "service": "BGD.CLINICAL.WebApi"
+  "service": "AG.CLINICAL.WebApi"
 }
 ```
 
@@ -2810,4 +2810,4 @@ interface CompleteAppointmentRequest {
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend BGD Clinical (… + Appointments / Agendamentos).*
+*Última atualização: junho/2026 — alinhado ao backend AG Clinical (… + Appointments / Agendamentos).*
