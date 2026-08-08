@@ -5,13 +5,19 @@ namespace BGD.CLINICAL.Application.Applications.PatientApplications;
 
 internal sealed record ResolvedPatientApplicationProcedure(
     Guid ProcedimentoId,
-    decimal? QuantidadeUtilizada);
+    decimal? QuantidadeUtilizada,
+    Guid? LoteProdutoId,
+    bool ConsumirInsumosKit,
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais);
 
 internal static class PatientApplicationProcedureResolver
 {
     public static Result<IReadOnlyList<ResolvedPatientApplicationProcedure>> Resolve(
         Guid? procedimentoId,
         decimal? quantidadeUtilizada,
+        Guid? loteProdutoId,
+        bool consumirInsumosKit,
+        IReadOnlyList<PatientApplicationManualSupplyRequest>? insumosManuais,
         IReadOnlyList<CreatePatientApplicationProcedureRequest>? procedimentos)
     {
         IReadOnlyList<ResolvedPatientApplicationProcedure> resolved;
@@ -22,14 +28,22 @@ internal static class PatientApplicationProcedureResolver
                 .Where(item => item.ProcedimentoId != Guid.Empty)
                 .Select(item => new ResolvedPatientApplicationProcedure(
                     item.ProcedimentoId,
-                    item.QuantidadeUtilizada))
+                    item.QuantidadeUtilizada,
+                    item.LoteProdutoId,
+                    item.ConsumirInsumosKit,
+                    item.InsumosManuais))
                 .ToList();
         }
         else if (procedimentoId.HasValue && procedimentoId.Value != Guid.Empty)
         {
             resolved =
             [
-                new ResolvedPatientApplicationProcedure(procedimentoId.Value, quantidadeUtilizada)
+                new ResolvedPatientApplicationProcedure(
+                    procedimentoId.Value,
+                    quantidadeUtilizada,
+                    loteProdutoId,
+                    consumirInsumosKit,
+                    insumosManuais)
             ];
         }
         else

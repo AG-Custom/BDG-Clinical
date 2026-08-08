@@ -1,3 +1,4 @@
+using BGD.CLINICAL.Application.Applications.Dtos;
 using BGD.CLINICAL.Domain.Entities;
 
 namespace BGD.CLINICAL.Application.Applications.PatientApplications;
@@ -13,7 +14,9 @@ internal static class PatientApplicationStockPlanner
     public static IReadOnlyList<StockConsumptionLine> BuildLines(
         decimal? quantidadeUtilizada,
         Procedimento procedimento,
-        IReadOnlyDictionary<Guid, Produto> productsById)
+        IReadOnlyDictionary<Guid, Produto> productsById,
+        bool consumirInsumosKit = true,
+        IReadOnlyList<PatientApplicationManualSupplyRequest>? insumosManuais = null)
     {
         var lines = new List<StockConsumptionLine>();
 
@@ -27,14 +30,32 @@ internal static class PatientApplicationStockPlanner
                 produto.ControlaEstoque));
         }
 
-        foreach (var item in procedimento.Itens)
+        if (consumirInsumosKit)
         {
-            var produto = productsById[item.ProdutoId];
-            lines.Add(new StockConsumptionLine(
-                produto.Id,
-                produto.Nome,
-                item.Quantidade,
-                produto.ControlaEstoque));
+            foreach (var item in procedimento.Itens)
+            {
+                var produto = productsById[item.ProdutoId];
+                lines.Add(new StockConsumptionLine(
+                    produto.Id,
+                    produto.Nome,
+                    item.Quantidade,
+                    produto.ControlaEstoque));
+            }
+
+            return lines;
+        }
+
+        if (insumosManuais is { Count: > 0 })
+        {
+            foreach (var item in insumosManuais)
+            {
+                var produto = productsById[item.ProdutoId];
+                lines.Add(new StockConsumptionLine(
+                    produto.Id,
+                    produto.Nome,
+                    item.Quantidade,
+                    produto.ControlaEstoque));
+            }
         }
 
         return lines;
