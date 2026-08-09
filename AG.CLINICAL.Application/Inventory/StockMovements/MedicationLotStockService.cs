@@ -23,6 +23,14 @@ public interface IMedicationLotStockService
         decimal quantidadeEstoque,
         CancellationToken cancellationToken = default);
 
+    Task<(Guid LoteProdutoId, decimal Quantidade)> AllocateFromLotAsync(
+        Guid empresaId,
+        Guid unidadeId,
+        Produto produto,
+        Guid loteProdutoId,
+        decimal quantidadeEstoque,
+        CancellationToken cancellationToken = default);
+
     bool RequiresLot(Produto produto);
 }
 
@@ -143,5 +151,58 @@ public sealed class MedicationLotStockService : IMedicationLotStockService
         }
 
         return alocacoes;
+    }
+
+    public async Task<(Guid LoteProdutoId, decimal Quantidade)> AllocateFromLotAsync(
+        Guid empresaId,
+        Guid unidadeId,
+        Produto produto,
+        Guid loteProdutoId,
+        decimal quantidadeEstoque,
+        CancellationToken cancellationToken = default)
+    {
+        if (quantidadeEstoque <= 0)
+        {
+            throw new DomainException("A quantidade deve ser maior que zero.");
+        }
+
+        if (!RequiresLot(produto))
+        {
+            throw new DomainException("Produto não exige controle de lote.");
+        }
+
+        if (loteProdutoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o lote do medicamento.");
+        }
+
+        var lote = await _productLotsRepository.GetByIdAndEmpresaIdAsync(
+            loteProdutoId,
+            empresaId,
+            cancellationToken);
+
+        if (lote is null || !lote.Ativo)
+        {
+            throw new DomainException("Lote não encontrado ou inativo.");
+        }
+
+        if (lote.UnidadeId != unidadeId || lote.ProdutoId != produto.Id)
+        {
+            throw new DomainException(
+                "O lote informado não pertence ao medicamento ou à unidade selecionada.");
+        }
+
+        var saldoLote = await _stockBalancesRepository.GetSaldoByLoteAsync(
+            empresaId,
+            loteProdutoId,
+            cancellationToken);
+
+        if (saldoLote < quantidadeEstoque)
+        {
+            throw new DomainException(
+                $"Estoque insuficiente no lote {lote.Codigo}. Saldo: {saldoLote} | Necessário: {quantidadeEstoque}");
+        }
+
+        return (loteProdutoId, quantidadeEstoque);
     }
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD:AG.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
 using AG.CLINICAL.Application.Applications.Abstractions;
 using AG.CLINICAL.Application.Applications.Dtos;
 using AG.CLINICAL.Application.Common;
@@ -5,6 +6,17 @@ using AG.CLINICAL.Application.Core.Abstractions;
 using AG.CLINICAL.Application.Inventory.Abstractions;
 using AG.CLINICAL.Application.Patients.Abstractions;
 using AG.CLINICAL.Domain.Entities;
+=======
+using BGD.CLINICAL.Application.Applications.Abstractions;
+using BGD.CLINICAL.Application.Applications.Dtos;
+using BGD.CLINICAL.Application.Common;
+using BGD.CLINICAL.Application.Core.Abstractions;
+using BGD.CLINICAL.Application.Inventory.Abstractions;
+using BGD.CLINICAL.Application.Inventory.StockMovements;
+using BGD.CLINICAL.Application.Patients.Abstractions;
+using BGD.CLINICAL.Domain.Entities;
+using BGD.CLINICAL.Domain.Exceptions;
+>>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
 
 namespace AG.CLINICAL.Application.Applications.PatientApplications;
 
@@ -12,6 +24,8 @@ internal sealed record ValidatedCreatePatientApplicationProcedureData(
     Guid? ProdutoId,
     Guid ProcedimentoId,
     decimal? QuantidadeUtilizada,
+    Guid? LoteProdutoId,
+    bool ConsumirInsumosKit,
     IReadOnlyList<StockConsumptionLine> StockLines);
 
 internal sealed record ValidatedCreatePatientApplicationsData(
@@ -40,7 +54,12 @@ internal static class PatientApplicationRequestValidator
         IEmployeesRepository employeesRepository,
         ISymptomsRepository symptomsRepository,
         IStockBalancesRepository stockBalancesRepository,
+<<<<<<< HEAD:AG.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
         AG.CLINICAL.Application.Packages.Abstractions.IPatientPurchasesRepository patientPurchasesRepository,
+=======
+        BGD.CLINICAL.Application.Packages.Abstractions.IPatientPurchasesRepository patientPurchasesRepository,
+        IMedicationLotStockService medicationLotStockService,
+>>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
         CancellationToken cancellationToken)
     {
         if (request.PacienteId == Guid.Empty)
@@ -61,6 +80,9 @@ internal static class PatientApplicationRequestValidator
         var procedimentosResolvidos = PatientApplicationProcedureResolver.Resolve(
             request.ProcedimentoId,
             request.QuantidadeUtilizada,
+            request.LoteProdutoId,
+            request.ConsumirInsumosKit,
+            request.InsumosManuais,
             request.Procedimentos);
 
         if (procedimentosResolvidos.IsFailure)
@@ -126,7 +148,7 @@ internal static class PatientApplicationRequestValidator
             {
                 compra.EnsurePodeAplicar(request.PacienteId, null, null);
             }
-            catch (Domain.Exceptions.DomainException exception)
+            catch (DomainException exception)
             {
                 return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
             }
@@ -203,7 +225,7 @@ internal static class PatientApplicationRequestValidator
                         produtoIdResolvido,
                         quantidade);
                 }
-                catch (Domain.Exceptions.DomainException exception)
+                catch (DomainException exception)
                 {
                     return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
                 }
@@ -215,9 +237,22 @@ internal static class PatientApplicationRequestValidator
                 productIds.Add(produtoIdResolvido.Value);
             }
 
-            foreach (var kitItem in procedimento.Itens)
+            if (item.ConsumirInsumosKit)
             {
-                productIds.Add(kitItem.ProdutoId);
+                foreach (var kitItem in procedimento.Itens)
+                {
+                    productIds.Add(kitItem.ProdutoId);
+                }
+            }
+            else
+            {
+                foreach (var manual in item.InsumosManuais ?? [])
+                {
+                    if (manual.ProdutoId != Guid.Empty)
+                    {
+                        productIds.Add(manual.ProdutoId);
+                    }
+                }
             }
 
             var produtos = await productsRepository.GetActiveByIdsAndEmpresaIdAsync(
@@ -232,10 +267,66 @@ internal static class PatientApplicationRequestValidator
             }
 
             var productsById = produtos.ToDictionary(produto => produto.Id);
+
+            var insumosManuaisValidados = PatientApplicationManualSuppliesValidator.NormalizeAndValidate(
+                item.ConsumirInsumosKit,
+                item.InsumosManuais,
+                produtoIdResolvido,
+                productsById);
+
+            if (insumosManuaisValidados.IsFailure)
+            {
+                return Result<ValidatedCreatePatientApplicationsData>.Failure(insumosManuaisValidados.Error!);
+            }
+
             var stockLines = PatientApplicationStockPlanner.BuildLines(
                 quantidade,
                 procedimento,
-                productsById);
+                productsById,
+                item.ConsumirInsumosKit,
+                insumosManuaisValidados.Value);
+
+            Guid? loteProdutoId = item.LoteProdutoId;
+            Produto? produtoAplicado = null;
+
+            if (produtoIdResolvido.HasValue
+                && productsById.TryGetValue(produtoIdResolvido.Value, out var produtoResolvido))
+            {
+                produtoAplicado = produtoResolvido;
+            }
+
+            if (produtoAplicado is not null && medicationLotStockService.RequiresLot(produtoAplicado))
+            {
+                if (!loteProdutoId.HasValue || loteProdutoId.Value == Guid.Empty)
+                {
+                    return Result<ValidatedCreatePatientApplicationsData>.Failure(
+                        $"Informe o lote do medicamento \"{produtoAplicado.Nome}\".");
+                }
+
+                try
+                {
+                    await medicationLotStockService.AllocateFromLotAsync(
+                        empresaId,
+                        request.UnidadeId,
+                        produtoAplicado,
+                        loteProdutoId.Value,
+                        quantidade!.Value,
+                        cancellationToken);
+                }
+                catch (DomainException exception)
+                {
+                    return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
+                }
+            }
+            else if (loteProdutoId.HasValue && loteProdutoId.Value != Guid.Empty)
+            {
+                return Result<ValidatedCreatePatientApplicationsData>.Failure(
+                    "Lote só pode ser informado para procedimentos com medicamento que controla lote.");
+            }
+            else
+            {
+                loteProdutoId = null;
+            }
 
             foreach (var line in stockLines.Where(line => line.ControlaEstoque))
             {
@@ -256,6 +347,8 @@ internal static class PatientApplicationRequestValidator
                 produtoIdResolvido,
                 procedimento.Id,
                 quantidade,
+                loteProdutoId,
+                item.ConsumirInsumosKit,
                 stockLines));
         }
 

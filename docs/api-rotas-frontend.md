@@ -2077,7 +2077,11 @@ Inclui `saldo` calculado (aplicações + quantidade por produto).
 
 ## 19. Aplicações em Pacientes — `/api/patient-applications`
 
-Registro de aplicações realizadas. **Sempre** informe `procedimentoId` e **`compraPacienteId`**. Ao criar, gera saída(s) de estoque e debita o saldo da compra; ao cancelar, estorna estoque e restaura saldo (pode reabrir compra `Concluido` → `Ativo`).
+Registro de aplicações realizadas. **Sempre** informe `procedimentoId` (ou `procedimentos[]`). Ao criar, gera saída(s) de estoque; quando `compraPacienteId` é informado, debita o saldo da compra; ao cancelar, estorna estoque e restaura saldo (pode reabrir compra `Concluido` → `Ativo`).
+
+Para medicamento com controle de lote: informe `loteProdutoId` (obrigatório). Liste lotes com saldo em `GET /api/stock-balances/lots?unidadeId=&produtoId=`.
+
+`consumirInsumosKit` (default `true`): quando `false`, **não** baixa os insumos do kit. Nesse caso pode informar `insumosManuais: [{ produtoId, quantidade }]` para baixar insumos escolhidos manualmente (lista vazia/omitida = só o medicamento).
 
 ### GET `/api/patient-applications`
 
@@ -2106,6 +2110,12 @@ Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unid
   "aplicadorId": "uuid",
   "unidadeId": "uuid",
   "quantidadeUtilizada": 2.5,
+  "loteProdutoId": "uuid",
+  "consumirInsumosKit": false,
+  "insumosManuais": [
+    { "produtoId": "uuid-seringa", "quantidade": 1 },
+    { "produtoId": "uuid-luva", "quantidade": 2 }
+  ],
   "dataAplicacao": "2026-06-25T14:00:00Z",
   "compraPacienteId": "uuid"
 }
@@ -2122,8 +2132,19 @@ Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unid
   "unidadeId": "uuid",
   "dataAplicacao": "2026-06-25T14:00:00Z",
   "procedimentos": [
-    { "procedimentoId": "uuid", "quantidadeUtilizada": 2.5 },
-    { "procedimentoId": "uuid" }
+    {
+      "procedimentoId": "uuid",
+      "quantidadeUtilizada": 2.5,
+      "loteProdutoId": "uuid",
+      "consumirInsumosKit": true
+    },
+    {
+      "procedimentoId": "uuid",
+      "consumirInsumosKit": false,
+      "insumosManuais": [
+        { "produtoId": "uuid-seringa", "quantidade": 1 }
+      ]
+    }
   ]
 }
 ```
@@ -2132,14 +2153,17 @@ Retorna uma aplicação com nomes resolvidos (paciente, produto, aplicador, unid
 |-------|-------------|-------|
 | `pacienteId` | Sim | Paciente ativo no tenant |
 | `procedimentoId` | Um de: `procedimentoId` ou `procedimentos[]` | Procedimento(s) ativo(s), sem repetir |
-| `procedimentos` | Um de: `procedimentoId` ou `procedimentos[]` | Lista com quantidade por item quando há produto aplicado |
-| `quantidadeUtilizada` | Se o procedimento tem produto aplicado (modo legado com um `procedimentoId`) | &gt; 0 |
+| `procedimentos` | Um de: `procedimentoId` ou `procedimentos[]` | Lista com quantidade/lote/toggle por item quando há produto aplicado |
+| `quantidadeUtilizada` | Se o procedimento tem produto aplicado | &gt; 0 |
+| `loteProdutoId` | Se o produto aplicado é medicamento com controle de lote | Lote da unidade/produto com saldo ≥ dose |
+| `consumirInsumosKit` | Não (default `true`) | `false` = não baixa insumos do kit |
+| `insumosManuais` | Só com `consumirInsumosKit = false` | Insumos (`INSUMO`) com quantidade > 0; sem repetir; ≠ produto aplicado |
 | `compraPacienteId` | Não | Quando informado, valida saldo e debita por procedimento com produto aplicado |
 | `aplicadorId` | Sim | Funcionário aplicador ativo na unidade |
 | `unidadeId` | Sim | Unidade ativa |
 | `dataAplicacao` | Sim | Data/hora |
 
-**Response 201** — `{ "aplicacoes": [ PatientApplicationDto, ... ] }` (uma entrada por procedimento). Gera saídas de estoque por aplicação.
+**Response 201** — `{ "aplicacoes": [ PatientApplicationDto, ... ] }` (uma entrada por procedimento). Gera saídas de estoque por aplicação (medicamento no lote informado; insumos do kit somente se `consumirInsumosKit = true`).
 
 ### PUT `/api/patient-applications/{id}`
 
@@ -2226,11 +2250,19 @@ Conclui agendamento. Para `tipo = Aplicacao`, cria `AplicacaoPaciente` vinculada
 ```json
 {
   "quantidadeUtilizada": 1.0,
+  "loteProdutoId": "uuid",
+  "consumirInsumosKit": false,
+  "insumosManuais": [
+    { "produtoId": "uuid-seringa", "quantidade": 1 }
+  ],
   "peso": 72.5
 }
 ```
 
-`quantidadeUtilizada` obrigatória quando o procedimento possui produto aplicado.
+`quantidadeUtilizada` obrigatória quando o procedimento possui produto aplicado.  
+`loteProdutoId` obrigatório quando o produto aplicado é medicamento com controle de lote.  
+`consumirInsumosKit` (default `true`): quando `false`, não baixa os insumos do kit; use `insumosManuais` para baixa manual.  
+Para vários procedimentos no agendamento, envie `procedimentos: [{ procedimentoId, quantidadeUtilizada?, loteProdutoId?, consumirInsumosKit?, insumosManuais?, peso? }]`.
 
 ### PATCH `/api/appointments/{id}/cancel`
 
@@ -2685,9 +2717,17 @@ interface PatientApplication {
   atualizadoEm: string | null;
 }
 
+interface PatientApplicationManualSupplyRequest {
+  produtoId: string;
+  quantidade: number;
+}
+
 interface CreatePatientApplicationProcedureRequest {
   procedimentoId: string;
   quantidadeUtilizada?: number | null;
+  loteProdutoId?: string | null;
+  consumirInsumosKit?: boolean;
+  insumosManuais?: PatientApplicationManualSupplyRequest[] | null;
 }
 
 interface CreatePatientApplicationRequest {
@@ -2698,6 +2738,9 @@ interface CreatePatientApplicationRequest {
   procedimentoId?: string | null;
   procedimentos?: CreatePatientApplicationProcedureRequest[] | null;
   quantidadeUtilizada?: number | null;
+  loteProdutoId?: string | null;
+  consumirInsumosKit?: boolean;
+  insumosManuais?: PatientApplicationManualSupplyRequest[] | null;
   peso?: number | null;
   observacao?: string | null;
   sintomaIds?: string[] | null;
@@ -2758,9 +2801,22 @@ interface CancelAppointmentRequest {
   motivo: string;
 }
 
+interface CompleteAppointmentProcedureRequest {
+  procedimentoId: string;
+  quantidadeUtilizada?: number | null;
+  peso?: number | null;
+  loteProdutoId?: string | null;
+  consumirInsumosKit?: boolean;
+  insumosManuais?: PatientApplicationManualSupplyRequest[] | null;
+}
+
 interface CompleteAppointmentRequest {
   quantidadeUtilizada?: number | null;
   peso?: number | null;
+  loteProdutoId?: string | null;
+  consumirInsumosKit?: boolean;
+  insumosManuais?: PatientApplicationManualSupplyRequest[] | null;
+  procedimentos?: CompleteAppointmentProcedureRequest[] | null;
 }
 ```
 

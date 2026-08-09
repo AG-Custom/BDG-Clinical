@@ -88,6 +88,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
             _symptomsRepository,
             _stockBalancesRepository,
             _patientPurchasesRepository,
+            _medicationLotStockService,
             cancellationToken);
 
         if (validation.IsFailure)
@@ -159,28 +160,35 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                         return Result<CreatePatientApplicationsResult>.Failure("Produto de estoque não encontrado.");
                     }
 
-                    if (_medicationLotStockService.RequiresLot(produtoLinha))
+                    var isProdutoAplicado = procedimentoData.ProdutoId.HasValue
+                        && line.ProdutoId == procedimentoData.ProdutoId.Value;
+
+                    if (isProdutoAplicado && _medicationLotStockService.RequiresLot(produtoLinha))
                     {
-                        var alocacoes = await _medicationLotStockService.AllocateFefoAsync(
+                        if (!procedimentoData.LoteProdutoId.HasValue)
+                        {
+                            return Result<CreatePatientApplicationsResult>.Failure(
+                                $"Informe o lote do medicamento \"{produtoLinha.Nome}\".");
+                        }
+
+                        var alocacao = await _medicationLotStockService.AllocateFromLotAsync(
                             empresaId,
                             data.UnidadeId,
                             produtoLinha,
+                            procedimentoData.LoteProdutoId.Value,
                             line.Quantidade,
                             cancellationToken);
 
-                        foreach (var alocacao in alocacoes)
-                        {
-                            var movimentacao = MovimentacaoEstoque.CreateSaidaFromAplicacao(
-                                empresaId,
-                                data.UnidadeId,
-                                line.ProdutoId,
-                                aplicacao.Id,
-                                data.AplicadorId,
-                                alocacao.Quantidade,
-                                data.DataAplicacao);
-                            movimentacao.AssignLote(alocacao.LoteProdutoId);
-                            todasMovimentacoes.Add(movimentacao);
-                        }
+                        var movimentacao = MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                            empresaId,
+                            data.UnidadeId,
+                            line.ProdutoId,
+                            aplicacao.Id,
+                            data.AplicadorId,
+                            alocacao.Quantidade,
+                            data.DataAplicacao);
+                        movimentacao.AssignLote(alocacao.LoteProdutoId);
+                        todasMovimentacoes.Add(movimentacao);
                     }
                     else
                     {

@@ -34,9 +34,16 @@ public sealed record PatientApplicationDto(
     DateTime CriadoEm,
     DateTime? AtualizadoEm);
 
+public sealed record PatientApplicationManualSupplyRequest(
+    Guid ProdutoId,
+    decimal Quantidade);
+
 public sealed record CreatePatientApplicationProcedureRequest(
     Guid ProcedimentoId,
-    decimal? QuantidadeUtilizada = null);
+    decimal? QuantidadeUtilizada = null,
+    Guid? LoteProdutoId = null,
+    bool ConsumirInsumosKit = true,
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null);
 
 public sealed record CreatePatientApplicationRequest(
     Guid PacienteId,
@@ -46,6 +53,9 @@ public sealed record CreatePatientApplicationRequest(
     Guid? CompraPacienteId = null,
     Guid? ProcedimentoId = null,
     decimal? QuantidadeUtilizada = null,
+    Guid? LoteProdutoId = null,
+    bool ConsumirInsumosKit = true,
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null,
     decimal? Peso = null,
     string? Observacao = null,
     IReadOnlyList<Guid>? SintomaIds = null,

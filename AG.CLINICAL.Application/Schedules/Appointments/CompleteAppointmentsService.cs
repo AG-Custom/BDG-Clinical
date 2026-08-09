@@ -1,3 +1,4 @@
+<<<<<<< HEAD:AG.CLINICAL.Application/Schedules/Appointments/CompleteAppointmentsService.cs
 using AG.CLINICAL.Application.Abstractions.Persistence;
 using AG.CLINICAL.Application.Abstractions.Security;
 using AG.CLINICAL.Application.Applications.Abstractions;
@@ -11,6 +12,23 @@ using AG.CLINICAL.Application.Schedules.Dtos;
 using AG.CLINICAL.Domain.Entities;
 using AG.CLINICAL.Domain.Enums;
 using AG.CLINICAL.Domain.Exceptions;
+=======
+using BGD.CLINICAL.Application.Abstractions.Persistence;
+using BGD.CLINICAL.Application.Abstractions.Security;
+using BGD.CLINICAL.Application.Applications.Abstractions;
+using BGD.CLINICAL.Application.Applications.Dtos;
+using BGD.CLINICAL.Application.Applications.PatientApplications;
+using BGD.CLINICAL.Application.Common;
+using BGD.CLINICAL.Application.Identity.Abstractions;
+using BGD.CLINICAL.Application.Inventory.Abstractions;
+using BGD.CLINICAL.Application.Inventory.StockMovements;
+using BGD.CLINICAL.Application.Packages.Abstractions;
+using BGD.CLINICAL.Application.Schedules.Abstractions;
+using BGD.CLINICAL.Application.Schedules.Dtos;
+using BGD.CLINICAL.Domain.Entities;
+using BGD.CLINICAL.Domain.Enums;
+using BGD.CLINICAL.Domain.Exceptions;
+>>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Schedules/Appointments/CompleteAppointmentsService.cs
 
 namespace AG.CLINICAL.Application.Schedules.Appointments;
 
@@ -30,6 +48,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
     private readonly IProductsRepository _productsRepository;
     private readonly IStockBalancesRepository _stockBalancesRepository;
     private readonly IStockMovementsRepository _stockMovementsRepository;
+    private readonly IMedicationLotStockService _medicationLotStockService;
     private readonly IPatientApplicationsRepository _patientApplicationsRepository;
     private readonly IPatientPurchasesRepository _patientPurchasesRepository;
     private readonly IAuditLogsService _auditLogsService;
@@ -42,6 +61,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         IProductsRepository productsRepository,
         IStockBalancesRepository stockBalancesRepository,
         IStockMovementsRepository stockMovementsRepository,
+        IMedicationLotStockService medicationLotStockService,
         IPatientApplicationsRepository patientApplicationsRepository,
         IPatientPurchasesRepository patientPurchasesRepository,
         IAuditLogsService auditLogsService,
@@ -53,6 +73,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         _productsRepository = productsRepository;
         _stockBalancesRepository = stockBalancesRepository;
         _stockMovementsRepository = stockMovementsRepository;
+        _medicationLotStockService = medicationLotStockService;
         _patientApplicationsRepository = patientApplicationsRepository;
         _patientPurchasesRepository = patientPurchasesRepository;
         _auditLogsService = auditLogsService;
@@ -156,6 +177,9 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
                 item.ProcedimentoId,
                 item.QuantidadeUtilizada,
                 item.Peso,
+                item.LoteProdutoId,
+                item.ConsumirInsumosKit,
+                item.InsumosManuais,
                 empresaId,
                 cancellationToken);
 
@@ -193,7 +217,10 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
                 new CompleteAppointmentProcedureRequest(
                     procedimentoIds[0],
                     request.QuantidadeUtilizada,
-                    request.Peso)
+                    request.Peso,
+                    request.LoteProdutoId,
+                    request.ConsumirInsumosKit,
+                    request.InsumosManuais)
             ]);
         }
 
@@ -232,6 +259,9 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         Guid procedimentoId,
         decimal? quantidadeUtilizada,
         decimal? peso,
+        Guid? loteProdutoId,
+        bool consumirInsumosKit,
+        IReadOnlyList<PatientApplicationManualSupplyRequest>? insumosManuais,
         Guid empresaId,
         CancellationToken cancellationToken)
     {
@@ -268,9 +298,22 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             productIds.Add(procedimento.ProdutoAplicadoId.Value);
         }
 
-        foreach (var item in procedimento.Itens)
+        if (consumirInsumosKit)
         {
-            productIds.Add(item.ProdutoId);
+            foreach (var item in procedimento.Itens)
+            {
+                productIds.Add(item.ProdutoId);
+            }
+        }
+        else
+        {
+            foreach (var manual in insumosManuais ?? [])
+            {
+                if (manual.ProdutoId != Guid.Empty)
+                {
+                    productIds.Add(manual.ProdutoId);
+                }
+            }
         }
 
         var produtos = await _productsRepository.GetActiveByIdsAndEmpresaIdAsync(
@@ -284,10 +327,62 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         }
 
         var productsById = produtos.ToDictionary(produto => produto.Id);
+
+        var insumosManuaisValidados = PatientApplicationManualSuppliesValidator.NormalizeAndValidate(
+            consumirInsumosKit,
+            insumosManuais,
+            procedimento.ProdutoAplicadoId,
+            productsById);
+
+        if (insumosManuaisValidados.IsFailure)
+        {
+            return insumosManuaisValidados.Error;
+        }
+
         var stockLines = PatientApplicationStockPlanner.BuildLines(
             quantidadeUtilizada,
             procedimento,
-            productsById);
+            productsById,
+            consumirInsumosKit,
+            insumosManuaisValidados.Value);
+
+        Produto? produtoAplicado = null;
+        if (procedimento.ProdutoAplicadoId.HasValue
+            && productsById.TryGetValue(procedimento.ProdutoAplicadoId.Value, out var produtoResolvido))
+        {
+            produtoAplicado = produtoResolvido;
+        }
+
+        if (produtoAplicado is not null && _medicationLotStockService.RequiresLot(produtoAplicado))
+        {
+            if (!loteProdutoId.HasValue || loteProdutoId.Value == Guid.Empty)
+            {
+                return $"Informe o lote do medicamento \"{produtoAplicado.Nome}\".";
+            }
+
+            try
+            {
+                await _medicationLotStockService.AllocateFromLotAsync(
+                    empresaId,
+                    agendamento.UnidadeId,
+                    produtoAplicado,
+                    loteProdutoId.Value,
+                    quantidadeUtilizada!.Value,
+                    cancellationToken);
+            }
+            catch (DomainException exception)
+            {
+                return exception.Message;
+            }
+        }
+        else if (loteProdutoId.HasValue && loteProdutoId.Value != Guid.Empty)
+        {
+            return "Lote só pode ser informado para procedimentos com medicamento que controla lote.";
+        }
+        else
+        {
+            loteProdutoId = null;
+        }
 
         foreach (var line in stockLines.Where(line => line.ControlaEstoque))
         {
@@ -317,17 +412,49 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             agendamento.Observacao,
             agendamento.Id);
 
-        var movimentacoes = stockLines
-            .Where(line => line.ControlaEstoque)
-            .Select(line => MovimentacaoEstoque.CreateSaidaFromAplicacao(
-                empresaId,
-                agendamento.UnidadeId,
-                line.ProdutoId,
-                aplicacao.Id,
-                agendamento.FuncionarioId,
-                line.Quantidade,
-                agendamento.DataInicio))
-            .ToList();
+        var movimentacoes = new List<MovimentacaoEstoque>();
+
+        foreach (var line in stockLines.Where(line => line.ControlaEstoque))
+        {
+            var isProdutoAplicado = procedimento.ProdutoAplicadoId.HasValue
+                && line.ProdutoId == procedimento.ProdutoAplicadoId.Value;
+
+            if (isProdutoAplicado
+                && produtoAplicado is not null
+                && _medicationLotStockService.RequiresLot(produtoAplicado)
+                && loteProdutoId.HasValue)
+            {
+                var alocacao = await _medicationLotStockService.AllocateFromLotAsync(
+                    empresaId,
+                    agendamento.UnidadeId,
+                    produtoAplicado,
+                    loteProdutoId.Value,
+                    line.Quantidade,
+                    cancellationToken);
+
+                var movimentacao = MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                    empresaId,
+                    agendamento.UnidadeId,
+                    line.ProdutoId,
+                    aplicacao.Id,
+                    agendamento.FuncionarioId,
+                    alocacao.Quantidade,
+                    agendamento.DataInicio);
+                movimentacao.AssignLote(alocacao.LoteProdutoId);
+                movimentacoes.Add(movimentacao);
+            }
+            else
+            {
+                movimentacoes.Add(MovimentacaoEstoque.CreateSaidaFromAplicacao(
+                    empresaId,
+                    agendamento.UnidadeId,
+                    line.ProdutoId,
+                    aplicacao.Id,
+                    agendamento.FuncionarioId,
+                    line.Quantidade,
+                    agendamento.DataInicio));
+            }
+        }
 
         await _patientApplicationsRepository.AddAsync(aplicacao, cancellationToken);
 

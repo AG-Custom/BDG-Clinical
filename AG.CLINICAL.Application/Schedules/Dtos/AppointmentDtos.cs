@@ -1,4 +1,10 @@
+<<<<<<< HEAD:AG.CLINICAL.Application/Schedules/Dtos/AppointmentDtos.cs
 namespace AG.CLINICAL.Application.Schedules.Dtos;
+=======
+using BGD.CLINICAL.Application.Applications.Dtos;
+
+namespace BGD.CLINICAL.Application.Schedules.Dtos;
+>>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Schedules/Dtos/AppointmentDtos.cs
 
 public sealed record AppointmentProcedureDto(Guid Id, string Nome);
 
@@ -60,9 +66,15 @@ public sealed record CancelAppointmentRequest(string Motivo);
 public sealed record CompleteAppointmentProcedureRequest(
     Guid ProcedimentoId,
     decimal? QuantidadeUtilizada = null,
-    decimal? Peso = null);
+    decimal? Peso = null,
+    Guid? LoteProdutoId = null,
+    bool ConsumirInsumosKit = true,
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null);
 
 public sealed record CompleteAppointmentRequest(
     decimal? QuantidadeUtilizada = null,
     decimal? Peso = null,
+    Guid? LoteProdutoId = null,
+    bool ConsumirInsumosKit = true,
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null,
     IReadOnlyList<CompleteAppointmentProcedureRequest>? Procedimentos = null);
