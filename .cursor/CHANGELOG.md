@@ -1,4 +1,4 @@
-# Changelog — Arquitetura Backend BGD Clinical
+# Changelog — Arquitetura Backend AG Clinical
 
 Registro de mudanças nas regras de arquitetura e no modo de operação da IA para o backend.
 
@@ -34,7 +34,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ### Added
 
-- Estrutura inicial de regras em `.cursor/rules/` para o backend BGD Clinical.
+- Estrutura inicial de regras em `.cursor/rules/` para o backend AG Clinical.
 - Definição de camadas: Domain, Application, Infra.Data, Infra.ExternalApis, Infra.Jobs, WebApi, Jobs.Web.
 - Contextos delimitados alinhados ao documento de banco de dados e aos módulos contratáveis.
 - Checklist para criação de nova feature.

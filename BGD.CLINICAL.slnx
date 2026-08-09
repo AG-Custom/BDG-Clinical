@@ -1,9 +1,0 @@
-<Solution>
-  <Project Path="BGD.CLINICAL.Application/BGD.CLINICAL.Application.csproj" />
-  <Project Path="BGD.CLINICAL.Domain/BGD.CLINICAL.Domain.csproj" />
-  <Project Path="BGD.CLINICAL.Infra.Data/BGD.CLINICAL.Infra.Data.csproj" />
-  <Project Path="BGD.CLINICAL.Infra.ExternalApis/BGD.CLINICAL.Infra.ExternalApis.csproj" />
-  <Project Path="BGD.CLINICAL.Infra.Jobs/BGD.CLINICAL.Infra.Jobs.csproj" />
-  <Project Path="BGD.CLINICAL.Jobs.Web/BGD.CLINICAL.Jobs.Web.csproj" />
-  <Project Path="BGD.CLINICAL.WebApi/BGD.CLINICAL.WebApi.csproj" />
-</Solution>

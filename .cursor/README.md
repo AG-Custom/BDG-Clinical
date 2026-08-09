@@ -1,4 +1,4 @@
-# Backend BGD Clinical — Guia para IA
+# Backend AG Clinical — Guia para IA
 
 Documentação de arquitetura e regras de operação do backend. Leia antes de implementar qualquer feature.
 

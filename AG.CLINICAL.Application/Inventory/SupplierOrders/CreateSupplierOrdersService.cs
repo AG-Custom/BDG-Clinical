@@ -1,0 +1,116 @@
+using AG.CLINICAL.Application.Abstractions.Storage;
+using AG.CLINICAL.Application.Abstractions.Persistence;
+using AG.CLINICAL.Application.Abstractions.Security;
+using AG.CLINICAL.Application.Common;
+using AG.CLINICAL.Application.Core.Abstractions;
+using AG.CLINICAL.Application.Identity.Abstractions;
+using AG.CLINICAL.Application.Inventory.Abstractions;
+using AG.CLINICAL.Application.Inventory.Dtos;
+using AG.CLINICAL.Domain.Entities;
+using AG.CLINICAL.Domain.Enums;
+using AG.CLINICAL.Domain.Exceptions;
+
+namespace AG.CLINICAL.Application.Inventory.SupplierOrders;
+
+public interface ICreateSupplierOrdersService
+{
+    Task<Result<SupplierOrderDto>> ExecuteAsync(
+        CreateSupplierOrderRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class CreateSupplierOrdersService : ICreateSupplierOrdersService
+{
+    private readonly ICurrentTenantContext _tenantContext;
+    private readonly ISupplierOrdersRepository _supplierOrdersRepository;
+    private readonly ISuppliersRepository _suppliersRepository;
+    private readonly IUnitsRepository _unitsRepository;
+    private readonly IProductsRepository _productsRepository;
+    private readonly IAuditLogsService _auditLogsService;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IObjectStorageService _objectStorageService;
+
+    public CreateSupplierOrdersService(
+        ICurrentTenantContext tenantContext,
+        ISupplierOrdersRepository supplierOrdersRepository,
+        ISuppliersRepository suppliersRepository,
+        IUnitsRepository unitsRepository,
+        IProductsRepository productsRepository,
+        IAuditLogsService auditLogsService,
+        IUnitOfWork unitOfWork,
+        IObjectStorageService objectStorageService)
+    {
+        _tenantContext = tenantContext;
+        _supplierOrdersRepository = supplierOrdersRepository;
+        _suppliersRepository = suppliersRepository;
+        _unitsRepository = unitsRepository;
+        _productsRepository = productsRepository;
+        _auditLogsService = auditLogsService;
+        _unitOfWork = unitOfWork;
+        _objectStorageService = objectStorageService;
+    }
+
+    public async Task<Result<SupplierOrderDto>> ExecuteAsync(
+        CreateSupplierOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var empresaId = _tenantContext.EmpresaId;
+
+        var validation = await SupplierOrderRequestValidator.ValidateAsync(
+            empresaId,
+            request.FornecedorId,
+            request.UnidadeId,
+            request.TipoPedido,
+            request.DataPedido,
+            request.Status,
+            request.Observacao,
+            request.Itens,
+            _suppliersRepository,
+            _unitsRepository,
+            _productsRepository,
+            cancellationToken);
+
+        if (validation.IsFailure)
+        {
+            return Result<SupplierOrderDto>.Failure(validation.Error!);
+        }
+
+        try
+        {
+            var data = validation.Value!;
+            var pedido = PedidoFornecedor.Create(
+                empresaId,
+                data.FornecedorId,
+                data.UnidadeId,
+                data.TipoPedido,
+                data.DataPedido,
+                data.Status,
+                data.Observacao,
+                data.Itens);
+
+            await _supplierOrdersRepository.AddAsync(pedido, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var persisted = await _supplierOrdersRepository.GetByIdAndEmpresaIdWithItensAsync(
+                pedido.Id,
+                empresaId,
+                cancellationToken);
+
+            await _auditLogsService.RegisterEntityChangeAsync(
+                empresaId,
+                _tenantContext.UsuarioId,
+                nameof(PedidoFornecedor),
+                pedido.Id,
+                AcaoAuditoria.Criar,
+                dadosNovos: SupplierOrdersAuditSerializer.Serialize(persisted ?? pedido),
+                cancellationToken: cancellationToken);
+
+            return Result<SupplierOrderDto>.Success(
+                SupplierOrdersMapper.Map(persisted ?? pedido, _objectStorageService));
+        }
+        catch (DomainException exception)
+        {
+            return Result<SupplierOrderDto>.Failure(exception.Message);
+        }
+    }
+}

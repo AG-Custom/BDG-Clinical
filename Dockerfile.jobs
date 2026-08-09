@@ -1,17 +1,18 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ["BGD.CLINICAL.Jobs.Web/BGD.CLINICAL.Jobs.Web.csproj", "BGD.CLINICAL.Jobs.Web/"]
-COPY ["BGD.CLINICAL.Application/BGD.CLINICAL.Application.csproj", "BGD.CLINICAL.Application/"]
-COPY ["BGD.CLINICAL.Domain/BGD.CLINICAL.Domain.csproj", "BGD.CLINICAL.Domain/"]
-COPY ["BGD.CLINICAL.Infra.Data/BGD.CLINICAL.Infra.Data.csproj", "BGD.CLINICAL.Infra.Data/"]
-COPY ["BGD.CLINICAL.Infra.ExternalApis/BGD.CLINICAL.Infra.ExternalApis.csproj", "BGD.CLINICAL.Infra.ExternalApis/"]
+COPY ["AG.CLINICAL.Jobs.Web/AG.CLINICAL.Jobs.Web.csproj", "AG.CLINICAL.Jobs.Web/"]
+COPY ["AG.CLINICAL.Application/AG.CLINICAL.Application.csproj", "AG.CLINICAL.Application/"]
+COPY ["AG.CLINICAL.Domain/AG.CLINICAL.Domain.csproj", "AG.CLINICAL.Domain/"]
+COPY ["AG.CLINICAL.Infra.Data/AG.CLINICAL.Infra.Data.csproj", "AG.CLINICAL.Infra.Data/"]
+COPY ["AG.CLINICAL.Infra.ExternalApis/AG.CLINICAL.Infra.ExternalApis.csproj", "AG.CLINICAL.Infra.ExternalApis/"]
+COPY ["AG.CLINICAL.Infra.Jobs/AG.CLINICAL.Infra.Jobs.csproj", "AG.CLINICAL.Infra.Jobs/"]
 
-RUN dotnet restore "BGD.CLINICAL.Jobs.Web/BGD.CLINICAL.Jobs.Web.csproj"
+RUN dotnet restore "AG.CLINICAL.Jobs.Web/AG.CLINICAL.Jobs.Web.csproj"
 
 COPY . .
 
-RUN dotnet publish "BGD.CLINICAL.Jobs.Web/BGD.CLINICAL.Jobs.Web.csproj" \
+RUN dotnet publish "AG.CLINICAL.Jobs.Web/AG.CLINICAL.Jobs.Web.csproj" \
     -c Release \
     -o /app/publish \
     /p:UseAppHost=false
@@ -22,4 +23,4 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
-ENTRYPOINT ["dotnet", "BGD.CLINICAL.Jobs.Web.dll"]
+ENTRYPOINT ["dotnet", "AG.CLINICAL.Jobs.Web.dll"]
