@@ -1,9 +1,5 @@
-<<<<<<< HEAD:AG.CLINICAL.Application/Applications/PatientApplications/PatientApplicationStockPlanner.cs
+using AG.CLINICAL.Application.Applications.Dtos;
 using AG.CLINICAL.Domain.Entities;
-=======
-using BGD.CLINICAL.Application.Applications.Dtos;
-using BGD.CLINICAL.Domain.Entities;
->>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Applications/PatientApplications/PatientApplicationStockPlanner.cs
 
 namespace AG.CLINICAL.Application.Applications.PatientApplications;
 

@@ -1,9 +1,9 @@
-using BGD.CLINICAL.Application.Applications.Dtos;
-using BGD.CLINICAL.Application.Common;
-using BGD.CLINICAL.Domain.Constants;
-using BGD.CLINICAL.Domain.Entities;
+using AG.CLINICAL.Application.Applications.Dtos;
+using AG.CLINICAL.Application.Common;
+using AG.CLINICAL.Domain.Constants;
+using AG.CLINICAL.Domain.Entities;
 
-namespace BGD.CLINICAL.Application.Applications.PatientApplications;
+namespace AG.CLINICAL.Application.Applications.PatientApplications;
 
 internal static class PatientApplicationManualSuppliesValidator
 {

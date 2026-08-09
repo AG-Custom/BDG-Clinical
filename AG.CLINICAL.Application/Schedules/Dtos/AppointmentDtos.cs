@@ -1,10 +1,6 @@
-<<<<<<< HEAD:AG.CLINICAL.Application/Schedules/Dtos/AppointmentDtos.cs
-namespace AG.CLINICAL.Application.Schedules.Dtos;
-=======
-using BGD.CLINICAL.Application.Applications.Dtos;
+using AG.CLINICAL.Application.Applications.Dtos;
 
-namespace BGD.CLINICAL.Application.Schedules.Dtos;
->>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Schedules/Dtos/AppointmentDtos.cs
+namespace AG.CLINICAL.Application.Schedules.Dtos;
 
 public sealed record AppointmentProcedureDto(Guid Id, string Nome);
 

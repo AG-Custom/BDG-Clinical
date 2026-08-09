@@ -1,22 +1,13 @@
-<<<<<<< HEAD:AG.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
 using AG.CLINICAL.Application.Applications.Abstractions;
 using AG.CLINICAL.Application.Applications.Dtos;
 using AG.CLINICAL.Application.Common;
 using AG.CLINICAL.Application.Core.Abstractions;
 using AG.CLINICAL.Application.Inventory.Abstractions;
+using AG.CLINICAL.Application.Inventory.StockMovements;
+using AG.CLINICAL.Application.Packages.Abstractions;
 using AG.CLINICAL.Application.Patients.Abstractions;
 using AG.CLINICAL.Domain.Entities;
-=======
-using BGD.CLINICAL.Application.Applications.Abstractions;
-using BGD.CLINICAL.Application.Applications.Dtos;
-using BGD.CLINICAL.Application.Common;
-using BGD.CLINICAL.Application.Core.Abstractions;
-using BGD.CLINICAL.Application.Inventory.Abstractions;
-using BGD.CLINICAL.Application.Inventory.StockMovements;
-using BGD.CLINICAL.Application.Patients.Abstractions;
-using BGD.CLINICAL.Domain.Entities;
-using BGD.CLINICAL.Domain.Exceptions;
->>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
+using AG.CLINICAL.Domain.Exceptions;
 
 namespace AG.CLINICAL.Application.Applications.PatientApplications;
 
@@ -54,12 +45,8 @@ internal static class PatientApplicationRequestValidator
         IEmployeesRepository employeesRepository,
         ISymptomsRepository symptomsRepository,
         IStockBalancesRepository stockBalancesRepository,
-<<<<<<< HEAD:AG.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
-        AG.CLINICAL.Application.Packages.Abstractions.IPatientPurchasesRepository patientPurchasesRepository,
-=======
-        BGD.CLINICAL.Application.Packages.Abstractions.IPatientPurchasesRepository patientPurchasesRepository,
+        IPatientPurchasesRepository patientPurchasesRepository,
         IMedicationLotStockService medicationLotStockService,
->>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Applications/PatientApplications/PatientApplicationRequestValidator.cs
         CancellationToken cancellationToken)
     {
         if (request.PacienteId == Guid.Empty)

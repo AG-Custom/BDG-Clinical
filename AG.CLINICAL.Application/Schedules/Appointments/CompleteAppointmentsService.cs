@@ -1,34 +1,18 @@
-<<<<<<< HEAD:AG.CLINICAL.Application/Schedules/Appointments/CompleteAppointmentsService.cs
 using AG.CLINICAL.Application.Abstractions.Persistence;
 using AG.CLINICAL.Application.Abstractions.Security;
 using AG.CLINICAL.Application.Applications.Abstractions;
+using AG.CLINICAL.Application.Applications.Dtos;
 using AG.CLINICAL.Application.Applications.PatientApplications;
 using AG.CLINICAL.Application.Common;
 using AG.CLINICAL.Application.Identity.Abstractions;
 using AG.CLINICAL.Application.Inventory.Abstractions;
+using AG.CLINICAL.Application.Inventory.StockMovements;
 using AG.CLINICAL.Application.Packages.Abstractions;
 using AG.CLINICAL.Application.Schedules.Abstractions;
 using AG.CLINICAL.Application.Schedules.Dtos;
 using AG.CLINICAL.Domain.Entities;
 using AG.CLINICAL.Domain.Enums;
 using AG.CLINICAL.Domain.Exceptions;
-=======
-using BGD.CLINICAL.Application.Abstractions.Persistence;
-using BGD.CLINICAL.Application.Abstractions.Security;
-using BGD.CLINICAL.Application.Applications.Abstractions;
-using BGD.CLINICAL.Application.Applications.Dtos;
-using BGD.CLINICAL.Application.Applications.PatientApplications;
-using BGD.CLINICAL.Application.Common;
-using BGD.CLINICAL.Application.Identity.Abstractions;
-using BGD.CLINICAL.Application.Inventory.Abstractions;
-using BGD.CLINICAL.Application.Inventory.StockMovements;
-using BGD.CLINICAL.Application.Packages.Abstractions;
-using BGD.CLINICAL.Application.Schedules.Abstractions;
-using BGD.CLINICAL.Application.Schedules.Dtos;
-using BGD.CLINICAL.Domain.Entities;
-using BGD.CLINICAL.Domain.Enums;
-using BGD.CLINICAL.Domain.Exceptions;
->>>>>>> beaf46413336e75715ca7c780d9d8eb24c23c7ae:BGD.CLINICAL.Application/Schedules/Appointments/CompleteAppointmentsService.cs
 
 namespace AG.CLINICAL.Application.Schedules.Appointments;
 

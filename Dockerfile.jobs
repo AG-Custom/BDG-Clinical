@@ -6,6 +6,7 @@ COPY ["AG.CLINICAL.Application/AG.CLINICAL.Application.csproj", "AG.CLINICAL.App
 COPY ["AG.CLINICAL.Domain/AG.CLINICAL.Domain.csproj", "AG.CLINICAL.Domain/"]
 COPY ["AG.CLINICAL.Infra.Data/AG.CLINICAL.Infra.Data.csproj", "AG.CLINICAL.Infra.Data/"]
 COPY ["AG.CLINICAL.Infra.ExternalApis/AG.CLINICAL.Infra.ExternalApis.csproj", "AG.CLINICAL.Infra.ExternalApis/"]
+COPY ["AG.CLINICAL.Infra.Jobs/AG.CLINICAL.Infra.Jobs.csproj", "AG.CLINICAL.Infra.Jobs/"]
 
 RUN dotnet restore "AG.CLINICAL.Jobs.Web/AG.CLINICAL.Jobs.Web.csproj"
 
