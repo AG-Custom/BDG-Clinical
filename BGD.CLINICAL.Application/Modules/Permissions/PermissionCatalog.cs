@@ -30,7 +30,8 @@ public static class PermissionCatalog
         // Compra de pacote
         new("compra_paciente.visualizar", "Visualizar compras de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 30),
         new("compra_paciente.criar", "Criar compra de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 31),
-        new("compra_paciente.cancelar", "Cancelar compra de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 32),
+        new("compra_paciente.editar", "Editar saldo de compra de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 32),
+        new("compra_paciente.cancelar", "Cancelar compra de pacote", "Compras de pacote", PermissionModuleCodes.Pacientes, 33),
 
         // Sintoma
         new("sintoma.visualizar", "Visualizar sintomas", "Sintomas", PermissionModuleCodes.Pacientes, 10),

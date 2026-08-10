@@ -163,14 +163,10 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                     var isProdutoAplicado = procedimentoData.ProdutoId.HasValue
                         && line.ProdutoId == procedimentoData.ProdutoId.Value;
 
-                    if (isProdutoAplicado && _medicationLotStockService.RequiresLot(produtoLinha))
+                    if (isProdutoAplicado
+                        && _medicationLotStockService.RequiresLot(produtoLinha)
+                        && procedimentoData.LoteProdutoId.HasValue)
                     {
-                        if (!procedimentoData.LoteProdutoId.HasValue)
-                        {
-                            return Result<CreatePatientApplicationsResult>.Failure(
-                                $"Informe o lote do medicamento \"{produtoLinha.Nome}\".");
-                        }
-
                         var alocacao = await _medicationLotStockService.AllocateFromLotAsync(
                             empresaId,
                             data.UnidadeId,

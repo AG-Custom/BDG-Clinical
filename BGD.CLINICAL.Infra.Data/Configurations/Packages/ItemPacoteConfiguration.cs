@@ -11,6 +11,7 @@ internal sealed class ItemPacoteConfiguration : IEntityTypeConfiguration<ItemPac
         builder.ToTable("item_pacote");
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.QuantidadeTotal).HasPrecision(18, 4);
+        builder.Property(entity => entity.QuantidadeUtilizadaBase).HasPrecision(18, 4);
         builder.Property(entity => entity.UnidadeMedida).HasMaxLength(30).IsRequired();
         builder.HasOne(entity => entity.Pacote)
             .WithMany(entity => entity.Itens)

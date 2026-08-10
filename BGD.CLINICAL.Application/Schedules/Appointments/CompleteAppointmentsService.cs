@@ -337,26 +337,30 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             produtoAplicado = produtoResolvido;
         }
 
+        // Lote opcional temporariamente (pós-migração). Quando informado, valida alocação;
+        // sem lote, segue baixa de estoque sem vínculo de lote.
         if (produtoAplicado is not null && _medicationLotStockService.RequiresLot(produtoAplicado))
         {
-            if (!loteProdutoId.HasValue || loteProdutoId.Value == Guid.Empty)
+            if (loteProdutoId.HasValue && loteProdutoId.Value != Guid.Empty)
             {
-                return $"Informe o lote do medicamento \"{produtoAplicado.Nome}\".";
+                try
+                {
+                    await _medicationLotStockService.AllocateFromLotAsync(
+                        empresaId,
+                        agendamento.UnidadeId,
+                        produtoAplicado,
+                        loteProdutoId.Value,
+                        quantidadeUtilizada!.Value,
+                        cancellationToken);
+                }
+                catch (DomainException exception)
+                {
+                    return exception.Message;
+                }
             }
-
-            try
+            else
             {
-                await _medicationLotStockService.AllocateFromLotAsync(
-                    empresaId,
-                    agendamento.UnidadeId,
-                    produtoAplicado,
-                    loteProdutoId.Value,
-                    quantidadeUtilizada!.Value,
-                    cancellationToken);
-            }
-            catch (DomainException exception)
-            {
-                return exception.Message;
+                loteProdutoId = null;
             }
         }
         else if (loteProdutoId.HasValue && loteProdutoId.Value != Guid.Empty)

@@ -66,4 +66,36 @@ public sealed class AuditLogsQueryRepository : IAuditLogsQueryRepository
 
         return new EntityAuditUserIds(criacao, atualizacao);
     }
+
+    public async Task<IReadOnlyList<EntityAuditLogRecord>> ListByEntityAsync(
+        Guid empresaId,
+        string entidade,
+        Guid registroId,
+        IReadOnlyList<AcaoAuditoria>? acoes = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.LogsAuditoria
+            .AsNoTracking()
+            .Where(log =>
+                log.EmpresaId == empresaId
+                && log.Entidade == entidade
+                && log.RegistroId == registroId);
+
+        if (acoes is { Count: > 0 })
+        {
+            query = query.Where(log => acoes.Contains(log.Acao));
+        }
+
+        return await query
+            .OrderBy(log => log.Data)
+            .ThenBy(log => log.CriadoEm)
+            .Select(log => new EntityAuditLogRecord(
+                log.Id,
+                log.UsuarioId,
+                log.Acao,
+                log.Data,
+                log.DadosAnteriores,
+                log.DadosNovos))
+            .ToListAsync(cancellationToken);
+    }
 }

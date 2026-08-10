@@ -8,7 +8,9 @@ public sealed record PatientApplicationConsumedItemDto(
     Guid ProdutoId,
     string ProdutoNome,
     decimal Quantidade,
-    bool ControlaEstoque);
+    bool ControlaEstoque,
+    Guid? LoteProdutoId = null,
+    string? LoteCodigo = null);
 
 public sealed record PatientApplicationDto(
     Guid Id,
@@ -32,7 +34,9 @@ public sealed record PatientApplicationDto(
     IReadOnlyList<PatientApplicationSymptomDto> Sintomas,
     IReadOnlyList<PatientApplicationConsumedItemDto> ItensConsumidos,
     DateTime CriadoEm,
-    DateTime? AtualizadoEm);
+    DateTime? AtualizadoEm,
+    Guid? LoteProdutoId = null,
+    string? LoteCodigo = null);
 
 public sealed record PatientApplicationManualSupplyRequest(
     Guid ProdutoId,

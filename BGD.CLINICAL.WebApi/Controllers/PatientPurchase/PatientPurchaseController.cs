@@ -17,6 +17,8 @@ public sealed class PatientPurchaseController : ControllerBase
     private readonly IListActivePatientPurchasesService _listActivePatientPurchasesService;
     private readonly IGetPatientPurchasesService _getPatientPurchasesService;
     private readonly IGetPatientPurchaseBalanceService _getPatientPurchaseBalanceService;
+    private readonly IGetPatientPurchaseHistoryService _getPatientPurchaseHistoryService;
+    private readonly IUpdatePatientPurchaseBalancesService _updatePatientPurchaseBalancesService;
     private readonly ICancelPatientPurchasesService _cancelPatientPurchasesService;
 
     public PatientPurchaseController(
@@ -26,6 +28,8 @@ public sealed class PatientPurchaseController : ControllerBase
         IListActivePatientPurchasesService listActivePatientPurchasesService,
         IGetPatientPurchasesService getPatientPurchasesService,
         IGetPatientPurchaseBalanceService getPatientPurchaseBalanceService,
+        IGetPatientPurchaseHistoryService getPatientPurchaseHistoryService,
+        IUpdatePatientPurchaseBalancesService updatePatientPurchaseBalancesService,
         ICancelPatientPurchasesService cancelPatientPurchasesService)
     {
         _createPatientPurchasesService = createPatientPurchasesService;
@@ -34,6 +38,8 @@ public sealed class PatientPurchaseController : ControllerBase
         _listActivePatientPurchasesService = listActivePatientPurchasesService;
         _getPatientPurchasesService = getPatientPurchasesService;
         _getPatientPurchaseBalanceService = getPatientPurchaseBalanceService;
+        _getPatientPurchaseHistoryService = getPatientPurchaseHistoryService;
+        _updatePatientPurchaseBalancesService = updatePatientPurchaseBalancesService;
         _cancelPatientPurchasesService = cancelPatientPurchasesService;
     }
 
@@ -147,6 +153,44 @@ public sealed class PatientPurchaseController : ControllerBase
         if (result.IsFailure)
         {
             return NotFound(new ApiResponse<object?>(null!, false, result.Error));
+        }
+
+        return Ok(new ApiResponse<PatientPurchaseBalanceDto>(result.Value!, true));
+    }
+
+    [HttpGet("api/patient-purchases/{id:guid}/history")]
+    [RequireAnyPermissionFrom(AuxiliaryPermissionSet.PatientPurchases)]
+    public async Task<IActionResult> GetHistory(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _getPatientPurchaseHistoryService.ExecuteAsync(id, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return NotFound(new ApiResponse<object?>(null!, false, result.Error));
+        }
+
+        return Ok(new ApiResponse<PatientPurchaseHistoryDto>(result.Value!, true));
+    }
+
+    [HttpPut("api/patient-purchases/{id:guid}/balance")]
+    [RequirePermission("compra_paciente.editar")]
+    public async Task<IActionResult> UpdateBalance(
+        Guid id,
+        [FromBody] UpdatePatientPurchaseBalanceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _updatePatientPurchaseBalancesService.ExecuteAsync(
+            id,
+            request,
+            cancellationToken);
+
+        if (result.IsFailure)
+        {
+            var statusCode = result.Error == "Compra de pacote não encontrada."
+                ? StatusCodes.Status404NotFound
+                : StatusCodes.Status400BadRequest;
+
+            return StatusCode(statusCode, new ApiResponse<object?>(null!, false, result.Error));
         }
 
         return Ok(new ApiResponse<PatientPurchaseBalanceDto>(result.Value!, true));

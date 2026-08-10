@@ -22,6 +22,11 @@ public interface IPatientApplicationsRepository
         int limit,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<AplicacaoPaciente>> ListByCompraPacienteIdWithDetailsAsync(
+        Guid empresaId,
+        Guid compraPacienteId,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(AplicacaoPaciente aplicacao, CancellationToken cancellationToken = default);
 
     void Update(AplicacaoPaciente aplicacao);

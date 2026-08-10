@@ -161,6 +161,8 @@ public static class DependencyInjection
         services.AddScoped<IListActivePatientPurchasesService, ListActivePatientPurchasesService>();
         services.AddScoped<IGetPatientPurchasesService, GetPatientPurchasesService>();
         services.AddScoped<IGetPatientPurchaseBalanceService, GetPatientPurchaseBalanceService>();
+        services.AddScoped<IGetPatientPurchaseHistoryService, GetPatientPurchaseHistoryService>();
+        services.AddScoped<IUpdatePatientPurchaseBalancesService, UpdatePatientPurchaseBalancesService>();
         services.AddScoped<ICancelPatientPurchasesService, CancelPatientPurchasesService>();
 
         services.AddScoped<ICreateAppointmentsService, CreateAppointmentsService>();

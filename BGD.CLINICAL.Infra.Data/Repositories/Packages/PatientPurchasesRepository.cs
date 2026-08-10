@@ -101,4 +101,16 @@ public sealed class PatientPurchasesRepository : IPatientPurchasesRepository
     {
         _context.ComprasPaciente.Update(compra);
     }
+
+    public Task<int> CountByPacoteIdAsync(
+        Guid empresaId,
+        Guid pacoteId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.ComprasPaciente
+            .AsNoTracking()
+            .CountAsync(
+                compra => compra.EmpresaId == empresaId && compra.PacoteId == pacoteId,
+                cancellationToken);
+    }
 }

@@ -30,4 +30,9 @@ public interface IPatientPurchasesRepository
     Task AddAsync(CompraPaciente compra, CancellationToken cancellationToken = default);
 
     void Update(CompraPaciente compra);
+
+    Task<int> CountByPacoteIdAsync(
+        Guid empresaId,
+        Guid pacoteId,
+        CancellationToken cancellationToken = default);
 }

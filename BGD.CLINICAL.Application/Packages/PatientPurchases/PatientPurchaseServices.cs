@@ -448,3 +448,132 @@ public sealed class CancelPatientPurchasesService : ICancelPatientPurchasesServi
         }
     }
 }
+
+public interface IUpdatePatientPurchaseBalancesService
+{
+    Task<Result<PatientPurchaseBalanceDto>> ExecuteAsync(
+        Guid id,
+        UpdatePatientPurchaseBalanceRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class UpdatePatientPurchaseBalancesService : IUpdatePatientPurchaseBalancesService
+{
+    private readonly ICurrentTenantContext _tenantContext;
+    private readonly IPatientPurchasesRepository _patientPurchasesRepository;
+    private readonly IPackagesRepository _packagesRepository;
+    private readonly IAuditLogsService _auditLogsService;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UpdatePatientPurchaseBalancesService(
+        ICurrentTenantContext tenantContext,
+        IPatientPurchasesRepository patientPurchasesRepository,
+        IPackagesRepository packagesRepository,
+        IAuditLogsService auditLogsService,
+        IUnitOfWork unitOfWork)
+    {
+        _tenantContext = tenantContext;
+        _patientPurchasesRepository = patientPurchasesRepository;
+        _packagesRepository = packagesRepository;
+        _auditLogsService = auditLogsService;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result<PatientPurchaseBalanceDto>> ExecuteAsync(
+        Guid id,
+        UpdatePatientPurchaseBalanceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var empresaId = _tenantContext.EmpresaId;
+
+        if (request.Itens is null || request.Itens.Count == 0)
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure("Informe ao menos um item de saldo para atualizar.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Motivo) && request.Motivo.Length > 2000)
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure("O motivo deve ter no máximo 2000 caracteres.");
+        }
+
+        var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+            id,
+            empresaId,
+            cancellationToken);
+
+        if (compra is null)
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure("Compra de pacote não encontrada.");
+        }
+
+        if (compra.Status == StatusCompraPaciente.Cancelado)
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure("Compra cancelada não pode ter o saldo alterado.");
+        }
+
+        var comprasNoPacote = await _patientPurchasesRepository.CountByPacoteIdAsync(
+            empresaId,
+            compra.PacoteId,
+            cancellationToken);
+
+        if (comprasNoPacote != 1)
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure(
+                "Só é permitido editar o saldo de compras com pacote exclusivo (não compartilhado).");
+        }
+
+        if (compra.Pacote is null)
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure("Pacote da compra não encontrado.");
+        }
+
+        try
+        {
+            var dadosAnteriores = PatientPurchasesAuditSerializer.Serialize(compra);
+
+            foreach (var itemRequest in request.Itens)
+            {
+                if (itemRequest.ProdutoId == Guid.Empty)
+                {
+                    return Result<PatientPurchaseBalanceDto>.Failure("Informe o produto do item de saldo.");
+                }
+
+                var utilizadaNasAplicacoes = compra.GetQuantidadeUtilizadaNasAplicacoes(itemRequest.ProdutoId);
+                compra.Pacote.UpdateItemQuantidade(
+                    itemRequest.ProdutoId,
+                    itemRequest.QuantidadeContratada,
+                    itemRequest.QuantidadeUtilizada,
+                    utilizadaNasAplicacoes);
+            }
+
+            compra.CompleteIfExhausted();
+            compra.ReopenIfCompleted();
+
+            _packagesRepository.Update(compra.Pacote);
+            _patientPurchasesRepository.Update(compra);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var dadosNovos = PatientPurchasesAuditSerializer.Serialize(compra);
+            if (!string.IsNullOrWhiteSpace(request.Motivo))
+            {
+                dadosNovos = $"{{\"motivo\":{System.Text.Json.JsonSerializer.Serialize(request.Motivo.Trim())},\"saldo\":{dadosNovos}}}";
+            }
+
+            await _auditLogsService.RegisterEntityChangeAsync(
+                empresaId,
+                _tenantContext.UsuarioId,
+                nameof(CompraPaciente),
+                compra.Id,
+                AcaoAuditoria.Editar,
+                dadosAnteriores: dadosAnteriores,
+                dadosNovos: dadosNovos,
+                cancellationToken: cancellationToken);
+
+            return Result<PatientPurchaseBalanceDto>.Success(PatientPurchasesMapper.MapBalance(compra));
+        }
+        catch (DomainException exception)
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure(exception.Message);
+        }
+    }
+}

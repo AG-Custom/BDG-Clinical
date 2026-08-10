@@ -151,13 +151,14 @@ CREATE TABLE licenca_modulo (
 GO
 
 CREATE TABLE item_pacote (
-    id                  UNIQUEIDENTIFIER NOT NULL,
-    pacote_id           UNIQUEIDENTIFIER NOT NULL,
-    produto_id          UNIQUEIDENTIFIER NOT NULL,
-    quantidade_total    DECIMAL(18, 4)   NOT NULL,
-    unidade_medida      NVARCHAR(30)     NOT NULL,
-    criado_em           DATETIME2        NOT NULL,
-    atualizado_em       DATETIME2        NULL,
+    id                          UNIQUEIDENTIFIER NOT NULL,
+    pacote_id                   UNIQUEIDENTIFIER NOT NULL,
+    produto_id                  UNIQUEIDENTIFIER NOT NULL,
+    quantidade_total            DECIMAL(18, 4)   NOT NULL,
+    quantidade_utilizada_base   DECIMAL(18, 4)   NOT NULL CONSTRAINT df_item_pacote_quantidade_utilizada_base DEFAULT (0),
+    unidade_medida              NVARCHAR(30)     NOT NULL,
+    criado_em                   DATETIME2        NOT NULL,
+    atualizado_em               DATETIME2        NULL,
     CONSTRAINT pk_item_pacote PRIMARY KEY (id),
     CONSTRAINT fk_item_pacote_pacote_pacote_id FOREIGN KEY (pacote_id) REFERENCES pacote (id),
     CONSTRAINT fk_item_pacote_produto_produto_id FOREIGN KEY (produto_id) REFERENCES produto (id)

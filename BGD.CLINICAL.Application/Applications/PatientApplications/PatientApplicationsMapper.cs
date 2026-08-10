@@ -8,6 +8,9 @@ internal static class PatientApplicationsMapper
 {
     public static PatientApplicationDto Map(AplicacaoPaciente aplicacao)
     {
+        var itensConsumidos = MapItensConsumidos(aplicacao);
+        var lotePrincipal = ObterLoteProdutoAplicado(aplicacao);
+
         return new PatientApplicationDto(
             aplicacao.Id,
             aplicacao.PacienteId,
@@ -28,9 +31,11 @@ internal static class PatientApplicationsMapper
             aplicacao.Realizado,
             aplicacao.Cancelada,
             MapSintomas(aplicacao.Sintomas),
-            MapItensConsumidos(aplicacao),
+            itensConsumidos,
             aplicacao.CriadoEm,
-            aplicacao.AtualizadoEm);
+            aplicacao.AtualizadoEm,
+            lotePrincipal?.LoteProdutoId,
+            lotePrincipal?.LoteCodigo);
     }
 
     public static IReadOnlyList<PatientApplicationDto> Map(IReadOnlyList<AplicacaoPaciente> aplicacoes)
@@ -57,7 +62,33 @@ internal static class PatientApplicationsMapper
                 movimentacao.ProdutoId,
                 movimentacao.Produto?.Nome ?? string.Empty,
                 movimentacao.Quantidade,
-                movimentacao.Produto?.ControlaEstoque ?? true))
+                movimentacao.Produto?.ControlaEstoque ?? true,
+                movimentacao.LoteProdutoId,
+                movimentacao.LoteProduto?.Codigo))
             .ToList();
+    }
+
+    private static (Guid? LoteProdutoId, string? LoteCodigo)? ObterLoteProdutoAplicado(
+        AplicacaoPaciente aplicacao)
+    {
+        if (!aplicacao.ProdutoId.HasValue)
+        {
+            return null;
+        }
+
+        var movimentacao = aplicacao.MovimentacoesEstoque
+            .Where(item =>
+                item.Tipo == TipoMovimentacaoEstoque.Saida
+                && item.ProdutoId == aplicacao.ProdutoId.Value
+                && item.LoteProdutoId.HasValue)
+            .OrderBy(item => item.CriadoEm)
+            .FirstOrDefault();
+
+        if (movimentacao is null)
+        {
+            return null;
+        }
+
+        return (movimentacao.LoteProdutoId, movimentacao.LoteProduto?.Codigo);
     }
 }

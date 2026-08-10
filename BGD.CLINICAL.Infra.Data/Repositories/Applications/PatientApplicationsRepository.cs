@@ -29,9 +29,37 @@ public sealed class PatientApplicationsRepository : IPatientApplicationsReposito
                 .ThenInclude(aplicacaoSintoma => aplicacaoSintoma.Sintoma)
             .Include(aplicacao => aplicacao.MovimentacoesEstoque)
                 .ThenInclude(movimentacao => movimentacao.Produto)
+            .Include(aplicacao => aplicacao.MovimentacoesEstoque)
+                .ThenInclude(movimentacao => movimentacao.LoteProduto)
             .FirstOrDefaultAsync(
                 aplicacao => aplicacao.Id == id && aplicacao.EmpresaId == empresaId,
                 cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AplicacaoPaciente>> ListByCompraPacienteIdWithDetailsAsync(
+        Guid empresaId,
+        Guid compraPacienteId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.AplicacoesPaciente
+            .AsNoTracking()
+            .Include(aplicacao => aplicacao.Paciente)
+            .Include(aplicacao => aplicacao.Produto)
+            .Include(aplicacao => aplicacao.Procedimento)
+            .Include(aplicacao => aplicacao.Funcionario)
+            .Include(aplicacao => aplicacao.Unidade)
+            .Include(aplicacao => aplicacao.Sintomas)
+                .ThenInclude(aplicacaoSintoma => aplicacaoSintoma.Sintoma)
+            .Include(aplicacao => aplicacao.MovimentacoesEstoque)
+                .ThenInclude(movimentacao => movimentacao.Produto)
+            .Include(aplicacao => aplicacao.MovimentacoesEstoque)
+                .ThenInclude(movimentacao => movimentacao.LoteProduto)
+            .Where(aplicacao =>
+                aplicacao.EmpresaId == empresaId
+                && aplicacao.CompraPacienteId == compraPacienteId)
+            .OrderBy(aplicacao => aplicacao.DataAplicacao)
+            .ThenBy(aplicacao => aplicacao.CriadoEm)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<AplicacaoPaciente>> ListByEmpresaIdAsync(

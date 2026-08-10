@@ -991,6 +991,11 @@ namespace BGD.CLINICAL.Infra.Data.Migrations
                         .HasColumnType("decimal(18,4)")
                         .HasColumnName("quantidade_total");
 
+                    b.Property<decimal>("QuantidadeUtilizadaBase")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("quantidade_utilizada_base");
+
                     b.Property<string>("UnidadeMedida")
                         .IsRequired()
                         .HasMaxLength(30)

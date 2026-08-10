@@ -154,6 +154,27 @@ public sealed class Pacote : AggregateRoot
         Ativo = true;
         AtualizadoEm = DateTime.UtcNow;
     }
+
+    public void UpdateItemQuantidade(
+        Guid produtoId,
+        decimal quantidadeTotal,
+        decimal quantidadeUtilizadaDesejada,
+        decimal quantidadeUtilizadaNasAplicacoes)
+    {
+        if (!Ativo)
+        {
+            throw new DomainException("Pacote inativo não pode ser alterado.");
+        }
+
+        var item = Itens.FirstOrDefault(i => i.ProdutoId == produtoId);
+        if (item is null)
+        {
+            throw new DomainException("Produto não encontrado neste pacote.");
+        }
+
+        item.UpdateSaldo(quantidadeTotal, quantidadeUtilizadaDesejada, quantidadeUtilizadaNasAplicacoes);
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }
 
 public sealed class ItemPacote : AggregateRoot
@@ -165,6 +186,13 @@ public sealed class ItemPacote : AggregateRoot
     public Guid PacoteId { get; private set; }
     public Guid ProdutoId { get; private set; }
     public decimal QuantidadeTotal { get; private set; }
+
+    /// <summary>
+    /// Consumo já utilizado fora das aplicações do sistema (ex.: correção de migração).
+    /// O utilizado total = base + soma das aplicações realizadas.
+    /// </summary>
+    public decimal QuantidadeUtilizadaBase { get; private set; }
+
     public string UnidadeMedida { get; private set; } = string.Empty;
 
     public Pacote Pacote { get; private set; } = null!;
@@ -198,8 +226,45 @@ public sealed class ItemPacote : AggregateRoot
             PacoteId = pacoteId,
             ProdutoId = produtoId,
             QuantidadeTotal = quantidadeTotal,
+            QuantidadeUtilizadaBase = 0,
             UnidadeMedida = unidadeMedida.Trim()
         };
+    }
+
+    public void UpdateSaldo(
+        decimal quantidadeTotal,
+        decimal quantidadeUtilizadaDesejada,
+        decimal quantidadeUtilizadaNasAplicacoes)
+    {
+        if (quantidadeTotal <= 0)
+        {
+            throw new DomainException("A quantidade do item deve ser maior que zero.");
+        }
+
+        if (quantidadeUtilizadaDesejada < 0)
+        {
+            throw new DomainException("A quantidade utilizada não pode ser negativa.");
+        }
+
+        if (quantidadeUtilizadaNasAplicacoes < 0)
+        {
+            throw new DomainException("A quantidade utilizada nas aplicações é inválida.");
+        }
+
+        if (quantidadeTotal < quantidadeUtilizadaDesejada)
+        {
+            throw new DomainException(
+                $"A quantidade contratada não pode ser menor que a já utilizada ({FormatarQuantidadeSaldo(quantidadeUtilizadaDesejada)} {UnidadeMedida}).");
+        }
+
+        QuantidadeTotal = quantidadeTotal;
+        QuantidadeUtilizadaBase = quantidadeUtilizadaDesejada - quantidadeUtilizadaNasAplicacoes;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    private static string FormatarQuantidadeSaldo(decimal quantidade)
+    {
+        return quantidade.ToString("0.####", CultureInfo.GetCultureInfo("pt-BR"));
     }
 }
 
@@ -251,7 +316,7 @@ public sealed class CompraPaciente : AggregateRoot
         };
     }
 
-    public decimal GetQuantidadeUtilizada(Guid produtoId)
+    public decimal GetQuantidadeUtilizadaNasAplicacoes(Guid produtoId)
     {
         return Aplicacoes
             .Where(aplicacao =>
@@ -260,6 +325,13 @@ public sealed class CompraPaciente : AggregateRoot
                 && aplicacao.ProdutoId == produtoId
                 && aplicacao.QuantidadeUtilizada.HasValue)
             .Sum(aplicacao => aplicacao.QuantidadeUtilizada!.Value);
+    }
+
+    public decimal GetQuantidadeUtilizada(Guid produtoId)
+    {
+        var item = Pacote?.Itens.FirstOrDefault(i => i.ProdutoId == produtoId);
+        var baseUtilizada = item?.QuantidadeUtilizadaBase ?? 0m;
+        return baseUtilizada + GetQuantidadeUtilizadaNasAplicacoes(produtoId);
     }
 
     public decimal GetQuantidadeRestante(Guid produtoId)

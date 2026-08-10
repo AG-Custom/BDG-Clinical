@@ -2067,6 +2067,27 @@ Inclui `saldo` calculado (aplicações + quantidade por produto).
 
 ### GET `/api/patient-purchases/{id}/balance`
 
+### GET `/api/patient-purchases/{id}/history`
+
+Histórico cronológico da compra: `Compra`, `Aplicacao` (com aplicador/lote), `CancelamentoAplicacao`, `AjusteManual` (diff de saldo + motivo da auditoria) e `CancelamentoCompra`.
+
+### PUT `/api/patient-purchases/{id}/balance` — `compra_paciente.editar`
+
+Ajusta a quantidade contratada (`item_pacote.quantidade_total`) e a quantidade utilizada de uma compra com **pacote exclusivo** (1 compra → 1 pacote). O restante é recalculado.
+
+A utilizada informada é o **total desejado**. O sistema persiste a diferença em `item_pacote.quantidade_utilizada_base` (consumo fora das aplicações do sistema); o total exibido continua sendo `base + soma das aplicações`. Novas aplicações continuam somando ao utilizado.
+
+```json
+{
+  "itens": [
+    { "produtoId": "uuid", "quantidadeContratada": 60, "quantidadeUtilizada": 12 }
+  ],
+  "motivo": "Correção de saldo migrado"
+}
+```
+
+Regras: `quantidadeContratada > 0`; `quantidadeUtilizada >= 0`; `quantidadeContratada >= quantidadeUtilizada`; compra cancelada não pode ser editada; pacote compartilhado por mais de uma compra retorna 400.
+
 ### POST `/api/patient-purchases/{id}/cancel` — `compra_paciente.cancelar`
 
 ```json

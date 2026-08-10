@@ -281,27 +281,30 @@ internal static class PatientApplicationRequestValidator
                 produtoAplicado = produtoResolvido;
             }
 
+            // Lote opcional temporariamente (pós-migração). Quando informado, valida alocação;
+            // sem lote, segue baixa de estoque sem vínculo de lote.
             if (produtoAplicado is not null && medicationLotStockService.RequiresLot(produtoAplicado))
             {
-                if (!loteProdutoId.HasValue || loteProdutoId.Value == Guid.Empty)
+                if (loteProdutoId.HasValue && loteProdutoId.Value != Guid.Empty)
                 {
-                    return Result<ValidatedCreatePatientApplicationsData>.Failure(
-                        $"Informe o lote do medicamento \"{produtoAplicado.Nome}\".");
+                    try
+                    {
+                        await medicationLotStockService.AllocateFromLotAsync(
+                            empresaId,
+                            request.UnidadeId,
+                            produtoAplicado,
+                            loteProdutoId.Value,
+                            quantidade!.Value,
+                            cancellationToken);
+                    }
+                    catch (DomainException exception)
+                    {
+                        return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
+                    }
                 }
-
-                try
+                else
                 {
-                    await medicationLotStockService.AllocateFromLotAsync(
-                        empresaId,
-                        request.UnidadeId,
-                        produtoAplicado,
-                        loteProdutoId.Value,
-                        quantidade!.Value,
-                        cancellationToken);
-                }
-                catch (DomainException exception)
-                {
-                    return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
+                    loteProdutoId = null;
                 }
             }
             else if (loteProdutoId.HasValue && loteProdutoId.Value != Guid.Empty)

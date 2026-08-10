@@ -72,3 +72,36 @@ public sealed record CreatePatientPurchaseRequest(
 
 public sealed record CancelPatientPurchaseRequest(
     string? Observacao = null);
+
+public sealed record UpdatePatientPurchaseBalanceItemRequest(
+    Guid ProdutoId,
+    decimal QuantidadeContratada,
+    decimal QuantidadeUtilizada);
+
+public sealed record UpdatePatientPurchaseBalanceRequest(
+    IReadOnlyList<UpdatePatientPurchaseBalanceItemRequest> Itens,
+    string? Motivo = null);
+
+public sealed record PatientPurchaseHistoryEventDto(
+    string Tipo,
+    DateTime Data,
+    Guid? ProdutoId = null,
+    string? ProdutoNome = null,
+    decimal? Quantidade = null,
+    decimal? QuantidadeAnterior = null,
+    decimal? QuantidadeNova = null,
+    string? CampoAjuste = null,
+    string? UnidadeMedida = null,
+    Guid? AplicadorId = null,
+    string? AplicadorNome = null,
+    Guid? UsuarioId = null,
+    string? UsuarioNome = null,
+    Guid? LoteProdutoId = null,
+    string? LoteCodigo = null,
+    Guid? AplicacaoId = null,
+    string? Motivo = null,
+    bool? Cancelada = null);
+
+public sealed record PatientPurchaseHistoryDto(
+    Guid CompraPacienteId,
+    IReadOnlyList<PatientPurchaseHistoryEventDto> Eventos);
