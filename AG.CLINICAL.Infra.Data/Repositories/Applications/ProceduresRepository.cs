@@ -127,6 +127,70 @@ public sealed class ProceduresRepository : IProceduresRepository
 
     public void Update(Procedimento procedimento)
     {
-        _context.Procedimentos.Update(procedimento);
+        var entry = _context.Entry(procedimento);
+
+        if (entry.State == EntityState.Detached)
+        {
+            _context.Procedimentos.Attach(procedimento);
+            entry.State = EntityState.Modified;
+        }
+
+        var currentItemIds = procedimento.Itens.Select(item => item.Id).ToHashSet();
+        var orphans = _context.ItensProcedimento.Local
+            .Where(item => item.ProcedimentoId == procedimento.Id && !currentItemIds.Contains(item.Id))
+            .ToList();
+
+        foreach (var orphan in orphans)
+        {
+            if (_context.Entry(orphan).State != EntityState.Deleted)
+            {
+                _context.ItensProcedimento.Remove(orphan);
+            }
+        }
+
+        foreach (var item in procedimento.Itens)
+        {
+            EnsureItemTrackedCorrectly(item);
+        }
+    }
+
+    private void EnsureItemTrackedCorrectly(ItemProcedimento item)
+    {
+        var itemEntry = _context.Entry(item);
+
+        if (itemEntry.State is EntityState.Added or EntityState.Deleted)
+        {
+            return;
+        }
+
+        if (_context.ItensProcedimento.Local.Any(tracked => tracked.Id == item.Id))
+        {
+            if (itemEntry.State == EntityState.Modified && !ItemExistsInDatabase(item.Id))
+            {
+                _context.ItensProcedimento.Add(item);
+            }
+
+            return;
+        }
+
+        if (ItemExistsInDatabase(item.Id))
+        {
+            if (itemEntry.State == EntityState.Detached)
+            {
+                _context.ItensProcedimento.Attach(item);
+            }
+
+            itemEntry.State = EntityState.Modified;
+            return;
+        }
+
+        _context.ItensProcedimento.Add(item);
+    }
+
+    private bool ItemExistsInDatabase(Guid itemId)
+    {
+        return _context.ItensProcedimento
+            .AsNoTracking()
+            .Any(item => item.Id == itemId);
     }
 }
