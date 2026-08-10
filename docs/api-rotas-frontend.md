@@ -2010,6 +2010,8 @@ Catálogo comercial de pacotes vendidos aos pacientes (RF017–RF018).
 | `search` | `string` | — | Busca por nome (mín. 2) |
 | `limit` | `number` | — | Máx. 50 |
 
+Não retorna pacotes auxiliares de migração de saldo (nome começando com `Migração` / `Migracao`). `GET /api/packages/{id}` continua disponível para compras já vinculadas a esses pacotes.
+
 Permissão auxiliar: `pacote.visualizar` (ou `compra_paciente.criar` / `aplicacao.criar` / `agendamento.criar`).
 
 ### GET `/api/packages/{id}`

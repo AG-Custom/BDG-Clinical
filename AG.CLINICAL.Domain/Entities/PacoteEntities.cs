@@ -21,6 +21,22 @@ public sealed class Pacote : AggregateRoot
     public ICollection<ItemPacote> Itens { get; private set; } = [];
     public ICollection<CompraPaciente> Compras { get; private set; } = [];
 
+    /// <summary>
+    /// Pacotes auxiliares criados na migração de saldo (ex.: "Migração — Paciente — Produto").
+    /// Não fazem parte do catálogo comercial e não devem aparecer em GET /api/packages.
+    /// </summary>
+    public static bool NomeIndicaMigracao(string? nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            return false;
+        }
+
+        var trimmed = nome.Trim();
+        return trimmed.StartsWith("Migração", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("Migracao", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static Pacote Create(
         Guid empresaId,
         string nome,

@@ -25,7 +25,11 @@ public sealed class PackagesRepository : IPackagesRepository
             .AsNoTracking()
             .Include(pacote => pacote.Itens)
                 .ThenInclude(item => item.Produto)
-            .Where(pacote => pacote.EmpresaId == empresaId);
+            .Where(pacote => pacote.EmpresaId == empresaId)
+            // Auxiliares de migração de saldo (nome "Migração — ...") ficam fora do catálogo.
+            .Where(pacote =>
+                !pacote.Nome.StartsWith("Migração") &&
+                !pacote.Nome.StartsWith("Migracao"));
 
         if (!includeInactive)
         {
