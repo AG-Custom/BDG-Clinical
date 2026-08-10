@@ -1,15 +1,15 @@
 using System.Text.Json;
-using BGD.CLINICAL.Application.Abstractions.Security;
-using BGD.CLINICAL.Application.Applications.Abstractions;
-using BGD.CLINICAL.Application.Audits.Abstractions;
-using BGD.CLINICAL.Application.Common;
-using BGD.CLINICAL.Application.Identity.Abstractions;
-using BGD.CLINICAL.Application.Packages.Abstractions;
-using BGD.CLINICAL.Application.Packages.Dtos;
-using BGD.CLINICAL.Domain.Entities;
-using BGD.CLINICAL.Domain.Enums;
+using AG.CLINICAL.Application.Abstractions.Security;
+using AG.CLINICAL.Application.Applications.Abstractions;
+using AG.CLINICAL.Application.Audits.Abstractions;
+using AG.CLINICAL.Application.Common;
+using AG.CLINICAL.Application.Identity.Abstractions;
+using AG.CLINICAL.Application.Packages.Abstractions;
+using AG.CLINICAL.Application.Packages.Dtos;
+using AG.CLINICAL.Domain.Entities;
+using AG.CLINICAL.Domain.Enums;
 
-namespace BGD.CLINICAL.Application.Packages.PatientPurchases;
+namespace AG.CLINICAL.Application.Packages.PatientPurchases;
 
 public interface IGetPatientPurchaseHistoryService
 {

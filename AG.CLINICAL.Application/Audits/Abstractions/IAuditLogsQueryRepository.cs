@@ -1,3 +1,5 @@
+using AG.CLINICAL.Domain.Enums;
+
 namespace AG.CLINICAL.Application.Audits.Abstractions;
 
 public sealed record EntityAuditUserIds(
