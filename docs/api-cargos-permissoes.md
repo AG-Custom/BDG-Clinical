@@ -1,4 +1,4 @@
-# BGD Clinical — Cargos e Permissões (API)
+# AG Clinical — Cargos e Permissões (API)
 
 Documento de contrato HTTP para **cargos** (`/api/positions`) e **mapa de permissões** (`/api/permissions`). Complementa o [api-rotas-frontend.md](./api-rotas-frontend.md).
 

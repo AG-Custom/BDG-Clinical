@@ -1,4 +1,4 @@
-﻿# BGD Clinical - Banco de Dados
+# AG Clinical - Banco de Dados
 
 Sistema SaaS white label para clínicas, com arquitetura multi-tenant e módulos contratáveis por empresa.
 
@@ -1376,7 +1376,7 @@ Eventos de login e logout devem registrar usuário, data e ip.
 
 ### OutputMessageEmail
 
-Fila de envio assíncrono de e-mails. A API REST enfileira mensagens durante os casos de uso; o host `BGD.CLINICAL.Jobs.Web` consome a tabela em background e dispara o SMTP sem bloquear a resposta HTTP.
+Fila de envio assíncrono de e-mails. A API REST enfileira mensagens durante os casos de uso; o host `AG.CLINICAL.Jobs.Web` consome a tabela em background e dispara o SMTP sem bloquear a resposta HTTP.
 
 ```text
 output_message_email

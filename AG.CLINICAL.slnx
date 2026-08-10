@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="AG.CLINICAL.Application/AG.CLINICAL.Application.csproj" />
+  <Project Path="AG.CLINICAL.Domain/AG.CLINICAL.Domain.csproj" />
+  <Project Path="AG.CLINICAL.Infra.Data/AG.CLINICAL.Infra.Data.csproj" />
+  <Project Path="AG.CLINICAL.Infra.ExternalApis/AG.CLINICAL.Infra.ExternalApis.csproj" />
+  <Project Path="AG.CLINICAL.Infra.Jobs/AG.CLINICAL.Infra.Jobs.csproj" />
+  <Project Path="AG.CLINICAL.Jobs.Web/AG.CLINICAL.Jobs.Web.csproj" />
+  <Project Path="AG.CLINICAL.WebApi/AG.CLINICAL.WebApi.csproj" />
+</Solution>

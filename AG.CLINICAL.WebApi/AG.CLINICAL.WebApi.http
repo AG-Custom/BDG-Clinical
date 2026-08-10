@@ -1,0 +1,6 @@
+@AG.CLINICAL.WebApi_HostAddress = http://localhost:5111
+
+GET {{AG.CLINICAL.WebApi_HostAddress}}/health
+Accept: application/json
+
+###

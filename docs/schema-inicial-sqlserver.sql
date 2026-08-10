@@ -1,5 +1,5 @@
 /*
-  BGD Clinical - Schema inicial
+  AG Clinical - Schema inicial
   Banco: Microsoft SQL Server
   Uso: executar em banco vazio (copiar e colar na interface do SSMS / Azure Data Studio)
 

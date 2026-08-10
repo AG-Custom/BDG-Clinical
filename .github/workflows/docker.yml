@@ -24,8 +24,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            rudio1/bdg-clinical:latest
-            rudio1/bdg-clinical:${{ github.sha }}
+            rudio1/ag-clinical:latest
+            rudio1/ag-clinical:${{ github.sha }}
 
   jobs:
     name: Build Jobs
@@ -45,5 +45,5 @@ jobs:
           file: ./Dockerfile.jobs
           push: true
           tags: |
-            rudio1/bdg-clinical-jobs:latest
-            rudio1/bdg-clinical-jobs:${{ github.sha }}
+            rudio1/ag-clinical-jobs:latest
+            rudio1/ag-clinical-jobs:${{ github.sha }}

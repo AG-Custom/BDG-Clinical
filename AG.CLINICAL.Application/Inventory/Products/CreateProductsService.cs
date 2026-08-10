@@ -1,0 +1,113 @@
+using AG.CLINICAL.Application.Abstractions.Persistence;
+using AG.CLINICAL.Application.Abstractions.Security;
+using AG.CLINICAL.Application.Common;
+using AG.CLINICAL.Application.Identity.Abstractions;
+using AG.CLINICAL.Application.Inventory.Abstractions;
+using AG.CLINICAL.Application.Inventory.Dtos;
+using AG.CLINICAL.Domain.Entities;
+using AG.CLINICAL.Domain.Enums;
+using AG.CLINICAL.Domain.Exceptions;
+
+namespace AG.CLINICAL.Application.Inventory.Products;
+
+public interface ICreateProductsService
+{
+    Task<Result<ProductDto>> ExecuteAsync(
+        CreateProductRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class CreateProductsService : ICreateProductsService
+{
+    private readonly ICurrentTenantContext _tenantContext;
+    private readonly IProductsRepository _productsRepository;
+    private readonly IProductTypesRepository _productTypesRepository;
+    private readonly IAuditLogsService _auditLogsService;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public CreateProductsService(
+        ICurrentTenantContext tenantContext,
+        IProductsRepository productsRepository,
+        IProductTypesRepository productTypesRepository,
+        IAuditLogsService auditLogsService,
+        IUnitOfWork unitOfWork)
+    {
+        _tenantContext = tenantContext;
+        _productsRepository = productsRepository;
+        _productTypesRepository = productTypesRepository;
+        _auditLogsService = auditLogsService;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result<ProductDto>> ExecuteAsync(
+        CreateProductRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var empresaId = _tenantContext.EmpresaId;
+
+        var validation = await ProductRequestValidator.ValidateAsync(
+            empresaId,
+            request.TipoProdutoId,
+            request.UnidadeMedidaId,
+            request.Nome,
+            request.EstoqueMinimo,
+            request.Valor,
+            request.Sku,
+            request.CodigoInterno,
+            request.CodigoBarras,
+            request.ControlaEstoque,
+            request.UnidadeEmbalagemId,
+            request.ConteudoPorEmbalagem,
+            request.UnidadeConteudoId,
+            request.ConcentracaoPorConteudo,
+            excludeProductId: null,
+            _productsRepository,
+            _productTypesRepository,
+            cancellationToken);
+
+        if (validation.IsFailure)
+        {
+            return Result<ProductDto>.Failure(validation.Error!);
+        }
+
+        try
+        {
+            var data = validation.Value!;
+            var produto = Produto.Create(
+                empresaId,
+                data.TipoProdutoId,
+                data.UnidadeMedidaId,
+                data.Nome,
+                data.EstoqueMinimo,
+                data.Valor,
+                data.Sku,
+                data.CodigoInterno,
+                data.CodigoBarras,
+                data.ControlaEstoque,
+                data.UnidadeEmbalagemId,
+                data.ConteudoPorEmbalagem,
+                data.UnidadeConteudoId,
+                data.ConcentracaoPorConteudo);
+
+            await _productsRepository.AddAsync(produto, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var persisted = await _productsRepository.GetByIdAndEmpresaIdAsync(produto.Id, empresaId, cancellationToken);
+
+            await _auditLogsService.RegisterEntityChangeAsync(
+                empresaId,
+                _tenantContext.UsuarioId,
+                nameof(Produto),
+                produto.Id,
+                AcaoAuditoria.Criar,
+                dadosNovos: ProductsAuditSerializer.Serialize(persisted ?? produto),
+                cancellationToken: cancellationToken);
+
+            return Result<ProductDto>.Success(ProductsMapper.Map(persisted ?? produto));
+        }
+        catch (DomainException exception)
+        {
+            return Result<ProductDto>.Failure(exception.Message);
+        }
+    }
+}

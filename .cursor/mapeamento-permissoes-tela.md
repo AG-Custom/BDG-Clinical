@@ -1,4 +1,4 @@
-# Mapeamento de permissões — Telas × APIs (BGD Clinical Frontend)
+# Mapeamento de permissões — Telas × APIs (AG Clinical Frontend)
 
 Documento gerado a partir da análise do código em `src/router`, páginas, services, `MainLayout`, boot e `.cursor/docs/api-backend-contexto.md`.
 
