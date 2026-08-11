@@ -20,9 +20,11 @@ internal static class StockMovementsAuditSerializer
             movimentacao.ProdutoId,
             Tipo = movimentacao.Tipo.ToString(),
             movimentacao.Quantidade,
+            movimentacao.ValorUnitario,
             movimentacao.Data,
             movimentacao.Origem,
             movimentacao.FuncionarioId,
+            movimentacao.TransferenciaEstoqueId,
             movimentacao.Observacao,
         }, Options);
     }

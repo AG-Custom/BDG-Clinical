@@ -28,13 +28,14 @@ internal static class StockMovementsMapper
             movimentacao.Tipo.ToString(),
             movimentacao.Motivo.ToString(),
             movimentacao.Quantidade,
-            movimentacao.QuantidadeEmbalagem ?? 0,
             valorUnitario,
             valorTotal,
+            movimentacao.QuantidadeEmbalagem,
             movimentacao.Data,
             movimentacao.Origem,
             movimentacao.PedidoFornecedorId,
             movimentacao.AplicacaoPacienteId,
+            movimentacao.TransferenciaEstoqueId,
             movimentacao.Observacao,
             movimentacao.CriadoEm);
     }
@@ -52,6 +53,11 @@ internal static class StockMovementsMapper
         MovimentacaoEstoque movimentacao,
         IReadOnlyDictionary<(Guid PedidoId, Guid ProdutoId), decimal>? valoresPedido)
     {
+        if (movimentacao.ValorUnitario.HasValue)
+        {
+            return movimentacao.ValorUnitario.Value;
+        }
+
         decimal valorEmbalagemOuCadastro;
 
         if (

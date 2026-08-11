@@ -3,6 +3,8 @@ using AG.CLINICAL.Domain.Entities;
 using AG.CLINICAL.Domain.Enums;
 using AG.CLINICAL.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using AG.CLINICAL.Domain.Exceptions;
 
 namespace AG.CLINICAL.Infra.Data.Repositories.Inventory;
 
@@ -27,6 +29,64 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
         CancellationToken cancellationToken = default)
     {
         await _context.MovimentacoesEstoque.AddRangeAsync(movimentacoes, cancellationToken);
+    }
+
+    public async Task AddTransferAtomicallyAsync(
+        Guid empresaId,
+        IReadOnlyList<MovimentacaoEstoque> movimentacoes,
+        IReadOnlyList<StockTransferBalanceRequirement> saldosNecessarios,
+        CancellationToken cancellationToken = default)
+    {
+        var executionStrategy = _context.Database.CreateExecutionStrategy();
+
+        await executionStrategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken);
+
+            try
+            {
+                foreach (var requisito in saldosNecessarios)
+                {
+                    var query = _context.MovimentacoesEstoque
+                        .Where(movimentacao =>
+                            movimentacao.EmpresaId == empresaId
+                            && movimentacao.UnidadeId == requisito.UnidadeId
+                            && movimentacao.ProdutoId == requisito.ProdutoId);
+
+                    if (requisito.LoteProdutoId.HasValue)
+                    {
+                        query = query.Where(movimentacao =>
+                            movimentacao.LoteProdutoId == requisito.LoteProdutoId.Value);
+                    }
+
+                    var saldo = await query.SumAsync(
+                        movimentacao =>
+                            movimentacao.Tipo == TipoMovimentacaoEstoque.Entrada
+                            || movimentacao.Tipo == TipoMovimentacaoEstoque.Ajuste
+                                ? movimentacao.Quantidade
+                                : -movimentacao.Quantidade,
+                        cancellationToken);
+
+                    if (saldo < requisito.Quantidade)
+                    {
+                        var escopo = requisito.LoteProdutoId.HasValue ? " no lote selecionado" : string.Empty;
+                        throw new DomainException(
+                            $"Saldo insuficiente{escopo}. Saldo disponível: {saldo}; quantidade solicitada: {requisito.Quantidade}.");
+                    }
+                }
+
+                await _context.MovimentacoesEstoque.AddRangeAsync(movimentacoes, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        });
     }
 
     public async Task<IReadOnlyList<MovimentacaoEstoque>> ListByEmpresaIdAsync(

@@ -80,6 +80,18 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 UnidadeMedidaSigla = unidadeMedida.Sigla,
                 produto.EstoqueMinimo,
                 balance.SaldoAtual,
+                ValorMovimentacaoManual =
+                    _context.MovimentacoesEstoque
+                        .AsNoTracking()
+                        .Where(movimentacao =>
+                            movimentacao.EmpresaId == empresaId
+                            && movimentacao.UnidadeId == balance.UnidadeId
+                            && movimentacao.ProdutoId == balance.ProdutoId
+                            && movimentacao.ValorUnitario != null)
+                        .OrderByDescending(movimentacao => movimentacao.Data)
+                        .ThenByDescending(movimentacao => movimentacao.CriadoEm)
+                        .Select(movimentacao => movimentacao.ValorUnitario)
+                        .FirstOrDefault(),
                 ValorEmbalagemOuPedido =
                     _context.ItensPedidoFornecedor
                         .AsNoTracking()
@@ -149,9 +161,10 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 var fator = ProductStockValuation.ResolveFatorEmbalagemParaEstoque(
                     row.ConteudoPorEmbalagem,
                     row.ConcentracaoPorConteudo);
-                var valorUnitario = ProductStockValuation.ResolveValorPorUnidadeEstoque(
-                    row.ValorEmbalagemOuPedido,
-                    fator);
+                var valorUnitario = row.ValorMovimentacaoManual
+                    ?? ProductStockValuation.ResolveValorPorUnidadeEstoque(
+                        row.ValorEmbalagemOuPedido,
+                        fator);
 
                 return new StockBalanceRow(
                     row.UnidadeId,
