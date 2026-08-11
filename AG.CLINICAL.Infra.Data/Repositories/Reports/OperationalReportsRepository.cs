@@ -69,7 +69,12 @@ public sealed class OperationalReportsRepository(AppDbContext context) : IOperat
             .ToDictionaryAsync(x => x.Tipo, x => x.Quantidade, cancellationToken);
 
         var movimentos = await context.MovimentacoesEstoque.AsNoTracking()
-            .Where(m => m.EmpresaId == empresaId && m.Data >= inicio && m.Data < fimExclusivo && m.Motivo != MotivoMovimentacaoEstoque.Transferencia)
+            .Where(m =>
+                m.EmpresaId == empresaId
+                && m.Data >= inicio
+                && m.Data < fimExclusivo
+                && m.Motivo != MotivoMovimentacaoEstoque.Transferencia
+                && m.Origem != "RESET_ESTOQUE")
             .Select(m => new
             {
                 m.Tipo,
