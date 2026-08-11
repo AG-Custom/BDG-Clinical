@@ -14,6 +14,7 @@ internal sealed class MovimentacaoEstoqueConfiguration : IEntityTypeConfiguratio
         builder.Property(entity => entity.Tipo).HasConversion<string>().HasMaxLength(40).IsRequired();
         builder.Property(entity => entity.Motivo).HasConversion<string>().HasMaxLength(40).IsRequired();
         builder.Property(entity => entity.Quantidade).HasPrecision(18, 4);
+        builder.Property(entity => entity.ValorUnitario).HasPrecision(18, 4);
         builder.Property(entity => entity.QuantidadeEmbalagem).HasPrecision(18, 4);
         builder.Property(entity => entity.Origem).HasMaxLength(120).IsRequired();
         builder.Property(entity => entity.Observacao).HasMaxLength(2000);
@@ -26,5 +27,6 @@ internal sealed class MovimentacaoEstoqueConfiguration : IEntityTypeConfiguratio
         builder.HasOne(entity => entity.PedidoFornecedor).WithMany().HasForeignKey(entity => entity.PedidoFornecedorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(entity => new { entity.EmpresaId, entity.UnidadeId, entity.ProdutoId, entity.Data });
         builder.HasIndex(entity => new { entity.EmpresaId, entity.LoteProdutoId });
+        builder.HasIndex(entity => new { entity.EmpresaId, entity.TransferenciaEstoqueId });
     }
 }

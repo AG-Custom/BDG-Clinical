@@ -1090,12 +1090,14 @@ public sealed class MovimentacaoEstoque : AggregateRoot
     public TipoMovimentacaoEstoque Tipo { get; private set; }
     public MotivoMovimentacaoEstoque Motivo { get; private set; }
     public decimal Quantidade { get; private set; }
+    public decimal? ValorUnitario { get; private set; }
     public decimal? QuantidadeEmbalagem { get; private set; }
     public DateTime Data { get; private set; }
     public string Origem { get; private set; } = string.Empty;
     public Guid? FuncionarioId { get; private set; }
     public Guid? AplicacaoPacienteId { get; private set; }
     public Guid? PedidoFornecedorId { get; private set; }
+    public Guid? TransferenciaEstoqueId { get; private set; }
     public string? Observacao { get; private set; }
 
     public Empresa Empresa { get; private set; } = null!;
@@ -1120,6 +1122,16 @@ public sealed class MovimentacaoEstoque : AggregateRoot
 
         LoteProdutoId = loteProdutoId;
         QuantidadeEmbalagem = quantidadeEmbalagem;
+    }
+
+    public void AssignValorUnitario(decimal valorUnitario)
+    {
+        if (valorUnitario < 0)
+        {
+            throw new DomainException("O valor unitário da movimentação não pode ser negativo.");
+        }
+
+        ValorUnitario = decimal.Round(valorUnitario, 4, MidpointRounding.AwayFromZero);
     }
 
     public static MovimentacaoEstoque CreateEntradaFromPedido(
@@ -1313,6 +1325,82 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             "PERDA_MANUAL",
             funcionarioId,
             observacao);
+    }
+
+    public static MovimentacaoEstoque CreateTransferenciaSaida(
+        Guid transferenciaEstoqueId,
+        Guid empresaId,
+        Guid unidadeOrigemId,
+        Guid produtoId,
+        decimal quantidade,
+        DateTime data,
+        Guid? funcionarioId = null,
+        string? observacao = null)
+    {
+        return CreateTransferencia(
+            transferenciaEstoqueId,
+            empresaId,
+            unidadeOrigemId,
+            produtoId,
+            TipoMovimentacaoEstoque.Saida,
+            quantidade,
+            data,
+            funcionarioId,
+            observacao);
+    }
+
+    public static MovimentacaoEstoque CreateTransferenciaEntrada(
+        Guid transferenciaEstoqueId,
+        Guid empresaId,
+        Guid unidadeDestinoId,
+        Guid produtoId,
+        decimal quantidade,
+        DateTime data,
+        Guid? funcionarioId = null,
+        string? observacao = null)
+    {
+        return CreateTransferencia(
+            transferenciaEstoqueId,
+            empresaId,
+            unidadeDestinoId,
+            produtoId,
+            TipoMovimentacaoEstoque.Entrada,
+            quantidade,
+            data,
+            funcionarioId,
+            observacao);
+    }
+
+    private static MovimentacaoEstoque CreateTransferencia(
+        Guid transferenciaEstoqueId,
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        TipoMovimentacaoEstoque tipo,
+        decimal quantidade,
+        DateTime data,
+        Guid? funcionarioId,
+        string? observacao)
+    {
+        if (transferenciaEstoqueId == Guid.Empty)
+        {
+            throw new DomainException(
+                "Identificador da transferência inválido. Não foi possível gerar a movimentação de transferência.");
+        }
+
+        var movimentacao = CreateManual(
+            empresaId,
+            unidadeId,
+            produtoId,
+            tipo,
+            MotivoMovimentacaoEstoque.Transferencia,
+            quantidade,
+            data,
+            "TRANSFERENCIA_ESTOQUE",
+            funcionarioId,
+            observacao);
+        movimentacao.TransferenciaEstoqueId = transferenciaEstoqueId;
+        return movimentacao;
     }
 
     private static MovimentacaoEstoque CreateManual(

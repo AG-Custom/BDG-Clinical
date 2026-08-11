@@ -43,5 +43,6 @@ public interface IStockBalancesRepository
         Guid empresaId,
         Guid unidadeId,
         Guid produtoId,
+        bool apenasAtivosNaoVencidos = false,
         CancellationToken cancellationToken = default);
 }

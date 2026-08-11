@@ -17,6 +17,14 @@ public interface IProductLotsRepository
         CancellationToken cancellationToken = default);
 
     Task AddAsync(LoteProduto lote, CancellationToken cancellationToken = default);
+
+    Task<LoteProduto> GetOrCreateAsync(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        string codigo,
+        DateOnly dataValidade,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record LotBalanceRow(
@@ -27,6 +35,7 @@ public sealed record LotBalanceRow(
     string ProdutoNome,
     string Codigo,
     DateOnly DataValidade,
+    bool Ativo,
     decimal SaldoAtual,
     string UnidadeMedidaSigla,
     decimal? FatorEmbalagemParaEstoque);

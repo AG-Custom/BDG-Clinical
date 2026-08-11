@@ -93,6 +93,9 @@ public static class PermissionCatalog
         new("financeiro.pagar", "Registrar pagamento", "Financeiro", PermissionModuleCodes.Financeiro, 12, Implies: ["financeiro.visualizar"]),
         new("financeiro.estornar", "Estornar lançamento", "Financeiro", PermissionModuleCodes.Financeiro, 13, Implies: ["financeiro.visualizar"]),
 
+        // Relatórios
+        new("relatorio.visualizar", "Visualizar relatórios", "Relatórios", PermissionModuleCodes.Relatorios, 10),
+
         // Core
         new("funcionario.visualizar", "Visualizar funcionários", "Funcionários", PermissionModuleCodes.Core, 10),
         new("funcionario.criar", "Criar funcionário", "Funcionários", PermissionModuleCodes.Core, 11),

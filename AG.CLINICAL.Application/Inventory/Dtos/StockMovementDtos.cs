@@ -19,6 +19,7 @@ public sealed record StockMovementDto(
     string Origem,
     Guid? PedidoFornecedorId,
     Guid? AplicacaoPacienteId,
+    Guid? TransferenciaEstoqueId,
     string? Observacao,
     DateTime CriadoEm);
 
@@ -30,7 +31,29 @@ public sealed record CreateManualStockMovementRequest(
     string? Observacao = null,
     decimal? QuantidadeEmbalagem = null,
     string? LoteCodigo = null,
-    DateOnly? DataValidade = null);
+    DateOnly? DataValidade = null,
+    decimal? ValorUnitario = null);
+
+public sealed record CreateStockTransferRequest(
+    Guid UnidadeOrigemId,
+    Guid UnidadeDestinoId,
+    Guid ProdutoId,
+    decimal Quantidade,
+    DateTime Data,
+    string? Observacao = null);
+
+public sealed record StockTransferDto(
+    Guid TransferenciaId,
+    Guid UnidadeOrigemId,
+    string UnidadeOrigemNome,
+    Guid UnidadeDestinoId,
+    string UnidadeDestinoNome,
+    Guid ProdutoId,
+    string ProdutoNome,
+    decimal Quantidade,
+    DateTime Data,
+    string? Observacao,
+    IReadOnlyList<StockMovementDto> Movimentacoes);
 
 public sealed record ReceiveSupplierOrderRequest(
     IReadOnlyList<ReceiveSupplierOrderItemLotRequest>? Itens = null);

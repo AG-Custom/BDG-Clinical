@@ -100,7 +100,7 @@ public sealed class CreateStockLossesService : ICreateStockLossesService
                     data.UnidadeId,
                     produto,
                     quantidade,
-                    cancellationToken);
+                    cancellationToken: cancellationToken);
 
                 foreach (var alocacao in alocacoes)
                 {

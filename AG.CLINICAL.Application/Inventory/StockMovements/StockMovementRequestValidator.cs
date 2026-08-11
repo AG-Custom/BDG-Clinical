@@ -42,6 +42,12 @@ internal static class StockMovementRequestValidator
             return Result<ValidatedManualStockMovementData>.Failure("A observação deve ter no máximo 2000 caracteres.");
         }
 
+        if (request.ValorUnitario is < 0)
+        {
+            return Result<ValidatedManualStockMovementData>.Failure(
+                "O valor unitário não pode ser negativo.");
+        }
+
         if (requiresLotForEntry)
         {
             if (request.QuantidadeEmbalagem is null or <= 0)

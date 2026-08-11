@@ -80,6 +80,18 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 UnidadeMedidaSigla = unidadeMedida.Sigla,
                 produto.EstoqueMinimo,
                 balance.SaldoAtual,
+                ValorMovimentacaoManual =
+                    _context.MovimentacoesEstoque
+                        .AsNoTracking()
+                        .Where(movimentacao =>
+                            movimentacao.EmpresaId == empresaId
+                            && movimentacao.UnidadeId == balance.UnidadeId
+                            && movimentacao.ProdutoId == balance.ProdutoId
+                            && movimentacao.ValorUnitario != null)
+                        .OrderByDescending(movimentacao => movimentacao.Data)
+                        .ThenByDescending(movimentacao => movimentacao.CriadoEm)
+                        .Select(movimentacao => movimentacao.ValorUnitario)
+                        .FirstOrDefault(),
                 ValorEmbalagemOuPedido =
                     _context.ItensPedidoFornecedor
                         .AsNoTracking()
@@ -149,9 +161,10 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 var fator = ProductStockValuation.ResolveFatorEmbalagemParaEstoque(
                     row.ConteudoPorEmbalagem,
                     row.ConcentracaoPorConteudo);
-                var valorUnitario = ProductStockValuation.ResolveValorPorUnidadeEstoque(
-                    row.ValorEmbalagemOuPedido,
-                    fator);
+                var valorUnitario = row.ValorMovimentacaoManual
+                    ?? ProductStockValuation.ResolveValorPorUnidadeEstoque(
+                        row.ValorEmbalagemOuPedido,
+                        fator);
 
                 return new StockBalanceRow(
                     row.UnidadeId,
@@ -286,6 +299,7 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 ProdutoNome = produto.Nome,
                 lote.Codigo,
                 lote.DataValidade,
+                lote.Ativo,
                 balance.SaldoAtual,
                 UnidadeMedidaSigla = unidadeMedida.Sigla,
                 produto.ConteudoPorEmbalagem,
@@ -303,6 +317,7 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
                 row.ProdutoNome,
                 row.Codigo,
                 row.DataValidade,
+                row.Ativo,
                 row.SaldoAtual,
                 row.UnidadeMedidaSigla,
                 row.ConteudoPorEmbalagem is > 0 && row.ConcentracaoPorConteudo is > 0
@@ -315,12 +330,20 @@ public sealed class StockBalancesRepository : IStockBalancesRepository
         Guid empresaId,
         Guid unidadeId,
         Guid produtoId,
+        bool apenasAtivosNaoVencidos = false,
         CancellationToken cancellationToken = default)
     {
         var balances = await ListLotBalancesAsync(empresaId, unidadeId, produtoId, cancellationToken);
+        var hoje = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        return balances
-            .Where(row => row.SaldoAtual > 0)
+        IEnumerable<LotBalanceRow> rows = balances.Where(row => row.SaldoAtual > 0);
+
+        if (apenasAtivosNaoVencidos)
+        {
+            rows = rows.Where(row => row.Ativo && row.DataValidade >= hoje);
+        }
+
+        return rows
             .OrderBy(row => row.DataValidade)
             .ThenBy(row => row.Codigo)
             .Select(row => (row.LoteProdutoId, row.DataValidade, DateTime.MinValue, row.SaldoAtual))

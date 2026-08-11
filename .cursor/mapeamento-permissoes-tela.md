@@ -513,13 +513,13 @@ Ver seção Dashboard para dependências cruzadas e problemas.
 
 ## Movimentações histórico — `/movimentacoes-estoque`
 
-**Objetivo:** Extrato de movimentações.
+**Objetivo:** Extrato de movimentações (incluindo transferências).
 
 **Guard:** `estoque.visualizar`
 
-**Montagem:** `GET /api/units`, `GET /api/products`, `GET /api/stock-movements`.
+**Montagem:** `GET /api/units`, `GET /api/products`, `GET /api/stock-movements` (query opcional `transferenciaEstoqueId`).
 
-**Ações:** navegação para pedido/aplicação (sem API extra).
+**Ações:** navegação para pedido/aplicação; “Ver transferência” filtra por `transferenciaEstoqueId`.
 
 ---
 
@@ -527,11 +527,23 @@ Ver seção Dashboard para dependências cruzadas e problemas.
 
 **Objetivo:** Registrar entrada ou perda manual.
 
-**Guard:** `estoque.movimentar`
+**Guard:** entrada → `estoque.ajustar`; saída → `estoque.movimentar`
 
 **Montagem:** `GET /api/units`, `GET /api/products`, `GET /api/stock-balances` (saída), `GET /api/stock-movements` (histórico lateral).
 
-**Submit:** `POST /api/stock-movements/adjustment` ou `/loss`.
+**Submit:** `POST /api/stock-movements/adjustment` (`estoque.ajustar`) ou `/loss` (`estoque.movimentar`).
+
+---
+
+## Transferência de estoque — `/movimentacoes-estoque/transferencia`
+
+**Objetivo:** Transferir quantidade entre unidades ativas do mesmo tenant.
+
+**Guard:** `estoque.movimentar`
+
+**Montagem:** `GET /api/units`, `GET /api/products`, `GET /api/stock-balances` (saldo da origem).
+
+**Submit:** `POST /api/stock-movements/transfer`.
 
 ---
 
@@ -641,8 +653,9 @@ Constante `financeiro.visualizar` em `src/constants/permissoes.ts` — **sem rot
 | Saldos | `/api/stock-balances` | GET | `estoque.visualizar` | não | — | P0 |
 | Saldos | `/api/units`, `/api/products` | GET | vários | sim | `estoque.visualizar` | P1 |
 | Movimentações | `/api/stock-movements` | GET | `estoque.visualizar` | não | — | P0 |
-| Mov. manual | `/api/stock-movements/adjustment` | POST | `estoque.movimentar` | não | — | P0 |
+| Mov. manual | `/api/stock-movements/adjustment` | POST | `estoque.ajustar` | não | — | P0 |
 | Mov. manual | `/api/stock-movements/loss` | POST | `estoque.movimentar` | não | — | P0 |
+| Transferência | `/api/stock-movements/transfer` | POST | `estoque.movimentar` | não | — | P0 |
 | Aplicações lista | `/api/patient-applications` | GET | `aplicacao.visualizar` | não | — | P0 |
 | Aplicações lista | `/api/units`,`/products`,`/procedures`,`/positions` | GET | vários | sim | `aplicacao.visualizar` | P1 |
 | Aplicações lista | `/api/patients`,`/employees` | GET | paciente/funcionário | sim | `aplicacao.visualizar` | P1 |

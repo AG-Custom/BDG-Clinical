@@ -6,6 +6,7 @@ public static class PermissionModuleCodes
     public const string Aplicacoes = "APLICACOES";
     public const string Estoque = "ESTOQUE";
     public const string Financeiro = "FINANCEIRO";
+    public const string Relatorios = "RELATORIOS";
     public const string Pacientes = "PACIENTES";
     public const string Core = "CORE";
 }

@@ -123,6 +123,14 @@ public sealed class CreateStockAdjustmentsService : ICreateStockAdjustmentsServi
                 data.FuncionarioId,
                 data.Observacao);
 
+            if (request.ValorUnitario.HasValue)
+            {
+                var valorPorUnidadeEstoque = ProductStockValuation.ResolveValorPorUnidadeEstoque(
+                    request.ValorUnitario.Value,
+                    requiresLot ? produto.FatorEmbalagemParaEstoque : null);
+                movimentacao.AssignValorUnitario(valorPorUnidadeEstoque);
+            }
+
             if (loteId.HasValue)
             {
                 movimentacao.AssignLote(loteId.Value, quantidadeEmbalagem);

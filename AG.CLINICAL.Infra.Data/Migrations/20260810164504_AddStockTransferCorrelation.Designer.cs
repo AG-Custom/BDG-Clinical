@@ -4,6 +4,7 @@ using AG.CLINICAL.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AG.CLINICAL.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260810164504_AddStockTransferCorrelation")]
+    partial class AddStockTransferCorrelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1418,11 +1421,6 @@ namespace AG.CLINICAL.Infra.Data.Migrations
                     b.Property<Guid>("UnidadeId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("unidade_id");
-
-                    b.Property<decimal?>("ValorUnitario")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)")
-                        .HasColumnName("valor_unitario");
 
                     b.HasKey("Id")
                         .HasName("pk_movimentacao_estoque");
