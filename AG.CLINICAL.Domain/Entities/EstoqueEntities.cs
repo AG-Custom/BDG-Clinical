@@ -1384,7 +1384,8 @@ public sealed class MovimentacaoEstoque : AggregateRoot
     {
         if (transferenciaEstoqueId == Guid.Empty)
         {
-            throw new DomainException("Informe o identificador da transferência.");
+            throw new DomainException(
+                "Identificador da transferência inválido. Não foi possível gerar a movimentação de transferência.");
         }
 
         var movimentacao = CreateManual(

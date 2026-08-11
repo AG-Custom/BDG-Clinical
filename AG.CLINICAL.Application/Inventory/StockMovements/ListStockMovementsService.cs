@@ -14,6 +14,7 @@ public interface IListStockMovementsService
         DateTime? dataInicio = null,
         DateTime? dataFim = null,
         int? limit = null,
+        Guid? transferenciaEstoqueId = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -37,6 +38,7 @@ public sealed class ListStockMovementsService : IListStockMovementsService
         DateTime? dataInicio = null,
         DateTime? dataFim = null,
         int? limit = null,
+        Guid? transferenciaEstoqueId = null,
         CancellationToken cancellationToken = default)
     {
         var tipoResult = StockMovementValidation.ParseTipo(tipo);
@@ -67,6 +69,7 @@ public sealed class ListStockMovementsService : IListStockMovementsService
             validatedDataInicio,
             validatedDataFim,
             limitResult.Value!,
+            transferenciaEstoqueId,
             cancellationToken);
 
         var pedidoIds = movimentacoes

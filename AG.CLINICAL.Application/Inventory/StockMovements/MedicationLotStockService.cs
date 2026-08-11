@@ -1,3 +1,4 @@
+using AG.CLINICAL.Application.Common;
 using AG.CLINICAL.Application.Inventory.Abstractions;
 using AG.CLINICAL.Domain.Constants;
 using AG.CLINICAL.Domain.Entities;
@@ -21,6 +22,7 @@ public interface IMedicationLotStockService
         Guid unidadeId,
         Produto produto,
         decimal quantidadeEstoque,
+        bool apenasAtivosNaoVencidos = false,
         CancellationToken cancellationToken = default);
 
     Task<(Guid LoteProdutoId, decimal Quantidade)> AllocateFromLotAsync(
@@ -106,6 +108,7 @@ public sealed class MedicationLotStockService : IMedicationLotStockService
         Guid unidadeId,
         Produto produto,
         decimal quantidadeEstoque,
+        bool apenasAtivosNaoVencidos = false,
         CancellationToken cancellationToken = default)
     {
         if (quantidadeEstoque <= 0)
@@ -122,7 +125,8 @@ public sealed class MedicationLotStockService : IMedicationLotStockService
             empresaId,
             unidadeId,
             produto.Id,
-            cancellationToken);
+            apenasAtivosNaoVencidos: apenasAtivosNaoVencidos,
+            cancellationToken: cancellationToken);
 
         var restante = quantidadeEstoque;
         var alocacoes = new List<(Guid LoteProdutoId, decimal Quantidade)>();
@@ -147,10 +151,97 @@ public sealed class MedicationLotStockService : IMedicationLotStockService
         if (restante > 0)
         {
             throw new DomainException(
-                "Estoque insuficiente nos lotes disponíveis para a quantidade informada.");
+                await BuildMensagemSaldoLoteInsuficienteAsync(
+                    empresaId,
+                    unidadeId,
+                    produto.Id,
+                    quantidadeEstoque,
+                    lotes.Sum(lote => lote.Saldo),
+                    apenasAtivosNaoVencidos,
+                    cancellationToken));
         }
 
         return alocacoes;
+    }
+
+    private async Task<string> BuildMensagemSaldoLoteInsuficienteAsync(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        decimal quantidadeSolicitada,
+        decimal saldoTransferivel,
+        bool apenasAtivosNaoVencidos,
+        CancellationToken cancellationToken)
+    {
+        if (!apenasAtivosNaoVencidos)
+        {
+            return
+                $"Estoque insuficiente nos lotes do medicamento. " +
+                $"Disponível em lotes: {QuantidadeFormatter.Format(saldoTransferivel)}; " +
+                $"quantidade solicitada: {QuantidadeFormatter.Format(quantidadeSolicitada)}.";
+        }
+
+        var lotesComSaldo = (await _stockBalancesRepository.ListLotBalancesAsync(
+                empresaId,
+                unidadeId,
+                produtoId,
+                cancellationToken))
+            .Where(lote => lote.SaldoAtual > 0)
+            .ToList();
+
+        if (lotesComSaldo.Count == 0)
+        {
+            return
+                "Não é possível transferir este medicamento: não há lotes com saldo na unidade de origem. " +
+                "O saldo do produto não está vinculado a lotes. Verifique as movimentações ou registre uma entrada com lote.";
+        }
+
+        var hoje = DateOnly.FromDateTime(DateTime.UtcNow);
+        var vencidos = lotesComSaldo
+            .Where(lote => lote.DataValidade < hoje)
+            .OrderBy(lote => lote.DataValidade)
+            .ToList();
+        var inativos = lotesComSaldo
+            .Where(lote => !lote.Ativo)
+            .OrderBy(lote => lote.Codigo)
+            .ToList();
+        var saldoTotalEmLotes = lotesComSaldo.Sum(lote => lote.SaldoAtual);
+
+        if (saldoTransferivel <= 0 && (vencidos.Count > 0 || inativos.Count > 0))
+        {
+            var detalhes = new List<string>();
+
+            if (vencidos.Count > 0)
+            {
+                var exemplos = string.Join(
+                    ", ",
+                    vencidos.Take(3).Select(lote =>
+                        $"{lote.Codigo} (válido até {lote.DataValidade:dd/MM/yyyy}, saldo {QuantidadeFormatter.Format(lote.SaldoAtual)})"));
+                detalhes.Add($"vencidos: {exemplos}");
+            }
+
+            if (inativos.Count > 0)
+            {
+                var exemplos = string.Join(
+                    ", ",
+                    inativos.Take(3).Select(lote =>
+                        $"{lote.Codigo} (saldo {QuantidadeFormatter.Format(lote.SaldoAtual)})"));
+                detalhes.Add($"inativos: {exemplos}");
+            }
+
+            return
+                $"Não é possível transferir: há saldo na origem ({QuantidadeFormatter.Format(saldoTotalEmLotes)}), " +
+                $"mas ele está apenas em lotes bloqueados ({string.Join("; ", detalhes)}). " +
+                "A transferência só usa lotes ativos e não vencidos. " +
+                "Corrija a validade, reative o lote ou registre uma perda.";
+        }
+
+        return
+            $"Não é possível transferir a quantidade informada. " +
+            $"Disponível em lotes ativos e não vencidos: {QuantidadeFormatter.Format(saldoTransferivel)}; " +
+            $"solicitado: {QuantidadeFormatter.Format(quantidadeSolicitada)}; " +
+            $"saldo total em lotes: {QuantidadeFormatter.Format(saldoTotalEmLotes)}. " +
+            "Reduza a quantidade ou libere lotes transferíveis.";
     }
 
     public async Task<(Guid LoteProdutoId, decimal Quantidade)> AllocateFromLotAsync(

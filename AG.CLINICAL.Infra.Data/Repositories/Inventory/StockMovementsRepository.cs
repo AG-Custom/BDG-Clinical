@@ -1,10 +1,11 @@
+using AG.CLINICAL.Application.Common;
 using AG.CLINICAL.Application.Inventory.Abstractions;
 using AG.CLINICAL.Domain.Entities;
 using AG.CLINICAL.Domain.Enums;
+using AG.CLINICAL.Domain.Exceptions;
 using AG.CLINICAL.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
-using AG.CLINICAL.Domain.Exceptions;
 
 namespace AG.CLINICAL.Infra.Data.Repositories.Inventory;
 
@@ -64,16 +65,26 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
                     var saldo = await query.SumAsync(
                         movimentacao =>
                             movimentacao.Tipo == TipoMovimentacaoEstoque.Entrada
-                            || movimentacao.Tipo == TipoMovimentacaoEstoque.Ajuste
                                 ? movimentacao.Quantidade
-                                : -movimentacao.Quantidade,
+                                : movimentacao.Tipo == TipoMovimentacaoEstoque.Saida
+                                    ? -movimentacao.Quantidade
+                                    : movimentacao.Tipo == TipoMovimentacaoEstoque.Ajuste
+                                        ? movimentacao.Quantidade
+                                        : movimentacao.Tipo == TipoMovimentacaoEstoque.Perda
+                                            ? -movimentacao.Quantidade
+                                            : 0m,
                         cancellationToken);
 
                     if (saldo < requisito.Quantidade)
                     {
-                        var escopo = requisito.LoteProdutoId.HasValue ? " no lote selecionado" : string.Empty;
+                        var escopo = requisito.LoteProdutoId.HasValue
+                            ? " no lote que seria transferido"
+                            : " na unidade de origem";
                         throw new DomainException(
-                            $"Saldo insuficiente{escopo}. Saldo disponível: {saldo}; quantidade solicitada: {requisito.Quantidade}.");
+                            $"Não foi possível concluir a transferência: saldo insuficiente{escopo}. " +
+                            $"Saldo atual: {QuantidadeFormatter.Format(saldo)}; " +
+                            $"quantidade solicitada: {QuantidadeFormatter.Format(requisito.Quantidade)}. " +
+                            "Outra movimentação pode ter consumido o estoque. Atualize o saldo e tente novamente.");
                     }
                 }
 
@@ -97,6 +108,7 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
         DateTime? dataInicio,
         DateTime? dataFim,
         int limit,
+        Guid? transferenciaEstoqueId = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.MovimentacoesEstoque
@@ -129,6 +141,12 @@ public sealed class StockMovementsRepository : IStockMovementsRepository
         if (dataFim.HasValue)
         {
             query = query.Where(movimentacao => movimentacao.Data <= dataFim.Value);
+        }
+
+        if (transferenciaEstoqueId.HasValue)
+        {
+            query = query.Where(movimentacao =>
+                movimentacao.TransferenciaEstoqueId == transferenciaEstoqueId.Value);
         }
 
         return await query

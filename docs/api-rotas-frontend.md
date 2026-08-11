@@ -1864,7 +1864,7 @@ Somente combinações com ao menos uma movimentação aparecem na listagem.
 
 ## 17. Histórico de Movimentações — `/api/stock-movements`
 
-Extrato cronológico de entradas, saídas, ajustes e perdas.
+Extrato cronológico de entradas, saídas, ajustes, perdas e transferências.
 
 ### GET `/api/stock-movements`
 
@@ -1876,6 +1876,7 @@ Extrato cronológico de entradas, saídas, ajustes e perdas.
 | `dataInicio` | `datetime` | — | Início do período (inclusivo) |
 | `dataFim` | `datetime` | — | Fim do período (inclusivo) |
 | `limit` | `number` | `50` | Máx. 200 |
+| `transferenciaEstoqueId` | `uuid` | — | Filtrar o par de uma transferência |
 
 Ordenação: `data` decrescente, depois `criadoEm` decrescente.
 
@@ -1899,6 +1900,7 @@ Ordenação: `data` decrescente, depois `criadoEm` decrescente.
       "origem": "PEDIDO_FORNECEDOR",
       "pedidoFornecedorId": "uuid",
       "aplicacaoPacienteId": null,
+      "transferenciaEstoqueId": null,
       "observacao": null,
       "criadoEm": "2026-06-25T14:00:00Z"
     }
@@ -1910,11 +1912,13 @@ Ordenação: `data` decrescente, depois `criadoEm` decrescente.
 
 `valorUnitario` prioriza o valor do item no pedido ao fornecedor (quando `origem` é `PEDIDO_FORNECEDOR`); caso contrário usa `produto.valor`. `valorTotal` = `quantidade × valorUnitario`.
 
-Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`), do cancelamento de aplicação (`origem: APLICACAO_PACIENTE_CANCELAMENTO`) ou de ajuste manual (`origem: AJUSTE_MANUAL`, `tipo: Entrada`). Saídas vêm de `POST /api/patient-applications` (`origem: APLICACAO_PACIENTE`) ou de perda manual (`origem: PERDA_MANUAL`, `tipo: Saida`). A distinção entre operação automática e manual é feita pelo campo `origem`.
+Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`origem: PEDIDO_FORNECEDOR`), do cancelamento de aplicação (`origem: APLICACAO_PACIENTE_CANCELAMENTO`), de ajuste manual (`origem: AJUSTE_MANUAL`, `tipo: Entrada`) ou de transferência (`origem: TRANSFERENCIA_ESTOQUE`, `motivo: Transferencia`). Saídas vêm de `POST /api/patient-applications` (`origem: APLICACAO_PACIENTE`), de perda manual (`origem: PERDA_MANUAL`, `tipo: Saida`) ou de transferência.
 
 ### POST `/api/stock-movements/adjustment`
 
 Inclui estoque manualmente (tipo **Entrada** — soma no saldo).
+
+Permissão: `estoque.ajustar`.
 
 ```json
 {
@@ -1940,11 +1944,41 @@ Inclui estoque manualmente (tipo **Entrada** — soma no saldo).
 
 Remove estoque manualmente (tipo **Saida** — subtrai do saldo).
 
+Permissão: `estoque.movimentar`.
+
 Mesmo body do ajuste. Valida saldo disponível na unidade (`estoque insuficiente` se `quantidade` &gt; saldo atual).
 
 **Response 200** — `origem: PERDA_MANUAL`, `tipo: Saida`.
 
-Hoje as entradas vêm de `PATCH /api/supplier-orders/{id}/receive` (`motivo: Compra`), do cancelamento de aplicação (`motivo: Devolucao`) ou de ajuste manual (`motivo: Ajuste`, `tipo: Entrada`). Saídas vêm de `POST /api/patient-applications` (`motivo: Aplicacao`) ou de perda manual (`motivo: Perda`, `tipo: Saida`). O campo `origem` permanece para compatibilidade técnica.
+### POST `/api/stock-movements/transfer`
+
+Transfere estoque entre unidades do mesmo tenant. Gera um par saída/entrada correlacionado por `transferenciaEstoqueId`.
+
+Permissão: `estoque.movimentar`.
+
+```json
+{
+  "unidadeOrigemId": "uuid",
+  "unidadeDestinoId": "uuid",
+  "produtoId": "uuid",
+  "quantidade": 5,
+  "data": "2026-06-25T14:00:00Z",
+  "observacao": "Reposição da unidade filial"
+}
+```
+
+| Campo | Obrigatório | Regra |
+|-------|-------------|-------|
+| `unidadeOrigemId` | Sim | Unidade ativa; diferente do destino |
+| `unidadeDestinoId` | Sim | Unidade ativa; diferente da origem |
+| `produtoId` | Sim | Produto ativo com `controlaEstoque` |
+| `quantidade` | Sim | &gt; 0 e ≤ saldo na origem |
+| `data` | Sim | Data/hora da transferência |
+| `observacao` | Não | Máx. 2000 caracteres |
+
+Medicamentos usam FEFO automático apenas em lotes **ativos e não vencidos**. Espelha/cria o lote no destino.
+
+**Response 200** — DTO com `transferenciaId`, unidades, produto, quantidade e lista `movimentacoes` (saída na origem + entrada no destino; `origem: TRANSFERENCIA_ESTOQUE`, `motivo: Transferencia`).
 
 ---
 

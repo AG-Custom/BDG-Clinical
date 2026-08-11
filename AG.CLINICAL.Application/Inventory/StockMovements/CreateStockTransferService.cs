@@ -10,13 +10,6 @@ using AG.CLINICAL.Domain.Exceptions;
 
 namespace AG.CLINICAL.Application.Inventory.StockMovements;
 
-public interface ICreateStockTransferService
-{
-    Task<Result<StockTransferDto>> ExecuteAsync(
-        CreateStockTransferRequest request,
-        CancellationToken cancellationToken = default);
-}
-
 public sealed class CreateStockTransferService : ICreateStockTransferService
 {
     private readonly ICurrentTenantContext _tenantContext;
@@ -76,22 +69,26 @@ public sealed class CreateStockTransferService : ICreateStockTransferService
 
             if (unidadeOrigem is null)
             {
-                return Result<StockTransferDto>.Failure("Unidade de origem não encontrada.");
+                return Result<StockTransferDto>.Failure(
+                    "Unidade de origem não encontrada nesta empresa. Selecione uma unidade válida para a transferência.");
             }
 
             if (unidadeDestino is null)
             {
-                return Result<StockTransferDto>.Failure("Unidade de destino não encontrada.");
+                return Result<StockTransferDto>.Failure(
+                    "Unidade de destino não encontrada nesta empresa. Selecione uma unidade válida para a transferência.");
             }
 
             if (!unidadeOrigem.Ativo)
             {
-                return Result<StockTransferDto>.Failure("A unidade de origem está inativa.");
+                return Result<StockTransferDto>.Failure(
+                    $"A unidade de origem \"{unidadeOrigem.Nome}\" está inativa e não pode enviar estoque. Reative a unidade ou escolha outra origem.");
             }
 
             if (!unidadeDestino.Ativo)
             {
-                return Result<StockTransferDto>.Failure("A unidade de destino está inativa.");
+                return Result<StockTransferDto>.Failure(
+                    $"A unidade de destino \"{unidadeDestino.Nome}\" está inativa e não pode receber estoque. Reative a unidade ou escolha outro destino.");
             }
 
             var produto = await _productsRepository.GetByIdAndEmpresaIdAsync(
@@ -99,14 +96,22 @@ public sealed class CreateStockTransferService : ICreateStockTransferService
                 empresaId,
                 cancellationToken);
 
-            if (produto is null || !produto.Ativo)
+            if (produto is null)
             {
-                return Result<StockTransferDto>.Failure("Produto não encontrado ou inativo.");
+                return Result<StockTransferDto>.Failure(
+                    "Produto não encontrado nesta empresa. Selecione um produto válido para transferir.");
+            }
+
+            if (!produto.Ativo)
+            {
+                return Result<StockTransferDto>.Failure(
+                    $"O produto \"{produto.Nome}\" está inativo e não pode ser transferido. Reative o produto ou escolha outro.");
             }
 
             if (!produto.ControlaEstoque)
             {
-                return Result<StockTransferDto>.Failure("O produto informado não controla estoque.");
+                return Result<StockTransferDto>.Failure(
+                    $"O produto \"{produto.Nome}\" não controla estoque e não pode ser transferido entre unidades.");
             }
 
             var saldo = await _stockBalancesRepository.GetSaldoByUnidadeAndProdutoAsync(
@@ -118,7 +123,10 @@ public sealed class CreateStockTransferService : ICreateStockTransferService
             if (saldo < request.Quantidade)
             {
                 return Result<StockTransferDto>.Failure(
-                    $"Saldo insuficiente na unidade de origem. Saldo disponível: {saldo}; quantidade solicitada: {request.Quantidade}.");
+                    $"Saldo insuficiente para transferir \"{produto.Nome}\" da unidade \"{unidadeOrigem.Nome}\". " +
+                    $"Saldo disponível: {QuantidadeFormatter.Format(saldo)}; " +
+                    $"quantidade solicitada: {QuantidadeFormatter.Format(request.Quantidade)}. " +
+                    "Reduza a quantidade ou escolha outra unidade de origem.");
             }
 
             var saldoOrigem = (await _stockBalancesRepository.ListByEmpresaIdAsync(
@@ -155,7 +163,8 @@ public sealed class CreateStockTransferService : ICreateStockTransferService
                     request.UnidadeOrigemId,
                     produto,
                     request.Quantidade,
-                    cancellationToken);
+                    apenasAtivosNaoVencidos: true,
+                    cancellationToken: cancellationToken);
 
                 foreach (var alocacao in alocacoes)
                 {
@@ -163,45 +172,45 @@ public sealed class CreateStockTransferService : ICreateStockTransferService
                         alocacao.LoteProdutoId,
                         empresaId,
                         cancellationToken)
-                        ?? throw new DomainException("Lote de origem não encontrado.");
+                        ?? throw new DomainException(
+                            "O lote alocado na origem não foi encontrado. Atualize o saldo e tente a transferência novamente.");
 
                     if (!loteOrigem.Ativo)
                     {
-                        throw new DomainException($"O lote {loteOrigem.Codigo} está inativo e não pode ser transferido.");
+                        throw new DomainException(
+                            $"O lote \"{loteOrigem.Codigo}\" de \"{produto.Nome}\" está inativo na origem e não pode ser transferido. " +
+                            "Reative o lote ou registre uma perda desse saldo.");
                     }
 
                     if (loteOrigem.DataValidade < DateOnly.FromDateTime(DateTime.UtcNow))
                     {
-                        throw new DomainException($"O lote {loteOrigem.Codigo} está vencido e não pode ser transferido.");
+                        throw new DomainException(
+                            $"O lote \"{loteOrigem.Codigo}\" de \"{produto.Nome}\" está vencido " +
+                            $"(válido até {loteOrigem.DataValidade:dd/MM/yyyy}) e não pode ser transferido. " +
+                            "Corrija a validade do lote ou registre uma perda.");
                     }
 
-                    var loteDestino = await _productLotsRepository.GetByCodigoAsync(
+                    var loteDestino = await _productLotsRepository.GetOrCreateAsync(
                         empresaId,
                         request.UnidadeDestinoId,
                         request.ProdutoId,
                         loteOrigem.Codigo,
+                        loteOrigem.DataValidade,
                         cancellationToken);
 
-                    if (loteDestino is not null && loteDestino.DataValidade != loteOrigem.DataValidade)
+                    if (loteDestino.DataValidade != loteOrigem.DataValidade)
                     {
                         throw new DomainException(
-                            $"O lote {loteOrigem.Codigo} já existe no destino com outra data de validade.");
+                            $"O lote \"{loteOrigem.Codigo}\" já existe na unidade \"{unidadeDestino.Nome}\" " +
+                            $"com validade {loteDestino.DataValidade:dd/MM/yyyy}, diferente da origem " +
+                            $"({loteOrigem.DataValidade:dd/MM/yyyy}). Ajuste a validade no destino antes de transferir.");
                     }
 
-                    if (loteDestino is not null && !loteDestino.Ativo)
+                    if (!loteDestino.Ativo)
                     {
-                        throw new DomainException($"O lote {loteDestino.Codigo} está inativo na unidade de destino.");
-                    }
-
-                    if (loteDestino is null)
-                    {
-                        loteDestino = LoteProduto.Create(
-                            empresaId,
-                            request.UnidadeDestinoId,
-                            request.ProdutoId,
-                            loteOrigem.Codigo,
-                            loteOrigem.DataValidade);
-                        await _productLotsRepository.AddAsync(loteDestino, cancellationToken);
+                        throw new DomainException(
+                            $"O lote \"{loteDestino.Codigo}\" está inativo na unidade de destino \"{unidadeDestino.Nome}\" " +
+                            "e não pode receber a transferência. Reative o lote no destino e tente novamente.");
                     }
 
                     var saida = CreateMovement(
@@ -314,32 +323,37 @@ public sealed class CreateStockTransferService : ICreateStockTransferService
     {
         if (request.UnidadeOrigemId == Guid.Empty)
         {
-            return "Informe a unidade de origem.";
+            return "Informe a unidade de origem da transferência.";
         }
 
         if (request.UnidadeDestinoId == Guid.Empty)
         {
-            return "Informe a unidade de destino.";
+            return "Informe a unidade de destino da transferência.";
         }
 
         if (request.UnidadeOrigemId == request.UnidadeDestinoId)
         {
-            return "A unidade de destino deve ser diferente da unidade de origem.";
+            return "A unidade de destino deve ser diferente da unidade de origem. Escolha outra unidade para receber o estoque.";
         }
 
         if (request.ProdutoId == Guid.Empty)
         {
-            return "Informe o produto.";
+            return "Informe o produto que será transferido.";
         }
 
         if (request.Quantidade <= 0)
         {
-            return "A quantidade deve ser maior que zero.";
+            return "A quantidade da transferência deve ser maior que zero.";
+        }
+
+        if (request.Data == default)
+        {
+            return "Informe a data e hora da transferência.";
         }
 
         if (!string.IsNullOrWhiteSpace(request.Observacao) && request.Observacao.Length > 2000)
         {
-            return "A observação deve ter no máximo 2000 caracteres.";
+            return "A observação da transferência deve ter no máximo 2000 caracteres.";
         }
 
         return null;

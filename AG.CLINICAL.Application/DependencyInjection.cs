@@ -11,6 +11,7 @@ using AG.CLINICAL.Application.Core.Employees;
 using AG.CLINICAL.Application.Core.Positions;
 using AG.CLINICAL.Application.Patients.Patients;
 using AG.CLINICAL.Application.Patients.Symptoms;
+using AG.CLINICAL.Application.Inventory.Abstractions;
 using AG.CLINICAL.Application.Inventory.ProductTypes;
 using AG.CLINICAL.Application.Inventory.Products;
 using AG.CLINICAL.Application.Inventory.MeasurementUnits;

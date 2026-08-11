@@ -1,3 +1,4 @@
+using AG.CLINICAL.Application.Inventory.Abstractions;
 using AG.CLINICAL.Application.Inventory.Dtos;
 using AG.CLINICAL.Application.Inventory.StockMovements;
 using AG.CLINICAL.WebApi.Authorization;
@@ -38,6 +39,7 @@ public sealed class StockMovementController : ControllerBase
         [FromQuery] DateTime? dataInicio = null,
         [FromQuery] DateTime? dataFim = null,
         [FromQuery] int? limit = null,
+        [FromQuery] Guid? transferenciaEstoqueId = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _listStockMovementsService.ExecuteAsync(
@@ -47,6 +49,7 @@ public sealed class StockMovementController : ControllerBase
             dataInicio,
             dataFim,
             limit,
+            transferenciaEstoqueId,
             cancellationToken);
 
         if (result.IsFailure)
