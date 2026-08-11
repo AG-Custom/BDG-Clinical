@@ -28,6 +28,7 @@ using AG.CLINICAL.Application.Modules.EmployeePermissions;
 using AG.CLINICAL.Application.Core.PositionPermissions;
 using AG.CLINICAL.Application.Modules.Permissions;
 using AG.CLINICAL.Application.Notifications.EmailOutbox;
+using AG.CLINICAL.Application.Reports;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AG.CLINICAL.Application;
@@ -188,6 +189,7 @@ public static class DependencyInjection
         services.AddScoped<IGetEmployeePermissionsService, GetEmployeePermissionsService>();
         services.AddScoped<IUpdateEmployeePermissionsService, UpdateEmployeePermissionsService>();
         services.AddScoped<IUsersPermissionMutationService, UsersPermissionMutationService>();
+        services.AddScoped<IGetOperationalReportService, GetOperationalReportService>();
 
         return services;
     }
