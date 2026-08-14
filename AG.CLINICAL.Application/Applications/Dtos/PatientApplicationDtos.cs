@@ -47,7 +47,8 @@ public sealed record CreatePatientApplicationProcedureRequest(
     decimal? QuantidadeUtilizada = null,
     Guid? LoteProdutoId = null,
     bool ConsumirInsumosKit = true,
-    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null);
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null,
+    Guid? CompraPacienteId = null);
 
 public sealed record CreatePatientApplicationRequest(
     Guid PacienteId,

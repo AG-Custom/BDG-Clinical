@@ -32,7 +32,13 @@ public sealed record CreateManualStockMovementRequest(
     decimal? QuantidadeEmbalagem = null,
     string? LoteCodigo = null,
     DateOnly? DataValidade = null,
-    decimal? ValorUnitario = null);
+    decimal? ValorUnitario = null,
+    IReadOnlyList<CreateManualStockMovementLotRequest>? Lotes = null);
+
+public sealed record CreateManualStockMovementLotRequest(
+    string LoteCodigo,
+    decimal QuantidadeEmbalagem,
+    DateOnly DataValidade);
 
 public sealed record CreateStockTransferRequest(
     Guid UnidadeOrigemId,

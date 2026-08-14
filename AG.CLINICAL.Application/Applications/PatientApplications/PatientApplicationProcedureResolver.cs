@@ -8,11 +8,13 @@ internal sealed record ResolvedPatientApplicationProcedure(
     decimal? QuantidadeUtilizada,
     Guid? LoteProdutoId,
     bool ConsumirInsumosKit,
-    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais);
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais,
+    Guid? CompraPacienteId);
 
 internal static class PatientApplicationProcedureResolver
 {
     public static Result<IReadOnlyList<ResolvedPatientApplicationProcedure>> Resolve(
+        Guid? compraPacienteId,
         Guid? procedimentoId,
         decimal? quantidadeUtilizada,
         Guid? loteProdutoId,
@@ -31,7 +33,8 @@ internal static class PatientApplicationProcedureResolver
                     item.QuantidadeUtilizada,
                     item.LoteProdutoId,
                     item.ConsumirInsumosKit,
-                    item.InsumosManuais))
+                    item.InsumosManuais,
+                    NormalizeCompraId(item.CompraPacienteId) ?? NormalizeCompraId(compraPacienteId)))
                 .ToList();
         }
         else if (procedimentoId.HasValue && procedimentoId.Value != Guid.Empty)
@@ -43,7 +46,8 @@ internal static class PatientApplicationProcedureResolver
                     quantidadeUtilizada,
                     loteProdutoId,
                     consumirInsumosKit,
-                    insumosManuais)
+                    insumosManuais,
+                    NormalizeCompraId(compraPacienteId))
             ];
         }
         else
@@ -65,5 +69,12 @@ internal static class PatientApplicationProcedureResolver
         }
 
         return Result<IReadOnlyList<ResolvedPatientApplicationProcedure>>.Success(resolved);
+    }
+
+    private static Guid? NormalizeCompraId(Guid? compraPacienteId)
+    {
+        return compraPacienteId.HasValue && compraPacienteId.Value != Guid.Empty
+            ? compraPacienteId.Value
+            : null;
     }
 }

@@ -12,6 +12,7 @@ using AG.CLINICAL.Domain.Exceptions;
 namespace AG.CLINICAL.Application.Applications.PatientApplications;
 
 internal sealed record ValidatedCreatePatientApplicationProcedureData(
+    Guid? CompraPacienteId,
     Guid? ProdutoId,
     Guid ProcedimentoId,
     decimal? QuantidadeUtilizada,
@@ -21,7 +22,6 @@ internal sealed record ValidatedCreatePatientApplicationProcedureData(
 
 internal sealed record ValidatedCreatePatientApplicationsData(
     Guid PacienteId,
-    Guid? CompraPacienteId,
     Guid AplicadorId,
     Guid UnidadeId,
     DateTime DataAplicacao,
@@ -65,6 +65,7 @@ internal static class PatientApplicationRequestValidator
         }
 
         var procedimentosResolvidos = PatientApplicationProcedureResolver.Resolve(
+            request.CompraPacienteId,
             request.ProcedimentoId,
             request.QuantidadeUtilizada,
             request.LoteProdutoId,
@@ -115,32 +116,6 @@ internal static class PatientApplicationRequestValidator
             return Result<ValidatedCreatePatientApplicationsData>.Failure("A unidade está inativa.");
         }
 
-        CompraPaciente? compra = null;
-        Guid? compraPacienteId = null;
-
-        if (request.CompraPacienteId.HasValue && request.CompraPacienteId.Value != Guid.Empty)
-        {
-            compraPacienteId = request.CompraPacienteId.Value;
-            compra = await patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-                compraPacienteId.Value,
-                empresaId,
-                cancellationToken);
-
-            if (compra is null)
-            {
-                return Result<ValidatedCreatePatientApplicationsData>.Failure("Compra de pacote não encontrada.");
-            }
-
-            try
-            {
-                compra.EnsurePodeAplicar(request.PacienteId, null, null);
-            }
-            catch (DomainException exception)
-            {
-                return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
-            }
-        }
-
         var aplicador = await employeesRepository.GetByIdAndEmpresaIdAsync(request.AplicadorId, empresaId, cancellationToken);
         if (aplicador is null)
         {
@@ -174,9 +149,39 @@ internal static class PatientApplicationRequestValidator
         }
 
         var procedimentosValidados = new List<ValidatedCreatePatientApplicationProcedureData>();
+        var comprasPorId = new Dictionary<Guid, CompraPaciente>();
 
         foreach (var item in procedimentosResolvidos.Value!)
         {
+            CompraPaciente? compra = null;
+            if (item.CompraPacienteId.HasValue)
+            {
+                if (!comprasPorId.TryGetValue(item.CompraPacienteId.Value, out compra))
+                {
+                    compra = await patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                        item.CompraPacienteId.Value,
+                        empresaId,
+                        cancellationToken);
+
+                    if (compra is null)
+                    {
+                        return Result<ValidatedCreatePatientApplicationsData>.Failure(
+                            "Compra de pacote não encontrada.");
+                    }
+
+                    comprasPorId.Add(compra.Id, compra);
+                }
+
+                try
+                {
+                    compra.EnsurePodeAplicar(request.PacienteId, null, null);
+                }
+                catch (DomainException exception)
+                {
+                    return Result<ValidatedCreatePatientApplicationsData>.Failure(exception.Message);
+                }
+            }
+
             var procedimento = await proceduresRepository.GetByIdAndEmpresaIdWithDetailsAsync(
                 item.ProcedimentoId,
                 empresaId,
@@ -334,6 +339,7 @@ internal static class PatientApplicationRequestValidator
             }
 
             procedimentosValidados.Add(new ValidatedCreatePatientApplicationProcedureData(
+                item.CompraPacienteId,
                 produtoIdResolvido,
                 procedimento.Id,
                 quantidade,
@@ -342,9 +348,20 @@ internal static class PatientApplicationRequestValidator
                 stockLines));
         }
 
+        var aggregateStockError = await ValidateAggregateStockAsync(
+            empresaId,
+            request.UnidadeId,
+            procedimentosValidados,
+            stockBalancesRepository,
+            cancellationToken);
+
+        if (aggregateStockError is not null)
+        {
+            return Result<ValidatedCreatePatientApplicationsData>.Failure(aggregateStockError);
+        }
+
         return Result<ValidatedCreatePatientApplicationsData>.Success(new ValidatedCreatePatientApplicationsData(
             request.PacienteId,
-            compraPacienteId,
             request.AplicadorId,
             request.UnidadeId,
             request.DataAplicacao,
@@ -352,6 +369,65 @@ internal static class PatientApplicationRequestValidator
             string.IsNullOrWhiteSpace(request.Observacao) ? null : request.Observacao.Trim(),
             sintomaIds,
             procedimentosValidados));
+    }
+
+    private static async Task<string?> ValidateAggregateStockAsync(
+        Guid empresaId,
+        Guid unidadeId,
+        IReadOnlyList<ValidatedCreatePatientApplicationProcedureData> procedimentos,
+        IStockBalancesRepository stockBalancesRepository,
+        CancellationToken cancellationToken)
+    {
+        var totaisPorProduto = procedimentos
+            .SelectMany(item => item.StockLines)
+            .Where(line => line.ControlaEstoque)
+            .GroupBy(line => new { line.ProdutoId, line.ProdutoNome })
+            .Select(group => new
+            {
+                group.Key.ProdutoId,
+                group.Key.ProdutoNome,
+                Quantidade = group.Sum(line => line.Quantidade),
+            });
+
+        foreach (var total in totaisPorProduto)
+        {
+            var saldo = await stockBalancesRepository.GetSaldoByUnidadeAndProdutoAsync(
+                empresaId,
+                unidadeId,
+                total.ProdutoId,
+                cancellationToken);
+
+            if (saldo < total.Quantidade)
+            {
+                return $"Estoque insuficiente para \"{total.ProdutoNome}\" considerando todos os kits. " +
+                       $"Saldo: {saldo} | Necessário: {total.Quantidade}";
+            }
+        }
+
+        var totaisPorLote = procedimentos
+            .Where(item => item.LoteProdutoId.HasValue && item.ProdutoId.HasValue)
+            .GroupBy(item => item.LoteProdutoId!.Value)
+            .Select(group => new
+            {
+                LoteProdutoId = group.Key,
+                Quantidade = group.Sum(item => item.QuantidadeUtilizada ?? 0),
+            });
+
+        foreach (var total in totaisPorLote)
+        {
+            var saldo = await stockBalancesRepository.GetSaldoByLoteAsync(
+                empresaId,
+                total.LoteProdutoId,
+                cancellationToken);
+
+            if (saldo < total.Quantidade)
+            {
+                return "Estoque insuficiente no lote considerando todas as medicações. " +
+                       $"Saldo: {saldo} | Necessário: {total.Quantidade}";
+            }
+        }
+
+        return null;
     }
 
     public static async Task<Result<IReadOnlyList<Guid>>> ValidateUpdateAsync(

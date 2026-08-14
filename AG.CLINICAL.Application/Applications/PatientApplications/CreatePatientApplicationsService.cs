@@ -99,19 +99,23 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
         try
         {
             var data = validation.Value!;
-            CompraPaciente? compra = null;
-
-            if (data.CompraPacienteId.HasValue)
+            var comprasPorId = new Dictionary<Guid, CompraPaciente>();
+            foreach (var compraPacienteId in data.Procedimentos
+                         .Where(item => item.CompraPacienteId.HasValue)
+                         .Select(item => item.CompraPacienteId!.Value)
+                         .Distinct())
             {
-                compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-                    data.CompraPacienteId.Value,
+                var compraCarregada = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                    compraPacienteId,
                     empresaId,
                     cancellationToken);
 
-                if (compra is null)
+                if (compraCarregada is null)
                 {
                     return Result<CreatePatientApplicationsResult>.Failure("Compra de pacote não encontrada.");
                 }
+
+                comprasPorId.Add(compraCarregada.Id, compraCarregada);
             }
 
             var aplicacoesCriadas = new List<AplicacaoPaciente>();
@@ -120,6 +124,12 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
 
             foreach (var procedimentoData in data.Procedimentos)
             {
+                CompraPaciente? compra = null;
+                if (procedimentoData.CompraPacienteId.HasValue)
+                {
+                    compra = comprasPorId[procedimentoData.CompraPacienteId.Value];
+                }
+
                 if (compra is not null)
                 {
                     compra.EnsurePodeAplicar(
@@ -131,7 +141,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                 var aplicacao = AplicacaoPaciente.CreateRealizada(
                     empresaId,
                     data.PacienteId,
-                    data.CompraPacienteId,
+                    procedimentoData.CompraPacienteId,
                     procedimentoData.ProdutoId,
                     procedimentoData.ProcedimentoId,
                     data.AplicadorId,
@@ -209,7 +219,7 @@ public sealed class CreatePatientApplicationsService : ICreatePatientApplication
                 aplicacoesCriadas.Add(aplicacao);
             }
 
-            if (compra is not null)
+            foreach (var compra in comprasPorId.Values)
             {
                 compra.CompleteIfExhausted();
                 _patientPurchasesRepository.Update(compra);
