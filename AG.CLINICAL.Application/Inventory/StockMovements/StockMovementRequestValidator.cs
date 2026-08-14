@@ -50,20 +50,59 @@ internal static class StockMovementRequestValidator
 
         if (requiresLotForEntry)
         {
-            if (request.QuantidadeEmbalagem is null or <= 0)
+            if (request.Lotes is { Count: > 0 })
             {
-                return Result<ValidatedManualStockMovementData>.Failure(
-                    "Informe a quantidade de embalagens maior que zero.");
-            }
+                if (request.Lotes.Count > 100)
+                {
+                    return Result<ValidatedManualStockMovementData>.Failure(
+                        "Informe no máximo 100 lotes por entrada.");
+                }
 
-            if (string.IsNullOrWhiteSpace(request.LoteCodigo))
-            {
-                return Result<ValidatedManualStockMovementData>.Failure("Informe o código do lote.");
-            }
+                var codigos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var lote in request.Lotes)
+                {
+                    if (lote.QuantidadeEmbalagem <= 0)
+                    {
+                        return Result<ValidatedManualStockMovementData>.Failure(
+                            "A quantidade de embalagens de cada lote deve ser maior que zero.");
+                    }
 
-            if (request.DataValidade is null)
+                    if (string.IsNullOrWhiteSpace(lote.LoteCodigo))
+                    {
+                        return Result<ValidatedManualStockMovementData>.Failure(
+                            "Informe o código de todos os lotes.");
+                    }
+
+                    if (lote.DataValidade == default)
+                    {
+                        return Result<ValidatedManualStockMovementData>.Failure(
+                            "Informe a data de validade de todos os lotes.");
+                    }
+
+                    if (!codigos.Add(lote.LoteCodigo.Trim()))
+                    {
+                        return Result<ValidatedManualStockMovementData>.Failure(
+                            $"O lote {lote.LoteCodigo.Trim()} foi informado mais de uma vez.");
+                    }
+                }
+            }
+            else
             {
-                return Result<ValidatedManualStockMovementData>.Failure("Informe a data de validade do lote.");
+                if (request.QuantidadeEmbalagem is null or <= 0)
+                {
+                    return Result<ValidatedManualStockMovementData>.Failure(
+                        "Informe a quantidade de embalagens maior que zero.");
+                }
+
+                if (string.IsNullOrWhiteSpace(request.LoteCodigo))
+                {
+                    return Result<ValidatedManualStockMovementData>.Failure("Informe o código do lote.");
+                }
+
+                if (request.DataValidade is null)
+                {
+                    return Result<ValidatedManualStockMovementData>.Failure("Informe a data de validade do lote.");
+                }
             }
         }
         else if (request.Quantidade is null or <= 0)

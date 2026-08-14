@@ -12,3 +12,10 @@ public sealed record StockBalanceDto(
     decimal ValorEstoque,
     bool AbaixoDoMinimo,
     IReadOnlyList<string> OrigensEntrada);
+
+public sealed record UpdateStockBalanceRequest(
+    Guid UnidadeId,
+    Guid ProdutoId,
+    decimal SaldoDesejado,
+    string Observacao,
+    Guid? LoteProdutoId = null);

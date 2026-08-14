@@ -132,6 +132,7 @@ public static class DependencyInjection
 
         services.AddScoped<IListStockBalancesService, ListStockBalancesService>();
         services.AddScoped<IListStockLotBalancesService, ListStockLotBalancesService>();
+        services.AddScoped<IUpdateStockBalanceService, UpdateStockBalanceService>();
         services.AddScoped<IListStockMovementsService, ListStockMovementsService>();
         services.AddScoped<ICreateStockAdjustmentsService, CreateStockAdjustmentsService>();
         services.AddScoped<ICreateStockLossesService, CreateStockLossesService>();

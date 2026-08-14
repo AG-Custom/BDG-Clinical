@@ -1327,6 +1327,33 @@ public sealed class MovimentacaoEstoque : AggregateRoot
             observacao);
     }
 
+    public static MovimentacaoEstoque CreateCorrecaoSaldo(
+        Guid empresaId,
+        Guid unidadeId,
+        Guid produtoId,
+        decimal diferenca,
+        DateTime data,
+        Guid? funcionarioId = null,
+        string? observacao = null)
+    {
+        if (diferenca == 0)
+        {
+            throw new DomainException("A correção de saldo deve alterar a quantidade atual.");
+        }
+
+        return CreateManual(
+            empresaId,
+            unidadeId,
+            produtoId,
+            diferenca > 0 ? TipoMovimentacaoEstoque.Entrada : TipoMovimentacaoEstoque.Saida,
+            MotivoMovimentacaoEstoque.Ajuste,
+            Math.Abs(diferenca),
+            data,
+            "CORRECAO_SALDO",
+            funcionarioId,
+            observacao);
+    }
+
     public static MovimentacaoEstoque CreateTransferenciaSaida(
         Guid transferenciaEstoqueId,
         Guid empresaId,

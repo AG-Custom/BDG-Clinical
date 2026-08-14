@@ -73,7 +73,7 @@ public sealed class StockMovementController : ControllerBase
             return BadRequest(new ApiResponse<object?>(null!, false, result.Error));
         }
 
-        return Ok(new ApiResponse<StockMovementDto>(result.Value!, true));
+        return Ok(new ApiResponse<IReadOnlyList<StockMovementDto>>(result.Value!, true));
     }
 
     [HttpPost("loss")]
