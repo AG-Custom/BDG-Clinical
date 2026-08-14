@@ -14,13 +14,32 @@ public sealed class StockBalanceController : ControllerBase
 {
     private readonly IListStockBalancesService _listStockBalancesService;
     private readonly IListStockLotBalancesService _listStockLotBalancesService;
+    private readonly IUpdateStockBalanceService _updateStockBalanceService;
 
     public StockBalanceController(
         IListStockBalancesService listStockBalancesService,
-        IListStockLotBalancesService listStockLotBalancesService)
+        IListStockLotBalancesService listStockLotBalancesService,
+        IUpdateStockBalanceService updateStockBalanceService)
     {
         _listStockBalancesService = listStockBalancesService;
         _listStockLotBalancesService = listStockLotBalancesService;
+        _updateStockBalanceService = updateStockBalanceService;
+    }
+
+    [HttpPut]
+    [RequirePermission("estoque.ajustar")]
+    public async Task<IActionResult> Update(
+        [FromBody] UpdateStockBalanceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _updateStockBalanceService.ExecuteAsync(request, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new ApiResponse<object?>(null!, false, result.Error));
+        }
+
+        return Ok(new ApiResponse<IReadOnlyList<StockMovementDto>>(result.Value!, true));
     }
 
     [HttpGet]
