@@ -151,6 +151,41 @@ public sealed class Agendamento : AggregateRoot
         }
     }
 
+    public void SetApplicationDetails(IReadOnlyList<Guid> procedimentoIds, Guid compraPacienteId)
+    {
+        EnsureEditable();
+
+        if (Tipo != TipoAgendamento.Aplicacao)
+        {
+            throw new DomainException("Os dados da aplicação só podem ser informados em agendamentos do tipo aplicação.");
+        }
+
+        var normalizedProcedimentoIds = procedimentoIds
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (normalizedProcedimentoIds.Count == 0)
+        {
+            throw new DomainException("Informe ao menos um procedimento para realizar a aplicação.");
+        }
+
+        if (normalizedProcedimentoIds.Count != procedimentoIds.Count(id => id != Guid.Empty))
+        {
+            throw new DomainException("Não é permitido repetir o mesmo procedimento na aplicação.");
+        }
+
+        if (compraPacienteId == Guid.Empty)
+        {
+            throw new DomainException("Informe a compra de pacote para realizar a aplicação.");
+        }
+
+        ProcedimentoId = normalizedProcedimentoIds[0];
+        CompraPacienteId = compraPacienteId;
+        SetProcedimentos(normalizedProcedimentoIds);
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     public void Confirm()
     {
         if (Status != StatusAgendamento.Agendado)
@@ -276,17 +311,6 @@ public sealed class Agendamento : AggregateRoot
             .Where(id => id != Guid.Empty)
             .Distinct()
             .ToList();
-
-        if (tipo == TipoAgendamento.Aplicacao && normalizedProcedimentoIds.Count == 0)
-        {
-            throw new DomainException("Informe ao menos um procedimento para agendamentos do tipo aplicação.");
-        }
-
-        if (tipo == TipoAgendamento.Aplicacao
-            && (!compraPacienteId.HasValue || compraPacienteId.Value == Guid.Empty))
-        {
-            throw new DomainException("Informe a compra de pacote para agendamentos do tipo aplicação.");
-        }
 
         if (tipo != TipoAgendamento.Aplicacao && normalizedProcedimentoIds.Count > 0)
         {

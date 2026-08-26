@@ -136,28 +136,41 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         Guid empresaId,
         CancellationToken cancellationToken)
     {
-        if (agendamento.Tipo == TipoAgendamento.Aplicacao
-            && (!agendamento.CompraPacienteId.HasValue || agendamento.CompraPacienteId == Guid.Empty))
-        {
-            return "Informe a compra de pacote no agendamento antes de concluir.";
-        }
-
-        var procedimentoIds = agendamento.GetProcedimentoIds();
-        if (procedimentoIds.Count == 0)
-        {
-            return "Agendamento de aplicação sem procedimento vinculado.";
-        }
-
-        var completeItems = ResolveCompleteItems(procedimentoIds, request);
+        var completeItems = ResolveCompleteItems(agendamento.GetProcedimentoIds(), request);
         if (completeItems.IsFailure)
         {
             return completeItems.Error;
         }
 
-        foreach (var item in completeItems.Value!)
+        var compraPacienteId = request.CompraPacienteId is { } informedCompraId && informedCompraId != Guid.Empty
+            ? informedCompraId
+            : agendamento.CompraPacienteId;
+
+        if (!compraPacienteId.HasValue || compraPacienteId == Guid.Empty)
+        {
+            return "Informe a compra de pacote para realizar a aplicação.";
+        }
+
+        var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+            compraPacienteId.Value,
+            empresaId,
+            cancellationToken);
+
+        if (compra is null)
+        {
+            return "Compra de pacote não encontrada.";
+        }
+
+        var items = completeItems.Value!;
+        agendamento.SetApplicationDetails(
+            items.Select(item => item.ProcedimentoId).ToList(),
+            compraPacienteId.Value);
+
+        foreach (var item in items)
         {
             var error = await CreateApplicationForProcedureAsync(
                 agendamento,
+                compra,
                 item.ProcedimentoId,
                 item.QuantidadeUtilizada,
                 item.Peso,
@@ -173,19 +186,8 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             }
         }
 
-        if (agendamento.CompraPacienteId.HasValue)
-        {
-            var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-                agendamento.CompraPacienteId.Value,
-                empresaId,
-                cancellationToken);
-
-            if (compra is not null)
-            {
-                compra.CompleteIfExhausted();
-                _patientPurchasesRepository.Update(compra);
-            }
-        }
+        compra.CompleteIfExhausted();
+        _patientPurchasesRepository.Update(compra);
 
         return null;
     }
@@ -194,6 +196,19 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         IReadOnlyList<Guid> procedimentoIds,
         CompleteAppointmentRequest request)
     {
+        if (request.Procedimentos is { Count: > 0 })
+        {
+            var informedIds = request.Procedimentos.Select(item => item.ProcedimentoId).ToList();
+
+            if (informedIds.Any(id => id == Guid.Empty) || informedIds.Distinct().Count() != informedIds.Count)
+            {
+                return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
+                    "Informe procedimentos distintos e válidos na conclusão.");
+            }
+
+            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Success(request.Procedimentos);
+        }
+
         if (procedimentoIds.Count == 1)
         {
             return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Success(
@@ -208,38 +223,19 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             ]);
         }
 
-        if (request.Procedimentos is null || request.Procedimentos.Count == 0)
+        if (procedimentoIds.Count == 0)
         {
             return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
-                "Informe os dados de conclusão de cada procedimento em procedimentos.");
+                "Informe ao menos um procedimento para realizar a aplicação.");
         }
 
-        if (request.Procedimentos.Count != procedimentoIds.Count)
-        {
-            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
-                "Informe os dados de conclusão para todos os procedimentos do agendamento.");
-        }
-
-        var expectedIds = procedimentoIds.ToHashSet();
-        var informedIds = request.Procedimentos.Select(item => item.ProcedimentoId).ToList();
-
-        if (informedIds.Any(id => id == Guid.Empty) || informedIds.Distinct().Count() != informedIds.Count)
-        {
-            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
-                "Informe procedimentos distintos e válidos na conclusão.");
-        }
-
-        if (!expectedIds.SetEquals(informedIds))
-        {
-            return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
-                "Os procedimentos informados na conclusão devem corresponder aos do agendamento.");
-        }
-
-        return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Success(request.Procedimentos);
+        return Result<IReadOnlyList<CompleteAppointmentProcedureRequest>>.Failure(
+            "Informe os dados de conclusão de cada procedimento em procedimentos.");
     }
 
     private async Task<string?> CreateApplicationForProcedureAsync(
         Agendamento agendamento,
+        CompraPaciente compra,
         Guid procedimentoId,
         decimal? quantidadeUtilizada,
         decimal? peso,
@@ -275,6 +271,11 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         {
             return "O peso deve ser maior que zero quando informado.";
         }
+
+        compra.EnsurePodeAplicar(
+            agendamento.PacienteId,
+            procedimento.ProdutoAplicadoId,
+            quantidadeUtilizada);
 
         var productIds = new HashSet<Guid>();
         if (procedimento.ProdutoAplicadoId.HasValue)
