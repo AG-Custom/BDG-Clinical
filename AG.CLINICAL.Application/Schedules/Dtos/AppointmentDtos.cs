@@ -65,7 +65,8 @@ public sealed record CompleteAppointmentProcedureRequest(
     decimal? Peso = null,
     Guid? LoteProdutoId = null,
     bool ConsumirInsumosKit = true,
-    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null);
+    IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null,
+    Guid? CompraPacienteId = null);
 
 public sealed record CompleteAppointmentRequest(
     decimal? QuantidadeUtilizada = null,
@@ -74,4 +75,7 @@ public sealed record CompleteAppointmentRequest(
     bool ConsumirInsumosKit = true,
     IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null,
     IReadOnlyList<CompleteAppointmentProcedureRequest>? Procedimentos = null,
-    Guid? CompraPacienteId = null);
+    Guid? CompraPacienteId = null,
+    string? Observacao = null,
+    IReadOnlyList<Guid>? SintomaIds = null,
+    bool RegistrarAplicacao = true);

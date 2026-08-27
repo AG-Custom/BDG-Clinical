@@ -151,7 +151,7 @@ public sealed class Agendamento : AggregateRoot
         }
     }
 
-    public void SetApplicationDetails(IReadOnlyList<Guid> procedimentoIds, Guid compraPacienteId)
+    public void SetApplicationDetails(IReadOnlyList<Guid> procedimentoIds, Guid? compraPacienteId)
     {
         EnsureEditable();
 
@@ -175,13 +175,8 @@ public sealed class Agendamento : AggregateRoot
             throw new DomainException("Não é permitido repetir o mesmo procedimento na aplicação.");
         }
 
-        if (compraPacienteId == Guid.Empty)
-        {
-            throw new DomainException("Informe a compra de pacote para realizar a aplicação.");
-        }
-
         ProcedimentoId = normalizedProcedimentoIds[0];
-        CompraPacienteId = compraPacienteId;
+        CompraPacienteId = compraPacienteId is { } id && id != Guid.Empty ? id : null;
         SetProcedimentos(normalizedProcedimentoIds);
         AtualizadoEm = DateTime.UtcNow;
     }
