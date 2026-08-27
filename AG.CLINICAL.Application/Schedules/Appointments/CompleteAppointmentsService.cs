@@ -8,6 +8,7 @@ using AG.CLINICAL.Application.Identity.Abstractions;
 using AG.CLINICAL.Application.Inventory.Abstractions;
 using AG.CLINICAL.Application.Inventory.StockMovements;
 using AG.CLINICAL.Application.Packages.Abstractions;
+using AG.CLINICAL.Application.Patients.Abstractions;
 using AG.CLINICAL.Application.Schedules.Abstractions;
 using AG.CLINICAL.Application.Schedules.Dtos;
 using AG.CLINICAL.Domain.Entities;
@@ -35,6 +36,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
     private readonly IMedicationLotStockService _medicationLotStockService;
     private readonly IPatientApplicationsRepository _patientApplicationsRepository;
     private readonly IPatientPurchasesRepository _patientPurchasesRepository;
+    private readonly ISymptomsRepository _symptomsRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -48,6 +50,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         IMedicationLotStockService medicationLotStockService,
         IPatientApplicationsRepository patientApplicationsRepository,
         IPatientPurchasesRepository patientPurchasesRepository,
+        ISymptomsRepository symptomsRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
@@ -60,6 +63,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         _medicationLotStockService = medicationLotStockService;
         _patientApplicationsRepository = patientApplicationsRepository;
         _patientPurchasesRepository = patientPurchasesRepository;
+        _symptomsRepository = symptomsRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -89,7 +93,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
 
         try
         {
-            if (agendamento.Tipo == TipoAgendamento.Aplicacao)
+            if (agendamento.Tipo == TipoAgendamento.Aplicacao && request.RegistrarAplicacao)
             {
                 var applicationError = await CreateApplicationsFromAppointmentAsync(
                     agendamento,
@@ -136,38 +140,67 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         Guid empresaId,
         CancellationToken cancellationToken)
     {
+        if (!string.IsNullOrWhiteSpace(request.Observacao) && request.Observacao.Length > 2000)
+        {
+            return "A observação deve ter no máximo 2000 caracteres.";
+        }
+
+        var sintomaIds = (request.SintomaIds ?? [])
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (sintomaIds.Count != (request.SintomaIds ?? []).Count)
+        {
+            return "Informe sintomas distintos e válidos.";
+        }
+
+        if (sintomaIds.Count > 0 && !await _symptomsRepository.AllExistActiveByIdsAsync(
+                empresaId,
+                sintomaIds,
+                cancellationToken))
+        {
+            return "Um ou mais sintomas informados não foram encontrados ou estão inativos.";
+        }
+
         var completeItems = ResolveCompleteItems(agendamento.GetProcedimentoIds(), request);
         if (completeItems.IsFailure)
         {
             return completeItems.Error;
         }
 
-        var compraPacienteId = request.CompraPacienteId is { } informedCompraId && informedCompraId != Guid.Empty
+        var items = completeItems.Value!;
+        var compraPadraoId = request.CompraPacienteId is { } informedCompraId && informedCompraId != Guid.Empty
             ? informedCompraId
             : agendamento.CompraPacienteId;
+        var comprasPorId = new Dictionary<Guid, CompraPaciente>();
 
-        if (!compraPacienteId.HasValue || compraPacienteId == Guid.Empty)
-        {
-            return "Informe a compra de pacote para realizar a aplicação.";
-        }
-
-        var compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
-            compraPacienteId.Value,
-            empresaId,
-            cancellationToken);
-
-        if (compra is null)
-        {
-            return "Compra de pacote não encontrada.";
-        }
-
-        var items = completeItems.Value!;
         agendamento.SetApplicationDetails(
             items.Select(item => item.ProcedimentoId).ToList(),
-            compraPacienteId.Value);
+            items.Select(item => item.CompraPacienteId ?? compraPadraoId).FirstOrDefault(id => id.HasValue));
 
         foreach (var item in items)
         {
+            CompraPaciente? compra = null;
+            var compraItemId = item.CompraPacienteId ?? compraPadraoId;
+            if (compraItemId is { } id && id != Guid.Empty)
+            {
+                if (!comprasPorId.TryGetValue(id, out compra))
+                {
+                    compra = await _patientPurchasesRepository.GetByIdAndEmpresaIdWithDetailsAsync(
+                        id,
+                        empresaId,
+                        cancellationToken);
+
+                    if (compra is null)
+                    {
+                        return "Compra de pacote não encontrada.";
+                    }
+
+                    comprasPorId.Add(id, compra);
+                }
+            }
+
             var error = await CreateApplicationForProcedureAsync(
                 agendamento,
                 compra,
@@ -177,6 +210,10 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
                 item.LoteProdutoId,
                 item.ConsumirInsumosKit,
                 item.InsumosManuais,
+                string.IsNullOrWhiteSpace(request.Observacao)
+                    ? agendamento.Observacao
+                    : request.Observacao.Trim(),
+                sintomaIds,
                 empresaId,
                 cancellationToken);
 
@@ -186,8 +223,11 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             }
         }
 
-        compra.CompleteIfExhausted();
-        _patientPurchasesRepository.Update(compra);
+        foreach (var compra in comprasPorId.Values)
+        {
+            compra.CompleteIfExhausted();
+            _patientPurchasesRepository.Update(compra);
+        }
 
         return null;
     }
@@ -219,7 +259,8 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
                     request.Peso,
                     request.LoteProdutoId,
                     request.ConsumirInsumosKit,
-                    request.InsumosManuais)
+                    request.InsumosManuais,
+                    request.CompraPacienteId)
             ]);
         }
 
@@ -235,13 +276,15 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
 
     private async Task<string?> CreateApplicationForProcedureAsync(
         Agendamento agendamento,
-        CompraPaciente compra,
+        CompraPaciente? compra,
         Guid procedimentoId,
         decimal? quantidadeUtilizada,
         decimal? peso,
         Guid? loteProdutoId,
         bool consumirInsumosKit,
         IReadOnlyList<PatientApplicationManualSupplyRequest>? insumosManuais,
+        string? observacao,
+        IReadOnlyList<Guid> sintomaIds,
         Guid empresaId,
         CancellationToken cancellationToken)
     {
@@ -272,7 +315,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             return "O peso deve ser maior que zero quando informado.";
         }
 
-        compra.EnsurePodeAplicar(
+        compra?.EnsurePodeAplicar(
             agendamento.PacienteId,
             procedimento.ProdutoAplicadoId,
             quantidadeUtilizada);
@@ -390,7 +433,7 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
         var aplicacao = AplicacaoPaciente.CreateRealizada(
             empresaId,
             agendamento.PacienteId,
-            agendamento.CompraPacienteId,
+            compra?.Id,
             procedimento.ProdutoAplicadoId,
             procedimento.Id,
             agendamento.FuncionarioId,
@@ -398,8 +441,15 @@ public sealed class CompleteAppointmentsService : ICompleteAppointmentsService
             agendamento.DataInicio,
             quantidadeUtilizada,
             peso,
-            agendamento.Observacao,
+            observacao,
             agendamento.Id);
+
+        foreach (var sintomaId in sintomaIds)
+        {
+            aplicacao.Sintomas.Add(new AplicacaoSintoma(aplicacao.Id, sintomaId));
+        }
+
+        compra?.Aplicacoes.Add(aplicacao);
 
         var movimentacoes = new List<MovimentacaoEstoque>();
 
