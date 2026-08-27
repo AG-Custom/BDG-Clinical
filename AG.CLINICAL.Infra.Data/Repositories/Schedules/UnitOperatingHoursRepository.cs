@@ -1,3 +1,4 @@
+using AG.CLINICAL.Application.Common;
 using AG.CLINICAL.Application.Schedules.Abstractions;
 using AG.CLINICAL.Domain.Entities;
 using AG.CLINICAL.Domain.Enums;
@@ -62,14 +63,17 @@ public sealed class UnitOperatingHoursRepository : IUnitOperatingHoursRepository
         DateTime dataFim,
         CancellationToken cancellationToken = default)
     {
-        if (dataInicio.Date != dataFim.Date)
+        var inicioLocal = BrazilTime.FromUtc(dataInicio);
+        var fimLocal = BrazilTime.FromUtc(dataFim);
+
+        if (inicioLocal.Date != fimLocal.Date)
         {
             return false;
         }
 
-        var diaSemana = (DiaSemana)(int)dataInicio.DayOfWeek;
-        var horaInicio = TimeOnly.FromDateTime(dataInicio);
-        var horaFim = TimeOnly.FromDateTime(dataFim);
+        var diaSemana = (DiaSemana)(int)inicioLocal.DayOfWeek;
+        var horaInicio = TimeOnly.FromDateTime(inicioLocal);
+        var horaFim = TimeOnly.FromDateTime(fimLocal);
 
         return await _context.HorariosFuncionamentoUnidade.AnyAsync(
             h => h.EmpresaId == empresaId

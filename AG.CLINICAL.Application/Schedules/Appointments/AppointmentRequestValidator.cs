@@ -178,17 +178,6 @@ internal static class AppointmentRequestValidator
             return Result<ValidatedAppointmentData>.Failure("A data de término deve ser posterior à data de início.");
         }
 
-        if (tipoAgendamento == TipoAgendamento.Aplicacao && procedimentoIds.Count == 0)
-        {
-            return Result<ValidatedAppointmentData>.Failure("Informe ao menos um procedimento para agendamentos do tipo aplicação.");
-        }
-
-        if (tipoAgendamento == TipoAgendamento.Aplicacao
-            && (!compraPacienteId.HasValue || compraPacienteId.Value == Guid.Empty))
-        {
-            return Result<ValidatedAppointmentData>.Failure("Informe a compra de pacote para agendamentos do tipo aplicação.");
-        }
-
         if (tipoAgendamento != TipoAgendamento.Aplicacao && procedimentoIds.Count > 0)
         {
             return Result<ValidatedAppointmentData>.Failure("Procedimento só pode ser informado em agendamentos do tipo aplicação.");

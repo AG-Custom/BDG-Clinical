@@ -1,3 +1,4 @@
+using AG.CLINICAL.Application.Common;
 using AG.CLINICAL.Application.Schedules.Abstractions;
 using AG.CLINICAL.Domain.Entities;
 using AG.CLINICAL.Domain.Enums;
@@ -125,9 +126,17 @@ public sealed class AppointmentsRepository : IAppointmentsRepository
         DateTime dataFim,
         CancellationToken cancellationToken = default)
     {
-        var diaSemana = (DiaSemana)(int)dataInicio.DayOfWeek;
-        var horaInicio = TimeOnly.FromDateTime(dataInicio);
-        var horaFim = TimeOnly.FromDateTime(dataFim);
+        var inicioLocal = BrazilTime.FromUtc(dataInicio);
+        var fimLocal = BrazilTime.FromUtc(dataFim);
+
+        if (inicioLocal.Date != fimLocal.Date)
+        {
+            return false;
+        }
+
+        var diaSemana = (DiaSemana)(int)inicioLocal.DayOfWeek;
+        var horaInicio = TimeOnly.FromDateTime(inicioLocal);
+        var horaFim = TimeOnly.FromDateTime(fimLocal);
 
         return await _context.DisponibilidadesFuncionario.AnyAsync(
             d => d.EmpresaId == empresaId

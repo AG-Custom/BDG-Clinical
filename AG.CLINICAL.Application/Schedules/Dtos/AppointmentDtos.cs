@@ -73,4 +73,5 @@ public sealed record CompleteAppointmentRequest(
     Guid? LoteProdutoId = null,
     bool ConsumirInsumosKit = true,
     IReadOnlyList<PatientApplicationManualSupplyRequest>? InsumosManuais = null,
-    IReadOnlyList<CompleteAppointmentProcedureRequest>? Procedimentos = null);
+    IReadOnlyList<CompleteAppointmentProcedureRequest>? Procedimentos = null,
+    Guid? CompraPacienteId = null);

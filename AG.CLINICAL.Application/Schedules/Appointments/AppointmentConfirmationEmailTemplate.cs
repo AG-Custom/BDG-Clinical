@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using AG.CLINICAL.Application.Common;
 using AG.CLINICAL.Domain.Entities;
 
 namespace AG.CLINICAL.Application.Schedules.Appointments;
@@ -14,7 +15,6 @@ internal static class AppointmentConfirmationEmailTemplate
     private const string ColorGreen = "#059669";
     private const string ColorCardInner = "#F5F7FA";
 
-    private static readonly TimeZoneInfo BrazilTimeZone = ResolveBrazilTimeZone();
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
     public static string Build(Agendamento agendamento, string? platformLogoUrl = null)
@@ -161,29 +161,7 @@ internal static class AppointmentConfirmationEmailTemplate
         return $"{localInicio:HH:mm} — {localFim:HH:mm}";
     }
 
-    private static DateTime ToBrazilLocal(DateTime value) =>
-        TimeZoneInfo.ConvertTimeFromUtc(NormalizeToUtc(value), BrazilTimeZone);
-
-    private static DateTime NormalizeToUtc(DateTime value) =>
-        value.Kind switch
-        {
-            DateTimeKind.Utc => value,
-            DateTimeKind.Local => value.ToUniversalTime(),
-            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
-        };
-
-    private static TimeZoneInfo ResolveBrazilTimeZone()
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById(
-                OperatingSystem.IsWindows() ? "E. South America Standard Time" : "America/Sao_Paulo");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.Utc;
-        }
-    }
+    private static DateTime ToBrazilLocal(DateTime value) => BrazilTime.FromUtc(value);
 
     private static string Encode(string value) => WebUtility.HtmlEncode(value);
 }
