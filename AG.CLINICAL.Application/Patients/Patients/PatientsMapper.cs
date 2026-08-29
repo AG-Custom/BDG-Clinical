@@ -35,6 +35,7 @@ internal static class PatientsMapper
             paciente.Telefone,
             paciente.Email,
             paciente.DataNascimento,
+            paciente.Sexo?.ToString(),
             MapEndereco(paciente.Endereco),
             paciente.Observacao,
             paciente.Ativo,

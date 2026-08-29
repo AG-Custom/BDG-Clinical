@@ -9,6 +9,7 @@ using AG.CLINICAL.Application.Notifications.Abstractions;
 using AG.CLINICAL.Application.Packages.Abstractions;
 using AG.CLINICAL.Application.Schedules.Abstractions;
 using AG.CLINICAL.Application.Reports.Abstractions;
+using AG.CLINICAL.Application.ClinicalRecords.Abstractions;
 using AG.CLINICAL.Infra.Data.Context;
 using AG.CLINICAL.Infra.Data.Repositories;
 using AG.CLINICAL.Infra.Data.Repositories.Core;
@@ -24,6 +25,7 @@ using AG.CLINICAL.Application.Audits.Abstractions;
 using AG.CLINICAL.Infra.Data.Repositories.Audits;
 using AG.CLINICAL.Infra.Data.Repositories.Schedules;
 using AG.CLINICAL.Infra.Data.Repositories.Reports;
+using AG.CLINICAL.Infra.Data.Repositories.ClinicalRecords;
 using AG.CLINICAL.Infra.Data.Services.Audits;
 using AG.CLINICAL.Infra.Data.Services.Inventory;
 using Microsoft.EntityFrameworkCore;
@@ -87,6 +89,14 @@ public static class DependencyInjection
         services.AddScoped<IUnitOperatingHoursRepository, UnitOperatingHoursRepository>();
         services.AddScoped<IEmailOutboxRepository, EmailOutboxRepository>();
         services.AddScoped<IOperationalReportsRepository, OperationalReportsRepository>();
+        services.AddScoped<IMedicalRecordsRepository, MedicalRecordsRepository>();
+        services.AddScoped<IClinicalEncountersRepository, ClinicalEncountersRepository>();
+        services.AddScoped<IClinicalNotesRepository, ClinicalNotesRepository>();
+        services.AddScoped<IAnamneseTemplatesRepository, AnamneseTemplatesRepository>();
+        services.AddScoped<IAnamneseRecordsRepository, AnamneseRecordsRepository>();
+        services.AddScoped<IBodyAssessmentsRepository, BodyAssessmentsRepository>();
+        services.AddScoped<IClinicalFilesRepository, ClinicalFilesRepository>();
+        services.AddScoped<INutritionRecordsRepository, NutritionRecordsRepository>();
 
         return services;
     }

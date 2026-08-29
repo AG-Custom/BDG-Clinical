@@ -30,6 +30,13 @@ using AG.CLINICAL.Application.Core.PositionPermissions;
 using AG.CLINICAL.Application.Modules.Permissions;
 using AG.CLINICAL.Application.Notifications.EmailOutbox;
 using AG.CLINICAL.Application.Reports;
+using AG.CLINICAL.Application.ClinicalRecords.MedicalRecords;
+using AG.CLINICAL.Application.ClinicalRecords.Encounters;
+using AG.CLINICAL.Application.ClinicalRecords.Notes;
+using AG.CLINICAL.Application.ClinicalRecords.Anamneses;
+using AG.CLINICAL.Application.ClinicalRecords.BodyAssessments;
+using AG.CLINICAL.Application.ClinicalRecords.Files;
+using AG.CLINICAL.Application.ClinicalRecords.Nutrition;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AG.CLINICAL.Application;
@@ -192,6 +199,40 @@ public static class DependencyInjection
         services.AddScoped<IUpdateEmployeePermissionsService, UpdateEmployeePermissionsService>();
         services.AddScoped<IUsersPermissionMutationService, UsersPermissionMutationService>();
         services.AddScoped<IGetOperationalReportService, GetOperationalReportService>();
+
+        services.AddScoped<IGetOrCreateMedicalRecordsService, GetOrCreateMedicalRecordsService>();
+        services.AddScoped<IUpdateMedicalRecordsService, UpdateMedicalRecordsService>();
+        services.AddScoped<IGetMedicalRecordSummariesService, GetMedicalRecordSummariesService>();
+        services.AddScoped<IListClinicalEncountersService, ListClinicalEncountersService>();
+        services.AddScoped<IGetClinicalEncountersService, GetClinicalEncountersService>();
+        services.AddScoped<ICreateClinicalEncountersService, CreateClinicalEncountersService>();
+        services.AddScoped<IUpdateClinicalEncountersService, UpdateClinicalEncountersService>();
+        services.AddScoped<IFinalizeClinicalEncountersService, FinalizeClinicalEncountersService>();
+        services.AddScoped<IListClinicalNotesService, ListClinicalNotesService>();
+        services.AddScoped<ICreateClinicalNotesService, CreateClinicalNotesService>();
+        services.AddScoped<IUpdateClinicalNotesService, UpdateClinicalNotesService>();
+        services.AddScoped<IListAnamneseTemplatesService, ListAnamneseTemplatesService>();
+        services.AddScoped<IGetAnamneseTemplatesService, GetAnamneseTemplatesService>();
+        services.AddScoped<ICreateAnamneseTemplatesService, CreateAnamneseTemplatesService>();
+        services.AddScoped<IUpdateAnamneseTemplatesService, UpdateAnamneseTemplatesService>();
+        services.AddScoped<IDeactivateAnamneseTemplatesService, DeactivateAnamneseTemplatesService>();
+        services.AddScoped<IListAnamneseRecordsService, ListAnamneseRecordsService>();
+        services.AddScoped<ICreateAnamneseRecordsService, CreateAnamneseRecordsService>();
+        services.AddScoped<IUpdateAnamneseRecordsService, UpdateAnamneseRecordsService>();
+        services.AddScoped<IListBodyAssessmentsService, ListBodyAssessmentsService>();
+        services.AddScoped<IGetBodyAssessmentsService, GetBodyAssessmentsService>();
+        services.AddScoped<ICreateBodyAssessmentsService, CreateBodyAssessmentsService>();
+        services.AddScoped<IUpdateBodyAssessmentsService, UpdateBodyAssessmentsService>();
+        services.AddScoped<IGetBodyEvolutionService, GetBodyEvolutionService>();
+        services.AddScoped<IListClinicalAttachmentsService, ListClinicalAttachmentsService>();
+        services.AddScoped<IUploadClinicalAttachmentsService, UploadClinicalAttachmentsService>();
+        services.AddScoped<IListComparativePhotosService, ListComparativePhotosService>();
+        services.AddScoped<IUploadComparativePhotosService, UploadComparativePhotosService>();
+        services.AddScoped<ICompareComparativePhotosService, CompareComparativePhotosService>();
+        services.AddScoped<IListEnergyCalculationsService, ListEnergyCalculationsService>();
+        services.AddScoped<ICreateEnergyCalculationsService, CreateEnergyCalculationsService>();
+        services.AddScoped<IListPocketRulesService, ListPocketRulesService>();
+        services.AddScoped<ICreatePocketRulesService, CreatePocketRulesService>();
 
         return services;
     }

@@ -12,5 +12,6 @@ public static class SystemModulesCatalog
         new(ModuleCodes.Applications, "Aplicações", "Aplicações de procedimentos em pacientes"),
         new(ModuleCodes.Financial, "Financeiro", "Contas a receber e pagamentos"),
         new(ModuleCodes.Reports, "Relatórios", "Relatórios e indicadores"),
+        new(ModuleCodes.ClinicalRecords, "Prontuário", "Prontuário clínico, anamnese e avaliações"),
     ];
 }

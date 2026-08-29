@@ -62,6 +62,8 @@ public sealed class RequireAnyPermissionFromAttribute : Attribute, IAsyncAuthori
             AuxiliaryPermissionSet.Symptoms => AuxiliaryPermissionAlternates.Symptoms,
             AuxiliaryPermissionSet.Packages => AuxiliaryPermissionAlternates.Packages,
             AuxiliaryPermissionSet.PatientPurchases => AuxiliaryPermissionAlternates.PatientPurchases,
+            AuxiliaryPermissionSet.AnamneseTemplates => AuxiliaryPermissionAlternates.AnamneseTemplates,
+            AuxiliaryPermissionSet.ClinicalAttachments => AuxiliaryPermissionAlternates.ClinicalAttachments,
             _ => throw new ArgumentOutOfRangeException(nameof(set), set, null)
         };
 }
@@ -80,5 +82,7 @@ public enum AuxiliaryPermissionSet
     Suppliers,
     Symptoms,
     Packages,
-    PatientPurchases
+    PatientPurchases,
+    AnamneseTemplates,
+    ClinicalAttachments
 }

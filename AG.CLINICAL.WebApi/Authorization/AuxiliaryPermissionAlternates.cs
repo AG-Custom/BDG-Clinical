@@ -25,7 +25,9 @@ internal static class AuxiliaryPermissionAlternates
         "agenda.visualizar",
         "agendamento.criar",
         "agendamento.editar",
-        "aplicacao.visualizar"
+        "aplicacao.visualizar",
+        "prontuario.atendimento.criar",
+        "prontuario.atendimento.editar"
     ];
 
     public static readonly string[] OperatingHours =
@@ -108,5 +110,18 @@ internal static class AuxiliaryPermissionAlternates
         "aplicacao.editar",
         "agendamento.criar",
         "agendamento.editar"
+    ];
+
+    public static readonly string[] AnamneseTemplates =
+    [
+        "prontuario.modelo_anamnese.gerenciar",
+        "prontuario.anamnese.editar",
+        "prontuario.visualizar"
+    ];
+
+    public static readonly string[] ClinicalAttachments =
+    [
+        "prontuario.exame.enviar",
+        "prontuario.documento.editar"
     ];
 }

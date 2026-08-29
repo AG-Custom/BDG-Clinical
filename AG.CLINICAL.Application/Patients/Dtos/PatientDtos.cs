@@ -30,6 +30,7 @@ public sealed record PatientDto(
     string? Telefone,
     string? Email,
     DateOnly? DataNascimento,
+    string? Sexo,
     PatientAddressDto? Endereco,
     string? Observacao,
     bool Ativo,
@@ -44,6 +45,7 @@ public sealed record CreatePatientRequest(
     string? Telefone = null,
     string? Email = null,
     DateOnly? DataNascimento = null,
+    string? Sexo = null,
     PatientAddressRequest? Endereco = null,
     string? Observacao = null);
 
@@ -55,5 +57,6 @@ public sealed record UpdatePatientRequest(
     string? Telefone = null,
     string? Email = null,
     DateOnly? DataNascimento = null,
+    string? Sexo = null,
     PatientAddressRequest? Endereco = null,
     string? Observacao = null);

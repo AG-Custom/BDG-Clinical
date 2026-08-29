@@ -15,6 +15,7 @@ internal sealed class PacienteConfiguration : IEntityTypeConfiguration<Paciente>
         builder.Property(entity => entity.Telefone).HasMaxLength(30);
         builder.Property(entity => entity.Email).HasMaxLength(200);
         builder.Property(entity => entity.Observacao).HasMaxLength(2000);
+        builder.Property(entity => entity.Sexo).HasConversion<string>().HasMaxLength(20);
 
         builder.OwnsOne(entity => entity.Endereco, endereco =>
         {

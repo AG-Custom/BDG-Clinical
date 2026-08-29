@@ -104,5 +104,17 @@ public static class PermissionCatalog
         new("unidade.criar", "Criar unidade", "Unidades", PermissionModuleCodes.Core, 11),
         new("unidade.editar", "Editar unidade", "Unidades", PermissionModuleCodes.Core, 12),
         new("empresa.editar", "Editar empresa", "Empresa", PermissionModuleCodes.Core, 10),
+
+        // Prontuário
+        new("prontuario.visualizar", "Visualizar prontuário", "Prontuário", PermissionModuleCodes.Prontuario, 10),
+        new("prontuario.atendimento.criar", "Iniciar atendimento clínico", "Prontuário", PermissionModuleCodes.Prontuario, 11),
+        new("prontuario.atendimento.editar", "Editar atendimento clínico", "Prontuário", PermissionModuleCodes.Prontuario, 12),
+        new("prontuario.anamnese.editar", "Editar anamnese", "Prontuário", PermissionModuleCodes.Prontuario, 13),
+        new("prontuario.modelo_anamnese.gerenciar", "Gerenciar modelos de anamnese", "Prontuário", PermissionModuleCodes.Prontuario, 14),
+        new("prontuario.avaliacao.criar", "Criar avaliação corporal", "Prontuário", PermissionModuleCodes.Prontuario, 15),
+        new("prontuario.exame.enviar", "Enviar exames", "Prontuário", PermissionModuleCodes.Prontuario, 16),
+        new("prontuario.foto.enviar", "Enviar fotos", "Prontuário", PermissionModuleCodes.Prontuario, 17),
+        new("prontuario.documento.editar", "Editar documentos clínicos", "Prontuário", PermissionModuleCodes.Prontuario, 18),
+        new("prontuario.anotacao.criar", "Criar anotação clínica", "Prontuário", PermissionModuleCodes.Prontuario, 19),
     ];
 }

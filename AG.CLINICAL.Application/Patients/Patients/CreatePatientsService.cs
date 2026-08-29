@@ -73,7 +73,8 @@ public sealed class CreatePatientsService : ICreatePatientsService
                 data.Email,
                 request.DataNascimento,
                 data.Endereco,
-                data.Observacao);
+                data.Observacao,
+                PatientSexoParser.Parse(request.Sexo));
 
             await _patientsRepository.AddAsync(paciente, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

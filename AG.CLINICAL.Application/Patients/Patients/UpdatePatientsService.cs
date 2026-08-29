@@ -87,7 +87,8 @@ public sealed class UpdatePatientsService : IUpdatePatientsService
                 data.Email,
                 request.DataNascimento,
                 data.Endereco,
-                data.Observacao);
+                data.Observacao,
+                PatientSexoParser.Parse(request.Sexo));
 
             _patientsRepository.Update(paciente);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

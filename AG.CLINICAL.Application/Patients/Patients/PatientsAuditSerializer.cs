@@ -23,6 +23,7 @@ internal static class PatientsAuditSerializer
             paciente.Telefone,
             paciente.Email,
             paciente.DataNascimento,
+            Sexo = paciente.Sexo?.ToString(),
             Endereco = paciente.Endereco is null
                 ? null
                 : new

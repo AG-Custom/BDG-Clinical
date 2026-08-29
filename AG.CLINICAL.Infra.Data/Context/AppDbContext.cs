@@ -49,6 +49,18 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<BloqueioAgenda> BloqueiosAgenda => Set<BloqueioAgenda>();
     public DbSet<LogAuditoria> LogsAuditoria => Set<LogAuditoria>();
     public DbSet<OutputMessageEmail> OutputMessagesEmail => Set<OutputMessageEmail>();
+    public DbSet<Prontuario> Prontuarios => Set<Prontuario>();
+    public DbSet<AtendimentoClinico> AtendimentosClinicos => Set<AtendimentoClinico>();
+    public DbSet<EventoClinico> EventosClinicos => Set<EventoClinico>();
+    public DbSet<AnotacaoClinica> AnotacoesClinicas => Set<AnotacaoClinica>();
+    public DbSet<ModeloAnamnese> ModelosAnamnese => Set<ModeloAnamnese>();
+    public DbSet<RegistroAnamnese> RegistrosAnamnese => Set<RegistroAnamnese>();
+    public DbSet<RegistroAnamneseVersao> RegistrosAnamneseVersao => Set<RegistroAnamneseVersao>();
+    public DbSet<AvaliacaoCorporal> AvaliacoesCorporais => Set<AvaliacaoCorporal>();
+    public DbSet<AnexoClinico> AnexosClinicos => Set<AnexoClinico>();
+    public DbSet<FotoComparativa> FotosComparativas => Set<FotoComparativa>();
+    public DbSet<CalculoEnergeticoRegistro> CalculosEnergeticos => Set<CalculoEnergeticoRegistro>();
+    public DbSet<RegraBolsoRegistro> RegrasBolso => Set<RegraBolsoRegistro>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

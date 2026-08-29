@@ -9,4 +9,5 @@ public static class PermissionModuleCodes
     public const string Relatorios = "RELATORIOS";
     public const string Pacientes = "PACIENTES";
     public const string Core = "CORE";
+    public const string Prontuario = "PRONTUARIO";
 }

@@ -1,4 +1,5 @@
 using AG.CLINICAL.Domain.Common;
+using AG.CLINICAL.Domain.Enums;
 using AG.CLINICAL.Domain.Exceptions;
 using AG.CLINICAL.Domain.ValueObjects;
 
@@ -19,7 +20,8 @@ public sealed class Paciente : AggregateRoot
         string? email,
         DateOnly? dataNascimento,
         Address? endereco,
-        string? observacao)
+        string? observacao,
+        Sexo? sexo)
         : base(Guid.NewGuid())
     {
         EmpresaId = empresaId;
@@ -29,6 +31,7 @@ public sealed class Paciente : AggregateRoot
         Telefone = telefone;
         Email = email;
         DataNascimento = dataNascimento;
+        Sexo = sexo;
         Endereco = endereco;
         Observacao = observacao;
         Ativo = true;
@@ -41,6 +44,7 @@ public sealed class Paciente : AggregateRoot
     public string? Telefone { get; private set; }
     public string? Email { get; private set; }
     public DateOnly? DataNascimento { get; private set; }
+    public Sexo? Sexo { get; private set; }
     public Address? Endereco { get; private set; }
     public string? Observacao { get; private set; }
     public bool Ativo { get; private set; }
@@ -59,7 +63,8 @@ public sealed class Paciente : AggregateRoot
         string? email,
         DateOnly? dataNascimento,
         Address? endereco,
-        string? observacao)
+        string? observacao,
+        Sexo? sexo = null)
     {
         if (empresaId == Guid.Empty)
         {
@@ -82,7 +87,8 @@ public sealed class Paciente : AggregateRoot
             email,
             dataNascimento,
             endereco,
-            observacao);
+            observacao,
+            sexo);
 
         paciente.SetUnidades(unidadeIds);
         return paciente;
@@ -96,7 +102,8 @@ public sealed class Paciente : AggregateRoot
         string? email,
         DateOnly? dataNascimento,
         Address? endereco,
-        string? observacao)
+        string? observacao,
+        Sexo? sexo = null)
     {
         ValidateUnidadeIds(unidadeIds);
 
@@ -111,6 +118,7 @@ public sealed class Paciente : AggregateRoot
         Telefone = telefone;
         Email = email;
         DataNascimento = dataNascimento;
+        Sexo = sexo;
         Endereco = endereco;
         Observacao = observacao;
         SetUnidades(unidadeIds);

@@ -7,4 +7,5 @@ public static class ModuleCodes
     public const string Schedules = "AGENDAMENTOS";
     public const string Financial = "FINANCEIRO";
     public const string Reports = "RELATORIOS";
+    public const string ClinicalRecords = "PRONTUARIO";
 }
