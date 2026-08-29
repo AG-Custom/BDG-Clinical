@@ -1235,6 +1235,7 @@ Lista pacientes da empresa logada.
   "telefone": "(11) 99999-0000",
   "email": "maria@email.com",
   "dataNascimento": "1990-05-15",
+  "sexo": "Feminino",
   "endereco": {
     "cep": "01310-100",
     "logradouro": "Av. Paulista",
@@ -1256,6 +1257,7 @@ Lista pacientes da empresa logada.
 | `telefone` | Não | |
 | `email` | Não | Formato válido se informado |
 | `dataNascimento` | Não | Formato `YYYY-MM-DD` |
+| `sexo` | Não | `Feminino` ou `Masculino` |
 | `endereco` | Não | Objeto com campos opcionais: `cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `uf` |
 | `observacao` | Não | |
 
@@ -2109,9 +2111,9 @@ Histórico cronológico da compra: `Compra`, `Aplicacao` (com aplicador/lote), `
 
 ### PUT `/api/patient-purchases/{id}/balance` — `compra_paciente.editar`
 
-Ajusta a quantidade contratada (`item_pacote.quantidade_total`) e a quantidade utilizada de uma compra com **pacote exclusivo** (1 compra → 1 pacote). O restante é recalculado.
+Ajusta a quantidade contratada e a quantidade utilizada **somente dos itens desta compra** (`item_compra_paciente`). O restante é recalculado. Compras do mesmo pacote comercial têm saldo independente.
 
-A utilizada informada é o **total desejado**. O sistema persiste a diferença em `item_pacote.quantidade_utilizada_base` (consumo fora das aplicações do sistema); o total exibido continua sendo `base + soma das aplicações`. Novas aplicações continuam somando ao utilizado.
+A utilizada informada é o **total desejado**. O sistema persiste a diferença em `item_compra_paciente.quantidade_utilizada_base` (consumo fora das aplicações do sistema); o total exibido continua sendo `base + soma das aplicações`. Novas aplicações continuam somando ao utilizado.
 
 ```json
 {
@@ -2122,7 +2124,11 @@ A utilizada informada é o **total desejado**. O sistema persiste a diferença e
 }
 ```
 
-Regras: `quantidadeContratada > 0`; `quantidadeUtilizada >= 0`; `quantidadeContratada >= quantidadeUtilizada`; compra cancelada não pode ser editada; pacote compartilhado por mais de uma compra retorna 400.
+Regras: `quantidadeContratada > 0`; `quantidadeUtilizada >= 0`; `quantidadeContratada >= quantidadeUtilizada`; `motivo` obrigatório; compra cancelada não pode ser editada. Produto precisa existir nos itens da compra.
+
+### POST `/api/patient-purchases/reconcile-items` — `compra_paciente.editar`
+
+Reconstrói `item_compra_paciente` das compras que ainda não têm fotografia. Query `dryRun` (default `true`) devolve só o relatório; `dryRun=false` persiste. Executar **depois** de aplicar a migration de schema, não junto com o `Up()`.
 
 ### POST `/api/patient-purchases/{id}/cancel` — `compra_paciente.cancelar`
 
@@ -2436,6 +2442,65 @@ Atualiza faixa existente.
 ```
 
 **Regras:** no mesmo dia da unidade, não é permitido cadastrar faixas iguais nem que se sobreponham (ex.: `08:00–18:00` com `10:00–13:00`). Faixas adjacentes sem sobreposição são permitidas (ex.: `08:00–18:00` e `20:00–22:00`).
+
+---
+
+## 21.5. Prontuário clínico
+
+Módulo contratável `PRONTUARIO`. Prefixo tenant pelo JWT. Entidades em PT; rotas em inglês.
+
+### Pasta do paciente
+
+| Método | Rota | Permissão |
+|--------|------|-----------|
+| GET | `/api/patients/{id}/medical-record` | `prontuario.visualizar` (get-or-create) |
+| PATCH | `/api/patients/{id}/medical-record` | `prontuario.atendimento.editar` |
+| GET | `/api/patients/{id}/medical-record/summary` | `prontuario.visualizar` |
+| GET | `/api/patients/{id}/clinical-encounters` | `prontuario.visualizar` |
+| POST | `/api/patients/{id}/clinical-encounters` | `prontuario.atendimento.criar` |
+| GET | `/api/patients/{id}/body-assessments` | `prontuario.visualizar` |
+| GET | `/api/patients/{id}/body-evolution` | `prontuario.visualizar` |
+| GET | `/api/patients/{id}/photos` | `prontuario.visualizar` |
+
+**POST criar atendimento**
+
+```json
+{
+  "unidadeId": "guid",
+  "funcionarioId": "guid",
+  "dataInicio": null,
+  "observacao": null
+}
+```
+
+### Sessão (`/api/clinical-encounters`)
+
+| Método | Rota | Permissão |
+|--------|------|-----------|
+| GET | `/api/clinical-encounters/{id}` | `prontuario.visualizar` (inclui `timeline`) |
+| PATCH | `/api/clinical-encounters/{id}` | `prontuario.atendimento.editar` |
+| POST | `/api/clinical-encounters/{id}/finalize` | `prontuario.atendimento.editar` |
+| GET/POST | `.../notes` | visualizar / `prontuario.anotacao.criar` |
+| GET/POST | `.../anamneses` | visualizar / `prontuario.anamnese.editar` |
+| PUT | `/api/clinical-encounters/anamneses/{id}` | `prontuario.anamnese.editar` |
+| GET/POST | `.../body-assessments` | visualizar / `prontuario.avaliacao.criar` |
+| GET/PUT | `/api/clinical-encounters/body-assessments/{id}` | visualizar / `prontuario.avaliacao.criar` |
+| GET/POST | `.../attachments` | visualizar / `prontuario.exame.enviar` ou `prontuario.documento.editar` |
+| GET/POST | `.../photos` | visualizar / `prontuario.foto.enviar` |
+| GET | `/api/clinical-encounters/photos/compare?esquerdaId=&direitaId=` | `prontuario.visualizar` |
+| GET/POST | `.../energy-calculations` | visualizar / `prontuario.atendimento.editar` |
+| GET/POST | `.../pocket-rules` | visualizar / `prontuario.atendimento.editar` |
+
+Upload: `multipart/form-data`, campo `file`, até 10 MB. Chaves R2: `companies/{empresaId}/patients/{pacienteId}/encounters/{id}/...`.
+
+### Modelos de anamnese — `/api/anamnese-templates`
+
+| Método | Permissão |
+|--------|-----------|
+| GET list/get | `prontuario.modelo_anamnese.gerenciar` **ou** `prontuario.anamnese.editar` **ou** `prontuario.visualizar` |
+| POST/PUT/DELETE | `prontuario.modelo_anamnese.gerenciar` |
+
+Schema dos campos no body: `{ id, tipo, label, obrigatorio, opcoes, min, max }`. Tipos: `TextoCurto`, `TextoLongo`, `Numero`, `Data`, `SelecaoUnica`, `SelecaoMultipla`, `Checkbox`, `Escala`, `Upload`.
 
 ---
 
@@ -2906,6 +2971,9 @@ interface CompleteAppointmentRequest {
 22. CRUD procedimentos → /api/procedures/*
 23. Aplicações paciente → /api/patient-applications/* (sempre via procedimentoId)
 24. CRUD agendamentos → /api/appointments/*
+25. Prontuário do paciente → GET /api/patients/{id}/medical-record e /summary
+26. Atendimento clínico → POST /api/patients/{id}/clinical-encounters → /api/clinical-encounters/{id}/*
+27. Modelos de anamnese → /api/anamnese-templates
 23. Funcionário abre link → /primeiro-acesso?token=...
    a. Digita e-mail   → POST /api/auth/primeiro-acesso/validar-email
    b. Define senha    → POST /api/auth/primeiro-acesso/concluir → guardar token
@@ -2923,4 +2991,4 @@ interface CompleteAppointmentRequest {
 
 ---
 
-*Última atualização: junho/2026 — alinhado ao backend AG Clinical (… + Appointments / Agendamentos).*
+*Última atualização: agosto/2026 — alinhado ao backend AG Clinical (Appointments + ClinicalRecords / Prontuário).*

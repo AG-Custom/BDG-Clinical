@@ -42,6 +42,7 @@ public sealed class AppDbContext : DbContext, IUnitOfWork
     public DbSet<Pacote> Pacotes => Set<Pacote>();
     public DbSet<ItemPacote> ItensPacote => Set<ItemPacote>();
     public DbSet<CompraPaciente> ComprasPaciente => Set<CompraPaciente>();
+    public DbSet<ItemCompraPaciente> ItensCompraPaciente => Set<ItemCompraPaciente>();
     public DbSet<Agendamento> Agendamentos => Set<Agendamento>();
     public DbSet<AgendamentoProcedimento> AgendamentosProcedimento => Set<AgendamentoProcedimento>();
     public DbSet<HorarioFuncionamentoUnidade> HorariosFuncionamentoUnidade => Set<HorarioFuncionamentoUnidade>();

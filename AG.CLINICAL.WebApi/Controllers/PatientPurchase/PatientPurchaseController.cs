@@ -19,6 +19,7 @@ public sealed class PatientPurchaseController : ControllerBase
     private readonly IGetPatientPurchaseBalanceService _getPatientPurchaseBalanceService;
     private readonly IGetPatientPurchaseHistoryService _getPatientPurchaseHistoryService;
     private readonly IUpdatePatientPurchaseBalancesService _updatePatientPurchaseBalancesService;
+    private readonly IReconcilePatientPurchaseItemsService _reconcilePatientPurchaseItemsService;
     private readonly ICancelPatientPurchasesService _cancelPatientPurchasesService;
 
     public PatientPurchaseController(
@@ -30,6 +31,7 @@ public sealed class PatientPurchaseController : ControllerBase
         IGetPatientPurchaseBalanceService getPatientPurchaseBalanceService,
         IGetPatientPurchaseHistoryService getPatientPurchaseHistoryService,
         IUpdatePatientPurchaseBalancesService updatePatientPurchaseBalancesService,
+        IReconcilePatientPurchaseItemsService reconcilePatientPurchaseItemsService,
         ICancelPatientPurchasesService cancelPatientPurchasesService)
     {
         _createPatientPurchasesService = createPatientPurchasesService;
@@ -40,6 +42,7 @@ public sealed class PatientPurchaseController : ControllerBase
         _getPatientPurchaseBalanceService = getPatientPurchaseBalanceService;
         _getPatientPurchaseHistoryService = getPatientPurchaseHistoryService;
         _updatePatientPurchaseBalancesService = updatePatientPurchaseBalancesService;
+        _reconcilePatientPurchaseItemsService = reconcilePatientPurchaseItemsService;
         _cancelPatientPurchasesService = cancelPatientPurchasesService;
     }
 
@@ -170,6 +173,21 @@ public sealed class PatientPurchaseController : ControllerBase
         }
 
         return Ok(new ApiResponse<PatientPurchaseHistoryDto>(result.Value!, true));
+    }
+
+    [HttpPost("api/patient-purchases/reconcile-items")]
+    [RequirePermission("compra_paciente.editar")]
+    public async Task<IActionResult> ReconcileItems(
+        [FromQuery] bool dryRun = true,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _reconcilePatientPurchaseItemsService.ExecuteAsync(dryRun, cancellationToken);
+        if (result.IsFailure)
+        {
+            return BadRequest(new ApiResponse<object?>(null!, false, result.Error));
+        }
+
+        return Ok(new ApiResponse<ReconcilePatientPurchaseItemsResultDto>(result.Value!, true));
     }
 
     [HttpPut("api/patient-purchases/{id:guid}/balance")]

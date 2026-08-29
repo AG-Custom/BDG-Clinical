@@ -114,6 +114,8 @@ public sealed class CreatePatientPurchasesService : ICreatePatientPurchasesServi
                 request.DataCompra,
                 request.Observacao);
 
+            compra.CopiarItensDoPacote(pacote.Itens);
+
             await _patientPurchasesRepository.AddAsync(compra, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -461,20 +463,17 @@ public sealed class UpdatePatientPurchaseBalancesService : IUpdatePatientPurchas
 {
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IPatientPurchasesRepository _patientPurchasesRepository;
-    private readonly IPackagesRepository _packagesRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
 
     public UpdatePatientPurchaseBalancesService(
         ICurrentTenantContext tenantContext,
         IPatientPurchasesRepository patientPurchasesRepository,
-        IPackagesRepository packagesRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
     {
         _tenantContext = tenantContext;
         _patientPurchasesRepository = patientPurchasesRepository;
-        _packagesRepository = packagesRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
     }
@@ -491,7 +490,12 @@ public sealed class UpdatePatientPurchaseBalancesService : IUpdatePatientPurchas
             return Result<PatientPurchaseBalanceDto>.Failure("Informe ao menos um item de saldo para atualizar.");
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Motivo) && request.Motivo.Length > 2000)
+        if (string.IsNullOrWhiteSpace(request.Motivo))
+        {
+            return Result<PatientPurchaseBalanceDto>.Failure("Informe o motivo do ajuste de saldo.");
+        }
+
+        if (request.Motivo.Length > 2000)
         {
             return Result<PatientPurchaseBalanceDto>.Failure("O motivo deve ter no máximo 2000 caracteres.");
         }
@@ -511,22 +515,6 @@ public sealed class UpdatePatientPurchaseBalancesService : IUpdatePatientPurchas
             return Result<PatientPurchaseBalanceDto>.Failure("Compra cancelada não pode ter o saldo alterado.");
         }
 
-        var comprasNoPacote = await _patientPurchasesRepository.CountByPacoteIdAsync(
-            empresaId,
-            compra.PacoteId,
-            cancellationToken);
-
-        if (comprasNoPacote != 1)
-        {
-            return Result<PatientPurchaseBalanceDto>.Failure(
-                "Só é permitido editar o saldo de compras com pacote exclusivo (não compartilhado).");
-        }
-
-        if (compra.Pacote is null)
-        {
-            return Result<PatientPurchaseBalanceDto>.Failure("Pacote da compra não encontrado.");
-        }
-
         try
         {
             var dadosAnteriores = PatientPurchasesAuditSerializer.Serialize(compra);
@@ -539,7 +527,7 @@ public sealed class UpdatePatientPurchaseBalancesService : IUpdatePatientPurchas
                 }
 
                 var utilizadaNasAplicacoes = compra.GetQuantidadeUtilizadaNasAplicacoes(itemRequest.ProdutoId);
-                compra.Pacote.UpdateItemQuantidade(
+                compra.UpdateItemSaldo(
                     itemRequest.ProdutoId,
                     itemRequest.QuantidadeContratada,
                     itemRequest.QuantidadeUtilizada,
@@ -549,7 +537,6 @@ public sealed class UpdatePatientPurchaseBalancesService : IUpdatePatientPurchas
             compra.CompleteIfExhausted();
             compra.ReopenIfCompleted();
 
-            _packagesRepository.Update(compra.Pacote);
             _patientPurchasesRepository.Update(compra);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

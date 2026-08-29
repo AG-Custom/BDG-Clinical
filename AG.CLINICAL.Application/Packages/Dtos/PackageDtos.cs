@@ -105,3 +105,25 @@ public sealed record PatientPurchaseHistoryEventDto(
 public sealed record PatientPurchaseHistoryDto(
     Guid CompraPacienteId,
     IReadOnlyList<PatientPurchaseHistoryEventDto> Eventos);
+
+public sealed record ReconcilePatientPurchaseItemRowDto(
+    Guid PacienteId,
+    string PacienteNome,
+    Guid CompraPacienteId,
+    string PacoteNome,
+    Guid ProdutoId,
+    string ProdutoNome,
+    decimal Contratado,
+    decimal AplicacoesValidas,
+    decimal BaseReconstruida,
+    decimal RestanteNovo,
+    bool Divergencia,
+    string? MotivoDivergencia);
+
+public sealed record ReconcilePatientPurchaseItemsResultDto(
+    int ComprasProcessadas,
+    int ComprasJaMigradas,
+    int ItensCriados,
+    int Divergencias,
+    bool Persistido,
+    IReadOnlyList<ReconcilePatientPurchaseItemRowDto> Relatorio);

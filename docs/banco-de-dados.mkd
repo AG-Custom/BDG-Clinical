@@ -282,6 +282,7 @@ APLICACOES
 AGENDAMENTOS
 FINANCEIRO
 RELATORIOS
+PRONTUARIO
 ```
 
 Relacionamentos:
@@ -420,6 +421,7 @@ paciente
 - telefone
 - email
 - data_nascimento
+- sexo
 - cep
 - logradouro
 - numero
@@ -443,6 +445,7 @@ Paciente 1:N AplicacaoPaciente
 Paciente 1:N Agendamento
 Paciente 1:N ContaReceber
 Paciente 1:N PagamentoPaciente
+Paciente 1:1 Prontuario
 ```
 
 ---
@@ -1452,6 +1455,112 @@ Criar funcionário → FirstAccessInvitation
 
 ---
 
+## 12. Prontuário clínico
+
+Pasta 1:1 do paciente na clínica (`Prontuario`). Sessões de registro (`AtendimentoClinico`) ficam desacopladas da agenda (`agendamento_id` nulo nesta versão). Campos calculados (IMC, JP, VENTA, regra de bolso) são persistidos após recálculo no servidor. DELETE HTTP desativa (`ativo`), não apaga linha.
+
+### Prontuario
+
+```text
+prontuario
+- id
+- empresa_id
+- paciente_id
+- alergias
+- alertas
+- observacao
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Único por `empresa_id` + `paciente_id`. Get-or-create na primeira abertura.
+
+### AtendimentoClinico
+
+```text
+atendimento_clinico
+- id
+- empresa_id
+- prontuario_id
+- paciente_id
+- unidade_id
+- funcionario_id
+- agendamento_id (opcional, nulo nesta versão)
+- data_inicio
+- data_fim
+- status (EmAndamento | Finalizado)
+- observacao
+- ativo
+- criado_em
+- atualizado_em
+```
+
+Finalizar não trava edição. Histórico visível em `evento_clinico` + `log_auditoria`.
+
+### EventoClinico
+
+Linha do tempo amigável (anamnese alterada, avaliação criada, exame anexado, etc.).
+
+```text
+evento_clinico
+- id
+- empresa_id
+- paciente_id
+- atendimento_clinico_id
+- tipo
+- titulo
+- resumo
+- entidade
+- registro_id
+- dados_anteriores
+- dados_novos
+- funcionario_id
+- unidade_id
+- data
+```
+
+### AnotacaoClinica / ModeloAnamnese / RegistroAnamnese / RegistroAnamneseVersao
+
+```text
+anotacao_clinica — tipo (Evolucao, Intercorrencia, Retorno, Observacao), texto, data
+modelo_anamnese — nome, especialidade, schema JSON (campos), ativo (por clínica)
+registro_anamnese — snapshot do schema + respostas JSON + versao_atual
+registro_anamnese_versao — versao, funcionario_id, respostas JSON, resumo_alteracao
+```
+
+### AvaliacaoCorporal / AnexoClinico / FotoComparativa / CalculoEnergeticoRegistro / RegraBolsoRegistro
+
+```text
+avaliacao_corporal — um registro por medição (append-only); JSON de bioimpedância, circunferências e pregas; colunas de gráfico (peso, imc, massas, cintura, quadril)
+anexo_clinico — tipo Exame|Documento, categoria, arquivo no R2
+foto_comparativa — categoria (frente, costas, …), arquivo no R2
+calculo_energetico_registro — VENTA (protocolo, atividade, TMB, GET, meta)
+regra_bolso_registro — calorias e macros por objetivo
+```
+
+Object keys R2: `companies/{empresaId}/patients/{pacienteId}/encounters/{id}/...`
+
+Relacionamentos:
+
+```text
+Paciente 1:1 Prontuario
+Prontuario 1:N AtendimentoClinico
+Prontuario 1:N EventoClinico
+AtendimentoClinico 1:N AnotacaoClinica
+AtendimentoClinico 1:N RegistroAnamnese
+AtendimentoClinico 1:N AvaliacaoCorporal
+AtendimentoClinico 1:N AnexoClinico
+AtendimentoClinico 1:N FotoComparativa
+AtendimentoClinico 1:N CalculoEnergeticoRegistro
+AtendimentoClinico 1:N RegraBolsoRegistro
+Empresa 1:N ModeloAnamnese
+ModeloAnamnese 1:N RegistroAnamnese
+RegistroAnamnese 1:N RegistroAnamneseVersao
+```
+
+---
+
 ## Relacionamentos Gerais
 
 ```text
@@ -1461,6 +1570,7 @@ Empresa
 ├── Funcionario
 ├── Cargo
 ├── Paciente
+├── Prontuario
 ├── Produto
 ├── Pacote
 ├── Fornecedor

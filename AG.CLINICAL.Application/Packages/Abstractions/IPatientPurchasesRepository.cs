@@ -11,6 +11,10 @@ public interface IPatientPurchasesRepository
         StatusCompraPaciente? status,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<CompraPaciente>> ListTrackedByEmpresaIdAsync(
+        Guid empresaId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<CompraPaciente>> ListByPacienteAsync(
         Guid empresaId,
         Guid pacienteId,

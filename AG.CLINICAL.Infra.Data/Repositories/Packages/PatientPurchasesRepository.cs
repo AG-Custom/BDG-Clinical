@@ -21,14 +21,8 @@ public sealed class PatientPurchasesRepository : IPatientPurchasesRepository
         StatusCompraPaciente? status,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.ComprasPaciente
+        var query = QueryWithDetails()
             .AsNoTracking()
-            .Include(compra => compra.Pacote)
-                .ThenInclude(pacote => pacote.Itens)
-                    .ThenInclude(item => item.Produto)
-            .Include(compra => compra.Unidade)
-            .Include(compra => compra.Paciente)
-            .Include(compra => compra.Aplicacoes)
             .Where(compra => compra.EmpresaId == empresaId);
 
         if (pacienteId.HasValue && pacienteId.Value != Guid.Empty)
@@ -42,6 +36,16 @@ public sealed class PatientPurchasesRepository : IPatientPurchasesRepository
         }
 
         return await query
+            .OrderByDescending(compra => compra.DataCompra)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<CompraPaciente>> ListTrackedByEmpresaIdAsync(
+        Guid empresaId,
+        CancellationToken cancellationToken = default)
+    {
+        return await QueryWithDetails()
+            .Where(compra => compra.EmpresaId == empresaId)
             .OrderByDescending(compra => compra.DataCompra)
             .ToListAsync(cancellationToken);
     }
@@ -60,13 +64,7 @@ public sealed class PatientPurchasesRepository : IPatientPurchasesRepository
         Guid empresaId,
         CancellationToken cancellationToken = default)
     {
-        return _context.ComprasPaciente
-            .Include(compra => compra.Pacote)
-                .ThenInclude(pacote => pacote.Itens)
-                    .ThenInclude(item => item.Produto)
-            .Include(compra => compra.Unidade)
-            .Include(compra => compra.Paciente)
-            .Include(compra => compra.Aplicacoes)
+        return QueryWithDetails()
             .FirstOrDefaultAsync(
                 compra => compra.Id == id && compra.EmpresaId == empresaId,
                 cancellationToken);
@@ -77,13 +75,8 @@ public sealed class PatientPurchasesRepository : IPatientPurchasesRepository
         Guid pacienteId,
         CancellationToken cancellationToken = default)
     {
-        return await _context.ComprasPaciente
+        return await QueryWithDetails()
             .AsNoTracking()
-            .Include(compra => compra.Pacote)
-                .ThenInclude(pacote => pacote.Itens)
-                    .ThenInclude(item => item.Produto)
-            .Include(compra => compra.Unidade)
-            .Include(compra => compra.Aplicacoes)
             .Where(compra =>
                 compra.EmpresaId == empresaId
                 && compra.PacienteId == pacienteId
@@ -112,5 +105,18 @@ public sealed class PatientPurchasesRepository : IPatientPurchasesRepository
             .CountAsync(
                 compra => compra.EmpresaId == empresaId && compra.PacoteId == pacoteId,
                 cancellationToken);
+    }
+
+    private IQueryable<CompraPaciente> QueryWithDetails()
+    {
+        return _context.ComprasPaciente
+            .Include(compra => compra.Pacote)
+                .ThenInclude(pacote => pacote.Itens)
+                    .ThenInclude(item => item.Produto)
+            .Include(compra => compra.Itens)
+                .ThenInclude(item => item.Produto)
+            .Include(compra => compra.Unidade)
+            .Include(compra => compra.Paciente)
+            .Include(compra => compra.Aplicacoes);
     }
 }

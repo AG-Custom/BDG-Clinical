@@ -44,7 +44,26 @@ internal static class PatientPurchasesMapper
 {
     public static PatientPurchaseBalanceDto MapBalance(CompraPaciente compra)
     {
-        var produtos = (compra.Pacote?.Itens ?? [])
+        if (compra.Itens.Count > 0)
+        {
+            var produtos = compra.Itens
+                .Select(item =>
+                {
+                    var utilizada = compra.GetQuantidadeUtilizada(item.ProdutoId);
+                    return new PatientPurchaseProductBalanceDto(
+                        item.ProdutoId,
+                        item.Produto?.Nome ?? string.Empty,
+                        item.UnidadeMedida,
+                        item.QuantidadeContratada,
+                        utilizada,
+                        Math.Max(0, item.QuantidadeContratada - utilizada));
+                })
+                .ToList();
+
+            return new PatientPurchaseBalanceDto(compra.Id, produtos);
+        }
+
+        var fallback = (compra.Pacote?.Itens ?? [])
             .Select(item =>
             {
                 var utilizada = compra.GetQuantidadeUtilizada(item.ProdutoId);
@@ -58,7 +77,7 @@ internal static class PatientPurchasesMapper
             })
             .ToList();
 
-        return new PatientPurchaseBalanceDto(compra.Id, produtos);
+        return new PatientPurchaseBalanceDto(compra.Id, fallback);
     }
 
     public static PatientPurchaseDto Map(CompraPaciente compra)

@@ -302,6 +302,7 @@ public sealed class CompraPaciente : AggregateRoot
     public Paciente Paciente { get; private set; } = null!;
     public Pacote Pacote { get; private set; } = null!;
     public Unidade Unidade { get; private set; } = null!;
+    public ICollection<ItemCompraPaciente> Itens { get; private set; } = [];
     public ICollection<AplicacaoPaciente> Aplicacoes { get; private set; } = [];
     public ICollection<Agendamento> Agendamentos { get; private set; } = [];
 
@@ -332,6 +333,77 @@ public sealed class CompraPaciente : AggregateRoot
         };
     }
 
+    public void CopiarItensDoPacote(IEnumerable<ItemPacote> itensPacote)
+    {
+        if (Itens.Count > 0)
+        {
+            return;
+        }
+
+        foreach (var item in itensPacote)
+        {
+            Itens.Add(ItemCompraPaciente.Create(
+                Id,
+                item.ProdutoId,
+                item.QuantidadeTotal,
+                0,
+                item.UnidadeMedida));
+        }
+
+        if (Itens.Count == 0)
+        {
+            throw new DomainException("O pacote da compra não possui itens para copiar.");
+        }
+    }
+
+    public ItemCompraPaciente AdicionarItemMigrado(
+        Guid produtoId,
+        decimal quantidadeContratada,
+        decimal quantidadeUtilizadaBase,
+        string unidadeMedida)
+    {
+        if (Itens.Any(item => item.ProdutoId == produtoId))
+        {
+            throw new DomainException("Este produto já está vinculado à compra.");
+        }
+
+        var item = ItemCompraPaciente.Create(
+            Id,
+            produtoId,
+            quantidadeContratada,
+            quantidadeUtilizadaBase,
+            unidadeMedida);
+        Itens.Add(item);
+        AtualizadoEm = DateTime.UtcNow;
+        return item;
+    }
+
+    public void UpdateItemSaldo(
+        Guid produtoId,
+        decimal quantidadeContratada,
+        decimal quantidadeUtilizadaDesejada,
+        decimal quantidadeUtilizadaNasAplicacoes)
+    {
+        if (Status == StatusCompraPaciente.Cancelado)
+        {
+            throw new DomainException("Compra cancelada não pode ter o saldo alterado.");
+        }
+
+        if (Itens.Count == 0 && Pacote?.Itens is { Count: > 0 } itensPacote)
+        {
+            CopiarItensDoPacote(itensPacote);
+        }
+
+        var item = Itens.FirstOrDefault(i => i.ProdutoId == produtoId);
+        if (item is null)
+        {
+            throw new DomainException("Produto não encontrado nesta compra.");
+        }
+
+        item.UpdateSaldo(quantidadeContratada, quantidadeUtilizadaDesejada, quantidadeUtilizadaNasAplicacoes);
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     public decimal GetQuantidadeUtilizadaNasAplicacoes(Guid produtoId)
     {
         return Aplicacoes
@@ -345,31 +417,30 @@ public sealed class CompraPaciente : AggregateRoot
 
     public decimal GetQuantidadeUtilizada(Guid produtoId)
     {
-        var item = Pacote?.Itens.FirstOrDefault(i => i.ProdutoId == produtoId);
-        var baseUtilizada = item?.QuantidadeUtilizadaBase ?? 0m;
+        var baseUtilizada = ObterBaseUtilizada(produtoId);
         return baseUtilizada + GetQuantidadeUtilizadaNasAplicacoes(produtoId);
     }
 
     public decimal GetQuantidadeRestante(Guid produtoId)
     {
-        var item = Pacote?.Itens.FirstOrDefault(i => i.ProdutoId == produtoId);
-        if (item is null)
+        var contratada = ObterQuantidadeContratada(produtoId);
+        if (contratada is null)
         {
             return 0;
         }
 
-        return Math.Max(0, item.QuantidadeTotal - GetQuantidadeUtilizada(produtoId));
+        return Math.Max(0, contratada.Value - GetQuantidadeUtilizada(produtoId));
     }
 
     public bool HasSaldoProdutoDisponivel()
     {
-        var itens = Pacote?.Itens;
-        if (itens is null || itens.Count == 0)
+        var produtoIds = ListarProdutoIdsContrato();
+        if (produtoIds.Count == 0)
         {
             return false;
         }
 
-        return itens.Any(item => GetQuantidadeRestante(item.ProdutoId) > 0);
+        return produtoIds.Any(produtoId => GetQuantidadeRestante(produtoId) > 0);
     }
 
     public void EnsurePodeAplicar(Guid pacienteId, Guid? produtoId, decimal? quantidadeUtilizada)
@@ -394,18 +465,67 @@ public sealed class CompraPaciente : AggregateRoot
             return;
         }
 
-        var item = Pacote?.Itens.FirstOrDefault(i => i.ProdutoId == produtoId.Value);
-        if (item is null)
+        if (quantidadeUtilizada.Value <= 0)
         {
-            return;
+            throw new DomainException("A quantidade solicitada deve ser maior que zero.");
+        }
+
+        var unidade = ObterUnidadeMedida(produtoId.Value);
+        if (unidade is null)
+        {
+            throw new DomainException("O produto aplicado não existe nos itens desta compra.");
         }
 
         var restante = GetQuantidadeRestante(produtoId.Value);
         if (quantidadeUtilizada.Value > restante)
         {
             throw new DomainException(
-                $"Quantidade insuficiente no saldo do pacote. Disponível: {FormatarQuantidadeSaldo(restante)} {item.UnidadeMedida}.");
+                $"Quantidade insuficiente no saldo do pacote. Disponível: {FormatarQuantidadeSaldo(restante)} {unidade}.");
         }
+    }
+
+    public string? ObterUnidadeMedida(Guid produtoId)
+    {
+        var itemCompra = Itens.FirstOrDefault(item => item.ProdutoId == produtoId);
+        if (itemCompra is not null)
+        {
+            return itemCompra.UnidadeMedida;
+        }
+
+        return Pacote?.Itens.FirstOrDefault(item => item.ProdutoId == produtoId)?.UnidadeMedida;
+    }
+
+    private decimal ObterBaseUtilizada(Guid produtoId)
+    {
+        var itemCompra = Itens.FirstOrDefault(item => item.ProdutoId == produtoId);
+        if (itemCompra is not null)
+        {
+            return itemCompra.QuantidadeUtilizadaBase;
+        }
+
+        return Pacote?.Itens.FirstOrDefault(item => item.ProdutoId == produtoId)?.QuantidadeUtilizadaBase ?? 0m;
+    }
+
+    private decimal? ObterQuantidadeContratada(Guid produtoId)
+    {
+        var itemCompra = Itens.FirstOrDefault(item => item.ProdutoId == produtoId);
+        if (itemCompra is not null)
+        {
+            return itemCompra.QuantidadeContratada;
+        }
+
+        var itemPacote = Pacote?.Itens.FirstOrDefault(item => item.ProdutoId == produtoId);
+        return itemPacote?.QuantidadeTotal;
+    }
+
+    private List<Guid> ListarProdutoIdsContrato()
+    {
+        if (Itens.Count > 0)
+        {
+            return Itens.Select(item => item.ProdutoId).ToList();
+        }
+
+        return (Pacote?.Itens ?? []).Select(item => item.ProdutoId).ToList();
     }
 
     private static string FormatarQuantidadeSaldo(decimal quantidade)
@@ -466,5 +586,102 @@ public sealed class CompraPaciente : AggregateRoot
 
         Status = StatusCompraPaciente.Concluido;
         AtualizadoEm = DateTime.UtcNow;
+    }
+}
+
+public sealed class ItemCompraPaciente : AggregateRoot
+{
+    private ItemCompraPaciente()
+    {
+    }
+
+    public Guid CompraPacienteId { get; private set; }
+    public Guid ProdutoId { get; private set; }
+    public decimal QuantidadeContratada { get; private set; }
+    public decimal QuantidadeUtilizadaBase { get; private set; }
+    public string UnidadeMedida { get; private set; } = string.Empty;
+
+    public CompraPaciente CompraPaciente { get; private set; } = null!;
+    public Produto Produto { get; private set; } = null!;
+
+    public static ItemCompraPaciente Create(
+        Guid compraPacienteId,
+        Guid produtoId,
+        decimal quantidadeContratada,
+        decimal quantidadeUtilizadaBase,
+        string unidadeMedida)
+    {
+        if (compraPacienteId == Guid.Empty || produtoId == Guid.Empty)
+        {
+            throw new DomainException("Informe a compra e o produto do item.");
+        }
+
+        if (quantidadeContratada <= 0)
+        {
+            throw new DomainException("A quantidade contratada deve ser maior que zero.");
+        }
+
+        if (quantidadeUtilizadaBase < 0)
+        {
+            throw new DomainException("A quantidade utilizada base não pode ser negativa.");
+        }
+
+        if (string.IsNullOrWhiteSpace(unidadeMedida))
+        {
+            throw new DomainException("Informe a unidade de medida do item.");
+        }
+
+        return new ItemCompraPaciente
+        {
+            Id = Guid.NewGuid(),
+            CriadoEm = DateTime.UtcNow,
+            CompraPacienteId = compraPacienteId,
+            ProdutoId = produtoId,
+            QuantidadeContratada = quantidadeContratada,
+            QuantidadeUtilizadaBase = quantidadeUtilizadaBase,
+            UnidadeMedida = unidadeMedida.Trim()
+        };
+    }
+
+    public void UpdateSaldo(
+        decimal quantidadeContratada,
+        decimal quantidadeUtilizadaDesejada,
+        decimal quantidadeUtilizadaNasAplicacoes)
+    {
+        if (quantidadeContratada <= 0)
+        {
+            throw new DomainException("A quantidade contratada deve ser maior que zero.");
+        }
+
+        if (quantidadeUtilizadaDesejada < 0)
+        {
+            throw new DomainException("A quantidade utilizada não pode ser negativa.");
+        }
+
+        if (quantidadeUtilizadaNasAplicacoes < 0)
+        {
+            throw new DomainException("A quantidade utilizada nas aplicações é inválida.");
+        }
+
+        if (quantidadeContratada < quantidadeUtilizadaDesejada)
+        {
+            throw new DomainException(
+                $"A quantidade contratada não pode ser menor que a já utilizada ({FormatarQuantidadeSaldo(quantidadeUtilizadaDesejada)} {UnidadeMedida}).");
+        }
+
+        var baseCalculada = quantidadeUtilizadaDesejada - quantidadeUtilizadaNasAplicacoes;
+        if (baseCalculada < 0)
+        {
+            throw new DomainException("A quantidade utilizada não pode ser menor que as aplicações já registradas.");
+        }
+
+        QuantidadeContratada = quantidadeContratada;
+        QuantidadeUtilizadaBase = baseCalculada;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    private static string FormatarQuantidadeSaldo(decimal quantidade)
+    {
+        return quantidade.ToString("0.####", CultureInfo.GetCultureInfo("pt-BR"));
     }
 }
