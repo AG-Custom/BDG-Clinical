@@ -92,7 +92,71 @@ public sealed class PatientPurchasesRepository : IPatientPurchasesRepository
 
     public void Update(CompraPaciente compra)
     {
-        _context.ComprasPaciente.Update(compra);
+        var entry = _context.Entry(compra);
+
+        if (entry.State == EntityState.Detached)
+        {
+            _context.ComprasPaciente.Attach(compra);
+            entry.State = EntityState.Modified;
+        }
+
+        var currentItemIds = compra.Itens.Select(item => item.Id).ToHashSet();
+        var orphans = _context.ItensCompraPaciente.Local
+            .Where(item => item.CompraPacienteId == compra.Id && !currentItemIds.Contains(item.Id))
+            .ToList();
+
+        foreach (var orphan in orphans)
+        {
+            if (_context.Entry(orphan).State != EntityState.Deleted)
+            {
+                _context.ItensCompraPaciente.Remove(orphan);
+            }
+        }
+
+        foreach (var item in compra.Itens)
+        {
+            EnsureItemTrackedCorrectly(item);
+        }
+    }
+
+    private void EnsureItemTrackedCorrectly(ItemCompraPaciente item)
+    {
+        var itemEntry = _context.Entry(item);
+
+        if (itemEntry.State is EntityState.Added or EntityState.Deleted)
+        {
+            return;
+        }
+
+        if (_context.ItensCompraPaciente.Local.Any(tracked => tracked.Id == item.Id))
+        {
+            if (itemEntry.State == EntityState.Modified && !ItemExistsInDatabase(item.Id))
+            {
+                _context.ItensCompraPaciente.Add(item);
+            }
+
+            return;
+        }
+
+        if (ItemExistsInDatabase(item.Id))
+        {
+            if (itemEntry.State == EntityState.Detached)
+            {
+                _context.ItensCompraPaciente.Attach(item);
+            }
+
+            itemEntry.State = EntityState.Modified;
+            return;
+        }
+
+        _context.ItensCompraPaciente.Add(item);
+    }
+
+    private bool ItemExistsInDatabase(Guid itemId)
+    {
+        return _context.ItensCompraPaciente
+            .AsNoTracking()
+            .Any(item => item.Id == itemId);
     }
 
     public Task<int> CountByPacoteIdAsync(
