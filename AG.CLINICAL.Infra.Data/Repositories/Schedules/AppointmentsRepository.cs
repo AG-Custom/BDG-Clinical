@@ -34,6 +34,8 @@ public sealed class AppointmentsRepository : IAppointmentsRepository
             .Include(a => a.Procedimento)
             .Include(a => a.ProcedimentosVinculados)
                 .ThenInclude(item => item.Procedimento)
+            .Include(a => a.TagsVinculadas)
+                .ThenInclude(item => item.Tag)
             .Include(a => a.CriadoPor)
             .Include(a => a.AplicacoesPaciente)
             .Where(a => a.EmpresaId == empresaId);
@@ -95,6 +97,8 @@ public sealed class AppointmentsRepository : IAppointmentsRepository
             .Include(a => a.Procedimento)
             .Include(a => a.ProcedimentosVinculados)
                 .ThenInclude(item => item.Procedimento)
+            .Include(a => a.TagsVinculadas)
+                .ThenInclude(item => item.Tag)
             .Include(a => a.CriadoPor)
             .Include(a => a.CanceladoPor)
             .Include(a => a.AplicacoesPaciente)
@@ -182,7 +186,48 @@ public sealed class AppointmentsRepository : IAppointmentsRepository
         {
             EnsureProcedimentoVinculadoTrackedCorrectly(procedimentoVinculado);
         }
+
+        foreach (var tagVinculada in agendamento.TagsVinculadas)
+        {
+            EnsureTagVinculadaTrackedCorrectly(tagVinculada);
+        }
     }
+
+    private void EnsureTagVinculadaTrackedCorrectly(AgendamentoTag tagVinculada)
+    {
+        var itemEntry = _context.Entry(tagVinculada);
+
+        if (itemEntry.State is EntityState.Added or EntityState.Deleted)
+        {
+            return;
+        }
+
+        if (_context.AgendamentosTag.Local.Any(tracked => tracked.Id == tagVinculada.Id))
+        {
+            if (itemEntry.State == EntityState.Modified && !TagVinculadaExistsInDatabase(tagVinculada.Id))
+            {
+                _context.AgendamentosTag.Add(tagVinculada);
+            }
+
+            return;
+        }
+
+        if (TagVinculadaExistsInDatabase(tagVinculada.Id))
+        {
+            if (itemEntry.State == EntityState.Detached)
+            {
+                _context.AgendamentosTag.Attach(tagVinculada);
+            }
+
+            itemEntry.State = EntityState.Modified;
+            return;
+        }
+
+        _context.AgendamentosTag.Add(tagVinculada);
+    }
+
+    private bool TagVinculadaExistsInDatabase(Guid id) =>
+        _context.AgendamentosTag.Any(item => item.Id == id);
 
     private void EnsureProcedimentoVinculadoTrackedCorrectly(AgendamentoProcedimento procedimentoVinculado)
     {

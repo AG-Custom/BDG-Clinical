@@ -132,6 +132,61 @@ internal static class AppointmentRequestValidator
         return Result<IReadOnlyList<Guid>>.Success(resolved.Distinct().ToList());
     }
 
+    internal static Result<IReadOnlyList<Guid>> ResolveTagIds(IReadOnlyList<Guid>? tagIds)
+    {
+        if (tagIds is null || tagIds.Count == 0)
+        {
+            return Result<IReadOnlyList<Guid>>.Success([]);
+        }
+
+        var resolved = tagIds
+            .Where(id => id != Guid.Empty)
+            .ToList();
+
+        if (resolved.Count != resolved.Distinct().Count())
+        {
+            return Result<IReadOnlyList<Guid>>.Failure("Não é permitido repetir a mesma tag no agendamento.");
+        }
+
+        return Result<IReadOnlyList<Guid>>.Success(resolved);
+    }
+
+    internal static async Task<Result> ValidateTagsAsync(
+        Guid empresaId,
+        IReadOnlyList<Guid> tagIds,
+        IReadOnlyList<Guid> tagsJaVinculadas,
+        IAppointmentTagsRepository appointmentTagsRepository,
+        CancellationToken cancellationToken)
+    {
+        if (tagIds.Count == 0)
+        {
+            return Result.Success();
+        }
+
+        var tags = await appointmentTagsRepository.ListByIdsAndEmpresaIdAsync(
+            empresaId,
+            tagIds,
+            cancellationToken);
+
+        var tagsPorId = tags.ToDictionary(tag => tag.Id);
+        var vinculadas = tagsJaVinculadas.ToHashSet();
+
+        foreach (var tagId in tagIds)
+        {
+            if (!tagsPorId.TryGetValue(tagId, out var tag))
+            {
+                return Result.Failure("Tag não encontrada.");
+            }
+
+            if (!tag.Ativo && !vinculadas.Contains(tagId))
+            {
+                return Result.Failure("Tag inativa não pode ser vinculada.");
+            }
+        }
+
+        return Result.Success();
+    }
+
     private static async Task<Result<ValidatedAppointmentData>> ValidateCoreAsync(
         Guid empresaId,
         Guid unidadeId,

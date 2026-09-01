@@ -1369,6 +1369,65 @@ Reativa sintoma inativo. Falha se já existir outro ativo com o mesmo nome.
 
 ---
 
+## 10.1 Tags de agendamento — `/api/appointment-tags`
+
+Cadastro de tags (nome + cor hex) para colorir agendamentos na agenda. `GET` aceita permissão auxiliar (`tag_agendamento.visualizar`, `agenda.visualizar`, `agendamento.criar` ou `agendamento.editar`). Soft delete via `Ativo`.
+
+### GET `/api/appointment-tags`
+
+| Param | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `includeInactive` | `boolean` | `false` | Incluir tags inativas |
+
+**Response 200**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "nome": "Primeira consulta",
+      "cor": "#2563EB",
+      "ativo": true,
+      "criadoEm": "2026-09-01T10:00:00Z",
+      "atualizadoEm": null
+    }
+  ],
+  "success": true,
+  "message": null
+}
+```
+
+### GET `/api/appointment-tags/{id}`
+
+### POST `/api/appointment-tags`
+
+```json
+{ "nome": "Primeira consulta", "cor": "#2563EB" }
+```
+
+Cor obrigatória no formato `#RGB` ou `#RRGGBB`. Nome único por clínica.
+
+### PUT `/api/appointment-tags/{id}`
+
+```json
+{ "nome": "Retorno", "cor": "#16A34A" }
+```
+
+Bloqueado se a tag estiver inativa.
+
+### DELETE `/api/appointment-tags/{id}`
+
+Inativa a tag (não remove vínculos em agendamentos existentes).
+
+### PATCH `/api/appointment-tags/{id}/reactivate`
+
+Reativa tag inativa. Falha se já existir outra ativa com o mesmo nome.
+
+No create/update de agendamento, envie `tagIds` (ordem da lista = ordem na agenda; a primeira define a cor do evento).
+
+---
+
 ## 11. Tipos de Produto — `/api/product-types`
 
 Cadastro dos tipos de produto da clínica (ex.: Medicamento, Insumo, Implante, Material descartável, Equipamento, Outro). Todas as rotas exigem **Bearer token**.
@@ -2285,7 +2344,8 @@ Cria agendamento. `criadoPorId` e `empresaId` vêm do token.
   "procedimentoId": "uuid",
   "compraPacienteId": null,
   "observacao": "Observação opcional",
-  "excecaoHorario": 0
+  "excecaoHorario": 0,
+  "tagIds": ["uuid"]
 }
 ```
 
@@ -2353,6 +2413,9 @@ Marca falta do paciente (`Faltou`).
   "compraPacienteId": null,
   "procedimentoId": "uuid",
   "procedimentoNome": "Aplicação IM",
+  "tags": [
+    { "id": "uuid", "nome": "Primeira consulta", "cor": "#2563EB" }
+  ],
   "tipo": "Aplicacao",
   "status": "Agendado",
   "dataInicio": "2026-06-27T14:00:00Z",
@@ -2891,6 +2954,7 @@ interface Appointment {
   compraPacienteId: string | null;
   procedimentoId: string | null;
   procedimentoNome: string | null;
+  tags?: { id: string; nome: string; cor: string }[];
   tipo: 'Consulta' | 'Retorno' | 'Aplicacao' | 'Avaliacao';
   status: 'Agendado' | 'Confirmado' | 'Concluido' | 'Cancelado' | 'Faltou';
   dataInicio: string;
@@ -2915,6 +2979,7 @@ interface CreateAppointmentRequest {
   procedimentoId?: string | null;
   compraPacienteId?: string | null;
   observacao?: string | null;
+  tagIds?: string[] | null;
 }
 
 interface UpdateAppointmentRequest extends CreateAppointmentRequest {}
@@ -2961,6 +3026,7 @@ interface CompleteAppointmentRequest {
 12. CRUD funcionários → POST/PUT /api/employees (somente Admin) → e-mail de convite no create
 13. CRUD pacientes    → /api/patients/*
 14. CRUD sintomas     → /api/symptoms/* (popular multi-select em aplicações)
+14b. CRUD tags agenda  → /api/appointment-tags/* (popular multi-select em agendamentos; cor do evento = primeira tag)
 15. CRUD tipos produto → /api/product-types/*
 16. CRUD unidades medida → /api/measurement-units/* (antes de cadastrar produtos)
 17. CRUD produtos     → /api/products/*

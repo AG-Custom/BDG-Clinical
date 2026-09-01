@@ -24,6 +24,7 @@ using AG.CLINICAL.Application.Applications.Procedures;
 using AG.CLINICAL.Application.Packages.Packages;
 using AG.CLINICAL.Application.Packages.PatientPurchases;
 using AG.CLINICAL.Application.Schedules.Appointments;
+using AG.CLINICAL.Application.Schedules.AppointmentTags;
 using AG.CLINICAL.Application.Schedules.UnitOperatingHours;
 using AG.CLINICAL.Application.Modules.EmployeePermissions;
 using AG.CLINICAL.Application.Core.PositionPermissions;
@@ -187,6 +188,13 @@ public static class DependencyInjection
         services.AddScoped<ICompleteAppointmentsService, CompleteAppointmentsService>();
         services.AddScoped<ICancelAppointmentsService, CancelAppointmentsService>();
         services.AddScoped<IMarkNoShowAppointmentsService, MarkNoShowAppointmentsService>();
+
+        services.AddScoped<ICreateAppointmentTagsService, CreateAppointmentTagsService>();
+        services.AddScoped<IListAppointmentTagsService, ListAppointmentTagsService>();
+        services.AddScoped<IGetAppointmentTagsService, GetAppointmentTagsService>();
+        services.AddScoped<IUpdateAppointmentTagsService, UpdateAppointmentTagsService>();
+        services.AddScoped<IDeactivateAppointmentTagsService, DeactivateAppointmentTagsService>();
+        services.AddScoped<IReactivateAppointmentTagsService, ReactivateAppointmentTagsService>();
 
         services.AddScoped<IListUnitOperatingHoursService, ListUnitOperatingHoursService>();
         services.AddScoped<ICreateUnitOperatingHoursService, CreateUnitOperatingHoursService>();

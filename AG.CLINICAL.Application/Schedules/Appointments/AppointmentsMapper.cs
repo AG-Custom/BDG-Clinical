@@ -27,6 +27,14 @@ internal static class AppointmentsMapper
 
         var primeiroProcedimento = procedimentos.FirstOrDefault();
 
+        var tags = agendamento.TagsVinculadas
+            .OrderBy(item => item.Ordem)
+            .Select(item => new Dtos.AppointmentTagDto(
+                item.TagAgendamentoId,
+                item.Tag?.Nome ?? string.Empty,
+                item.Tag?.Cor ?? string.Empty))
+            .ToList();
+
         return new Dtos.AppointmentDto(
             agendamento.Id,
             agendamento.UnidadeId,
@@ -39,6 +47,7 @@ internal static class AppointmentsMapper
             primeiroProcedimento?.Nome,
             agendamento.CompraPacienteId,
             procedimentos,
+            tags,
             agendamento.Tipo.ToString(),
             agendamento.Status.ToString(),
             agendamento.DataInicio,

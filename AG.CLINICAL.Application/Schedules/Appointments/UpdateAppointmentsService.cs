@@ -29,6 +29,7 @@ public sealed class UpdateAppointmentsService : IUpdateAppointmentsService
     private readonly IEmployeesRepository _employeesRepository;
     private readonly IUnitsRepository _unitsRepository;
     private readonly IProceduresRepository _proceduresRepository;
+    private readonly IAppointmentTagsRepository _appointmentTagsRepository;
     private readonly IUnitOperatingHoursRepository _operatingHoursRepository;
     private readonly IAuditLogsService _auditLogsService;
     private readonly IUnitOfWork _unitOfWork;
@@ -40,6 +41,7 @@ public sealed class UpdateAppointmentsService : IUpdateAppointmentsService
         IEmployeesRepository employeesRepository,
         IUnitsRepository unitsRepository,
         IProceduresRepository proceduresRepository,
+        IAppointmentTagsRepository appointmentTagsRepository,
         IUnitOperatingHoursRepository operatingHoursRepository,
         IAuditLogsService auditLogsService,
         IUnitOfWork unitOfWork)
@@ -50,6 +52,7 @@ public sealed class UpdateAppointmentsService : IUpdateAppointmentsService
         _employeesRepository = employeesRepository;
         _unitsRepository = unitsRepository;
         _proceduresRepository = proceduresRepository;
+        _appointmentTagsRepository = appointmentTagsRepository;
         _operatingHoursRepository = operatingHoursRepository;
         _auditLogsService = auditLogsService;
         _unitOfWork = unitOfWork;
@@ -91,6 +94,31 @@ public sealed class UpdateAppointmentsService : IUpdateAppointmentsService
             return Result<AppointmentDto>.Failure(validation.Error!);
         }
 
+        IReadOnlyList<Guid>? tagIdsParaPersistir = null;
+
+        if (request.TagIds is not null)
+        {
+            var tagIdsResult = AppointmentRequestValidator.ResolveTagIds(request.TagIds);
+            if (tagIdsResult.IsFailure)
+            {
+                return Result<AppointmentDto>.Failure(tagIdsResult.Error!);
+            }
+
+            var tagsValidation = await AppointmentRequestValidator.ValidateTagsAsync(
+                empresaId,
+                tagIdsResult.Value!,
+                agendamento.GetTagIds(),
+                _appointmentTagsRepository,
+                cancellationToken);
+
+            if (tagsValidation.IsFailure)
+            {
+                return Result<AppointmentDto>.Failure(tagsValidation.Error!);
+            }
+
+            tagIdsParaPersistir = tagIdsResult.Value!;
+        }
+
         try
         {
             var data = validation.Value!;
@@ -105,6 +133,11 @@ public sealed class UpdateAppointmentsService : IUpdateAppointmentsService
                 data.Observacao,
                 data.ExcecaoHorario,
                 data.CompraPacienteId);
+
+            if (tagIdsParaPersistir is not null)
+            {
+                agendamento.SetTags(tagIdsParaPersistir);
+            }
 
             _appointmentsRepository.Update(agendamento);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

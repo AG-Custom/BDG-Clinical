@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AG.CLINICAL.Domain.Common;
 using AG.CLINICAL.Domain.Enums;
 using AG.CLINICAL.Domain.Exceptions;
@@ -36,6 +37,7 @@ public sealed class Agendamento : AggregateRoot
     public Usuario? CanceladoPor { get; private set; }
     public ICollection<AplicacaoPaciente> AplicacoesPaciente { get; private set; } = [];
     public ICollection<AgendamentoProcedimento> ProcedimentosVinculados { get; private set; } = [];
+    public ICollection<AgendamentoTag> TagsVinculadas { get; private set; } = [];
 
     public static Agendamento Create(
         Guid empresaId,
@@ -84,6 +86,33 @@ public sealed class Agendamento : AggregateRoot
 
         agendamento.SetProcedimentos(procedimentoIds);
         return agendamento;
+    }
+
+    public IReadOnlyList<Guid> GetTagIds()
+    {
+        return TagsVinculadas
+            .OrderBy(item => item.Ordem)
+            .Select(item => item.TagAgendamentoId)
+            .ToList();
+    }
+
+    public void SetTags(IReadOnlyList<Guid> tagIds)
+    {
+        var normalized = tagIds
+            .Where(id => id != Guid.Empty)
+            .ToList();
+
+        if (normalized.Count != normalized.Distinct().Count())
+        {
+            throw new DomainException("Não é permitido repetir a mesma tag no agendamento.");
+        }
+
+        TagsVinculadas.Clear();
+
+        for (var i = 0; i < normalized.Count; i++)
+        {
+            TagsVinculadas.Add(new AgendamentoTag(Id, normalized[i], i));
+        }
     }
 
     public void UpdateDetails(
@@ -354,6 +383,130 @@ public sealed class AgendamentoProcedimento : AggregateRoot
 
     public Agendamento Agendamento { get; private set; } = null!;
     public Procedimento Procedimento { get; private set; } = null!;
+}
+
+public sealed class TagAgendamento : AggregateRoot
+{
+    private static readonly Regex HexColorPattern = new(
+        "^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$",
+        RegexOptions.Compiled);
+
+    private TagAgendamento()
+    {
+    }
+
+    private TagAgendamento(Guid empresaId, string nome, string cor)
+        : base(Guid.NewGuid())
+    {
+        EmpresaId = empresaId;
+        Nome = nome;
+        Cor = cor;
+        Ativo = true;
+    }
+
+    public Guid EmpresaId { get; private set; }
+    public string Nome { get; private set; } = string.Empty;
+    public string Cor { get; private set; } = string.Empty;
+    public bool Ativo { get; private set; }
+
+    public Empresa Empresa { get; private set; } = null!;
+    public ICollection<AgendamentoTag> Agendamentos { get; private set; } = [];
+
+    public static TagAgendamento Create(Guid empresaId, string nome, string cor)
+    {
+        if (empresaId == Guid.Empty)
+        {
+            throw new DomainException("Informe a empresa da tag.");
+        }
+
+        var nomeNormalizado = NormalizeNome(nome);
+        var corNormalizada = NormalizeCor(cor);
+
+        return new TagAgendamento(empresaId, nomeNormalizado, corNormalizada);
+    }
+
+    public void UpdateDetails(string nome, string cor)
+    {
+        Nome = NormalizeNome(nome);
+        Cor = NormalizeCor(cor);
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Reactivate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    private static string NormalizeNome(string nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("Informe o nome da tag.");
+        }
+
+        var trimmed = nome.Trim();
+
+        if (trimmed.Length > 80)
+        {
+            throw new DomainException("O nome da tag deve ter no máximo 80 caracteres.");
+        }
+
+        return trimmed;
+    }
+
+    private static string NormalizeCor(string cor)
+    {
+        if (string.IsNullOrWhiteSpace(cor) || !HexColorPattern.IsMatch(cor.Trim()))
+        {
+            throw new DomainException("Informe uma cor válida no formato hexadecimal (#RGB ou #RRGGBB).");
+        }
+
+        return cor.Trim();
+    }
+}
+
+public sealed class AgendamentoTag : AggregateRoot
+{
+    private AgendamentoTag()
+    {
+    }
+
+    public AgendamentoTag(Guid agendamentoId, Guid tagAgendamentoId, int ordem)
+        : base(Guid.NewGuid())
+    {
+        if (agendamentoId == Guid.Empty)
+        {
+            throw new DomainException("Informe o agendamento da tag.");
+        }
+
+        if (tagAgendamentoId == Guid.Empty)
+        {
+            throw new DomainException("Informe a tag do agendamento.");
+        }
+
+        if (ordem < 0)
+        {
+            throw new DomainException("A ordem da tag não pode ser negativa.");
+        }
+
+        AgendamentoId = agendamentoId;
+        TagAgendamentoId = tagAgendamentoId;
+        Ordem = ordem;
+    }
+
+    public Guid AgendamentoId { get; private set; }
+    public Guid TagAgendamentoId { get; private set; }
+    public int Ordem { get; private set; }
+
+    public Agendamento Agendamento { get; private set; } = null!;
+    public TagAgendamento Tag { get; private set; } = null!;
 }
 
 public sealed class HorarioFuncionamentoUnidade : AggregateRoot

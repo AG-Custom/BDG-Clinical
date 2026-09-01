@@ -112,6 +112,14 @@ internal static class AuxiliaryPermissionAlternates
         "agendamento.editar"
     ];
 
+    public static readonly string[] AppointmentTags =
+    [
+        "tag_agendamento.visualizar",
+        "agenda.visualizar",
+        "agendamento.criar",
+        "agendamento.editar"
+    ];
+
     public static readonly string[] AnamneseTemplates =
     [
         "prontuario.modelo_anamnese.gerenciar",

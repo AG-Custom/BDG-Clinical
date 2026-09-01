@@ -14,6 +14,10 @@ public static class PermissionCatalog
         new("agendamento.confirmar", "Confirmar agendamento", "Agenda", PermissionModuleCodes.Agendamentos, 23),
         new("agendamento.concluir", "Concluir agendamento", "Agenda", PermissionModuleCodes.Agendamentos, 24),
         new("agendamento.registrar_falta", "Registrar falta", "Agenda", PermissionModuleCodes.Agendamentos, 25),
+        new("tag_agendamento.visualizar", "Visualizar tags de agendamento", "Tags de agendamento", PermissionModuleCodes.Agendamentos, 30),
+        new("tag_agendamento.criar", "Criar tag de agendamento", "Tags de agendamento", PermissionModuleCodes.Agendamentos, 31),
+        new("tag_agendamento.editar", "Editar tag de agendamento", "Tags de agendamento", PermissionModuleCodes.Agendamentos, 32),
+        new("tag_agendamento.excluir", "Excluir tag de agendamento", "Tags de agendamento", PermissionModuleCodes.Agendamentos, 33),
 
         // Paciente
         new("paciente.visualizar", "Visualizar pacientes", "Pacientes", PermissionModuleCodes.Pacientes, 10),

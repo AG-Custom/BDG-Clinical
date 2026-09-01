@@ -4,6 +4,8 @@ namespace AG.CLINICAL.Application.Schedules.Dtos;
 
 public sealed record AppointmentProcedureDto(Guid Id, string Nome);
 
+public sealed record AppointmentTagDto(Guid Id, string Nome, string Cor);
+
 public sealed record AppointmentDto(
     Guid Id,
     Guid UnidadeId,
@@ -16,6 +18,7 @@ public sealed record AppointmentDto(
     string? ProcedimentoNome,
     Guid? CompraPacienteId,
     IReadOnlyList<AppointmentProcedureDto> Procedimentos,
+    IReadOnlyList<AppointmentTagDto> Tags,
     string Tipo,
     string Status,
     DateTime DataInicio,
@@ -42,7 +45,8 @@ public sealed record CreateAppointmentRequest(
     IReadOnlyList<Guid>? ProcedimentoIds = null,
     Guid? CompraPacienteId = null,
     string? Observacao = null,
-    int ExcecaoHorario = 0);
+    int ExcecaoHorario = 0,
+    IReadOnlyList<Guid>? TagIds = null);
 
 public sealed record UpdateAppointmentRequest(
     Guid UnidadeId,
@@ -55,7 +59,8 @@ public sealed record UpdateAppointmentRequest(
     IReadOnlyList<Guid>? ProcedimentoIds = null,
     Guid? CompraPacienteId = null,
     string? Observacao = null,
-    int ExcecaoHorario = 0);
+    int ExcecaoHorario = 0,
+    IReadOnlyList<Guid>? TagIds = null);
 
 public sealed record CancelAppointmentRequest(string Motivo);
 

@@ -500,6 +500,7 @@ O campo `moduleCode` em cada nó do mapa indica a qual módulo a permissão pert
 | Prefixo | Uso na API |
 |---------|------------|
 | `sintoma.*` | `GET/POST/PUT/DELETE /api/symptoms` |
+| `tag_agendamento.*` | `GET/POST/PUT/DELETE /api/appointment-tags` |
 | `procedimento.*` | `GET/POST/PUT/PATCH /api/procedures` |
 | `tipo_produto.*` | `GET/POST/PUT/DELETE /api/product-types` |
 | `unidade_medida.*` | `GET/POST/PUT/DELETE /api/measurement-units` |

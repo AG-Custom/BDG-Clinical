@@ -22,7 +22,8 @@ internal static class AppointmentsAuditSerializer
             agendamento.Observacao,
             agendamento.ExcecaoHorario,
             agendamento.CanceladoPorId,
-            agendamento.MotivoCancelamento
+            agendamento.MotivoCancelamento,
+            TagIds = agendamento.GetTagIds()
         });
     }
 }

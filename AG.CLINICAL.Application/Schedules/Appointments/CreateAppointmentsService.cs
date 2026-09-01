@@ -30,6 +30,7 @@ public sealed class CreateAppointmentsService : ICreateAppointmentsService
     private readonly IEmployeesRepository _employeesRepository;
     private readonly IUnitsRepository _unitsRepository;
     private readonly IProceduresRepository _proceduresRepository;
+    private readonly IAppointmentTagsRepository _appointmentTagsRepository;
     private readonly IUnitOperatingHoursRepository _operatingHoursRepository;
     private readonly IEmailOutboxEnqueueService _emailOutboxEnqueueService;
     private readonly IAuditLogsService _auditLogsService;
@@ -42,6 +43,7 @@ public sealed class CreateAppointmentsService : ICreateAppointmentsService
         IEmployeesRepository employeesRepository,
         IUnitsRepository unitsRepository,
         IProceduresRepository proceduresRepository,
+        IAppointmentTagsRepository appointmentTagsRepository,
         IUnitOperatingHoursRepository operatingHoursRepository,
         IEmailOutboxEnqueueService emailOutboxEnqueueService,
         IAuditLogsService auditLogsService,
@@ -53,6 +55,7 @@ public sealed class CreateAppointmentsService : ICreateAppointmentsService
         _employeesRepository = employeesRepository;
         _unitsRepository = unitsRepository;
         _proceduresRepository = proceduresRepository;
+        _appointmentTagsRepository = appointmentTagsRepository;
         _operatingHoursRepository = operatingHoursRepository;
         _emailOutboxEnqueueService = emailOutboxEnqueueService;
         _auditLogsService = auditLogsService;
@@ -82,6 +85,24 @@ public sealed class CreateAppointmentsService : ICreateAppointmentsService
             return Result<AppointmentDto>.Failure(validation.Error!);
         }
 
+        var tagIdsResult = AppointmentRequestValidator.ResolveTagIds(request.TagIds);
+        if (tagIdsResult.IsFailure)
+        {
+            return Result<AppointmentDto>.Failure(tagIdsResult.Error!);
+        }
+
+        var tagsValidation = await AppointmentRequestValidator.ValidateTagsAsync(
+            empresaId,
+            tagIdsResult.Value!,
+            [],
+            _appointmentTagsRepository,
+            cancellationToken);
+
+        if (tagsValidation.IsFailure)
+        {
+            return Result<AppointmentDto>.Failure(tagsValidation.Error!);
+        }
+
         try
         {
             var data = validation.Value!;
@@ -98,6 +119,8 @@ public sealed class CreateAppointmentsService : ICreateAppointmentsService
                 data.ExcecaoHorario,
                 _tenantContext.UsuarioId,
                 data.CompraPacienteId);
+
+            agendamento.SetTags(tagIdsResult.Value!);
 
             await _appointmentsRepository.AddAsync(agendamento, cancellationToken);
 

@@ -267,6 +267,24 @@ Ver seção Dashboard para dependências cruzadas e problemas.
 
 ---
 
+## Tags de agendamento — `/tags-agendamento`
+
+**Objetivo da tela:** CRUD de tags (nome + cor) vinculadas a agendamentos.
+
+**Permissão mínima (guard):** `tag_agendamento.visualizar` | `tag_agendamento.criar` | `tag_agendamento.editar`
+
+**Montagem:** `GET /api/appointment-tags` (lista); `GET /api/appointment-tags/{id}` (form edição).
+
+**Ações:** `POST`, `PUT`, `DELETE`, `PATCH .../reactivate` em `/api/appointment-tags`.
+
+**Leituras auxiliares:** `GET` aceita `tag_agendamento.visualizar`, `agenda.visualizar`, `agendamento.criar` ou `agendamento.editar`.
+
+**Dependências cruzadas:** formulário de agendamento usa a listagem para o multi-select.
+
+**Permissão ideal:** `tag_agendamento.*` por operação.
+
+---
+
 ## Funcionários — `/funcionarios`
 
 **Objetivo da tela:** Listar colaboradores com filtros por unidade e cargo.

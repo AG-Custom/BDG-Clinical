@@ -86,6 +86,7 @@ public static class DependencyInjection
         services.AddScoped<IPermissionCacheInvalidator, CachedPermissionChecker>();
         services.AddScoped<IModuleLicensesRepository, ModuleLicensesRepository>();
         services.AddScoped<IAppointmentsRepository, AppointmentsRepository>();
+        services.AddScoped<IAppointmentTagsRepository, AppointmentTagsRepository>();
         services.AddScoped<IUnitOperatingHoursRepository, UnitOperatingHoursRepository>();
         services.AddScoped<IEmailOutboxRepository, EmailOutboxRepository>();
         services.AddScoped<IOperationalReportsRepository, OperationalReportsRepository>();
