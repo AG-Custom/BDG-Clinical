@@ -85,6 +85,7 @@ public static class DependencyInjection
         services.AddScoped<IUpdateEmployeesService, UpdateEmployeesService>();
         services.AddScoped<IDeactivateEmployeesService, DeactivateEmployeesService>();
         services.AddScoped<IReactivateEmployeesService, ReactivateEmployeesService>();
+        services.AddScoped<IResendEmployeeFirstAccessInvitationService, ResendEmployeeFirstAccessInvitationService>();
 
         services.AddScoped<ICreatePatientsService, CreatePatientsService>();
         services.AddScoped<IListPatientsService, ListPatientsService>();

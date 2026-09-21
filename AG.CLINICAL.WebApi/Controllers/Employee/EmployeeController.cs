@@ -20,6 +20,7 @@ public sealed class EmployeeController : ControllerBase
     private readonly IUpdateEmployeesService _updateEmployeesService;
     private readonly IDeactivateEmployeesService _deactivateEmployeesService;
     private readonly IReactivateEmployeesService _reactivateEmployeesService;
+    private readonly IResendEmployeeFirstAccessInvitationService _resendEmployeeFirstAccessInvitationService;
     private readonly IGetEmployeePermissionsService _getEmployeePermissionsService;
     private readonly IUpdateEmployeePermissionsService _updateEmployeePermissionsService;
 
@@ -30,6 +31,7 @@ public sealed class EmployeeController : ControllerBase
         IUpdateEmployeesService updateEmployeesService,
         IDeactivateEmployeesService deactivateEmployeesService,
         IReactivateEmployeesService reactivateEmployeesService,
+        IResendEmployeeFirstAccessInvitationService resendEmployeeFirstAccessInvitationService,
         IGetEmployeePermissionsService getEmployeePermissionsService,
         IUpdateEmployeePermissionsService updateEmployeePermissionsService)
     {
@@ -39,6 +41,7 @@ public sealed class EmployeeController : ControllerBase
         _updateEmployeesService = updateEmployeesService;
         _deactivateEmployeesService = deactivateEmployeesService;
         _reactivateEmployeesService = reactivateEmployeesService;
+        _resendEmployeeFirstAccessInvitationService = resendEmployeeFirstAccessInvitationService;
         _getEmployeePermissionsService = getEmployeePermissionsService;
         _updateEmployeePermissionsService = updateEmployeePermissionsService;
     }
@@ -114,6 +117,24 @@ public sealed class EmployeeController : ControllerBase
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _deactivateEmployeesService.ExecuteAsync(id, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            var statusCode = result.Error == "Funcionário não encontrado."
+                ? StatusCodes.Status404NotFound
+                : StatusCodes.Status400BadRequest;
+
+            return StatusCode(statusCode, new ApiResponse<object?>(null!, false, result.Error));
+        }
+
+        return Ok(new ApiResponse<EmployeeDto>(result.Value!, true));
+    }
+
+    [HttpPost("{id:guid}/resend-first-access")]
+    [RequirePermission("funcionario.editar")]
+    public async Task<IActionResult> ResendFirstAccess(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _resendEmployeeFirstAccessInvitationService.ExecuteAsync(id, cancellationToken);
 
         if (result.IsFailure)
         {

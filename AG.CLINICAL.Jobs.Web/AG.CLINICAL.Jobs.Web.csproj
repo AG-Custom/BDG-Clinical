@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AG.CLINICAL.Application\AG.CLINICAL.Application.csproj" />
     <ProjectReference Include="..\AG.CLINICAL.Infra.Data\AG.CLINICAL.Infra.Data.csproj" />
+    <ProjectReference Include="..\AG.CLINICAL.Infra.ExternalApis\AG.CLINICAL.Infra.ExternalApis.csproj" />
     <ProjectReference Include="..\AG.CLINICAL.Infra.Jobs\AG.CLINICAL.Infra.Jobs.csproj" />
   </ItemGroup>
 
